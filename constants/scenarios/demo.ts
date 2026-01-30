@@ -3,7 +3,7 @@ import { SavedScenario } from '../../types';
 
 export const voxelScenario: SavedScenario = {
     id: 'voxel-designer-scenario-default',
-    title: 'Voxel 3D Designer',
+    title: '3D体素模型生成（Three.js）',
     messages: [],
     systemInstruction: `**系统提示词：体素模型生成专家 (Voxel Art Generator)**
 
