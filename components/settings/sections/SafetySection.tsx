@@ -141,9 +141,8 @@ export const SafetySection: React.FC<SafetySectionProps> = ({ safetySettings, se
               <div className="flex justify-between items-center">
                 <label className="text-sm font-medium text-[var(--theme-text-primary)]">{t(categoryMap[category])}</label>
                 <span
-                  className={`text-xs font-bold uppercase tracking-wider ${
-                    stepTextColors[sliderValue] || 'text-[var(--theme-text-primary)]'
-                  }`}
+                  className={`text-xs font-bold uppercase tracking-wider ${stepTextColors[sliderValue] || 'text-[var(--theme-text-primary)]'
+                    }`}
                 >
                   {t(thresholdLabels[effectiveThreshold])}
                 </span>
@@ -166,9 +165,8 @@ export const SafetySection: React.FC<SafetySectionProps> = ({ safetySettings, se
                 {thresholdSteps.map((step, idx) => (
                   <div key={step} className="flex flex-col items-center w-8">
                     <div
-                      className={`w-1 h-2 rounded-full mb-1 ${
-                        idx === sliderValue ? 'bg-[var(--theme-text-primary)] h-3' : 'bg-[var(--theme-border-secondary)]'
-                      }`}
+                      className={`w-1 h-2 rounded-full mb-1 ${idx === sliderValue ? 'bg-[var(--theme-text-primary)] h-3' : 'bg-[var(--theme-border-secondary)]'
+                        }`}
                     />
                   </div>
                 ))}
@@ -180,7 +178,7 @@ export const SafetySection: React.FC<SafetySectionProps> = ({ safetySettings, se
 
       <div className="flex items-center justify-center gap-2 text-xs text-[var(--theme-text-tertiary)] pt-4">
         <Info size={14} />
-        <span>Changes apply to new messages.</span>
+        <span>{t('settings_safety_changes_apply')}</span>
       </div>
     </div>
   );

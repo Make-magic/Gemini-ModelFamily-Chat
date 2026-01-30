@@ -100,8 +100,8 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 
     const isUIBlocked = inputProps.disabled && !isAnimatingSend && !isRecording;
 
-    const wrapperClass = isFullscreen 
-        ? "fixed inset-0 z-[2000] bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] p-4 sm:p-6 flex flex-col fullscreen-enter-animation" 
+    const wrapperClass = isFullscreen
+        ? "fixed inset-0 z-[2000] bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] p-4 sm:p-6 flex flex-col fullscreen-enter-animation"
         : `bg-transparent ${isUIBlocked ? 'opacity-30 pointer-events-none' : ''}`;
 
     const innerContainerClass = isFullscreen
@@ -120,7 +120,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
         <div className={wrapperClass} aria-hidden={isUIBlocked}>
             <div className={innerContainerClass}>
                 {suggestionsProps && !isFullscreen && (
-                    <ChatSuggestions 
+                    <ChatSuggestions
                         show={suggestionsProps.show}
                         onSuggestionClick={suggestionsProps.onSuggestionClick}
                         onOrganizeInfoClick={suggestionsProps.onOrganizeInfoClick}
@@ -130,11 +130,11 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
                 )}
 
                 <ChatInputToolbar {...toolbarProps} />
-                
+
                 {liveStatusProps && (
                     <LiveStatusBanner {...liveStatusProps} />
                 )}
-                
+
                 <form onSubmit={formProps.onSubmit} className={formClass}>
                     <SlashCommandMenu
                         isOpen={slashCommandProps.isOpen}
@@ -142,9 +142,10 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
                         onSelect={slashCommandProps.onSelect}
                         selectedIndex={slashCommandProps.selectedIndex}
                         className={isFullscreen ? "absolute bottom-[60px] left-0 right-0 mb-2 w-full max-w-6xl mx-auto z-20" : undefined}
+                        t={t}
                     />
                     <div className={inputContainerClass}>
-                        <ChatFilePreviewList 
+                        <ChatFilePreviewList
                             selectedFiles={fileDisplayProps.selectedFiles}
                             onRemove={fileDisplayProps.onRemove}
                             onCancelUpload={fileDisplayProps.onCancelUpload}
@@ -154,13 +155,13 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
                         />
 
                         {quoteProps && (
-                            <ChatQuoteDisplay 
+                            <ChatQuoteDisplay
                                 quoteText={quoteProps.quoteText}
                                 onClearQuote={quoteProps.onClearQuote}
                             />
                         )}
-                        
-                        <ChatTextArea 
+
+                        <ChatTextArea
                             textareaRef={inputProps.textareaRef}
                             value={inputProps.value}
                             onChange={inputProps.onChange}
@@ -179,7 +180,7 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
 
                         <div className="flex items-center justify-between w-full flex-shrink-0 mt-auto pt-1">
                             <ChatInputActions {...actionsProps} />
-                            
+
                             {/* Hidden inputs */}
                             <input type="file" ref={fileInputRefs.fileInputRef} onChange={fileInputRefs.handleFileChange} accept={ALL_SUPPORTED_MIME_TYPES.join(',')} className="hidden" aria-hidden="true" multiple />
                             <input type="file" ref={fileInputRefs.imageInputRef} onChange={fileInputRefs.handleFileChange} accept={SUPPORTED_IMAGE_MIME_TYPES.join(',')} className="hidden" aria-hidden="true" multiple />

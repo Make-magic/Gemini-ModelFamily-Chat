@@ -32,4 +32,7 @@ export const dataSettings = {
     settingsViewLogs_title: { en: 'Open Application Logs (Ctrl+Alt+L)', zh: '查看应用日志 (Ctrl+Alt+L)' },
     settingsClearLogs: { en: 'Clear Logs', zh: '清空日志' },
     settingsClearLogs_confirm: { en: 'Are you sure you want to clear all system logs?', zh: '您确定要清空所有系统日志吗？' },
+    settings_data_applicationData_label: { en: 'Application Data', zh: '应用数据' },
+    settings_data_systemLogs_label: { en: 'System & Logs', zh: '系统日志' },
+    settings_data_dangerZone_label: { en: 'Danger Zone', zh: '高危操作' },
 };

@@ -46,4 +46,9 @@ export const modelSettings = {
     settings_autoCanvasVisualization_label: { en: 'Auto-visualize with Canvas', zh: 'Canvas 自动可视化' },
     settings_autoCanvasVisualization_tooltip: { en: 'Automatically trigger "Visualize with Canvas" after the model finishes generating a text response.', zh: '在模型生成文本回复后，自动触发“使用 Canvas 可视化”功能。' },
     settings_autoCanvasModel_label: { en: 'Visualization Model', zh: '可视化模型' },
+    settings_manageModels_label: { en: 'Manage Models', zh: '管理模型' },
+    settings_audioSpeech_label: { en: 'Audio & Speech', zh: '音频与语音' },
+    settings_canvasVisualization_label: { en: 'Canvas Visualization', zh: 'Canvas 可视化' },
+    settings_cancelEdit_label: { en: 'Cancel Edit', zh: '取消编辑' },
+    settings_editList_label: { en: 'Edit List', zh: '编辑列表' },
 };

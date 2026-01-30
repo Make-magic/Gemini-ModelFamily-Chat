@@ -79,7 +79,7 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
 
     return (
         <div className="space-y-6">
-            <DataCard title="Application Data" icon={<Database size={14} strokeWidth={1.5} />}>
+            <DataCard title={t('settings_data_applicationData_label')} icon={<Database size={14} strokeWidth={1.5} />}>
                 <ActionRow label="Settings" icon={<Settings size={16} strokeWidth={1.5} />}>
                     <button onClick={onExportSettings} className={outlineBtnClass}><Download size={12} strokeWidth={1.5} /> {t('export')}</button>
                     <button onClick={() => settingsImportRef.current?.click()} className={outlineBtnClass}><Upload size={12} strokeWidth={1.5} /> {t('import')}</button>
@@ -97,7 +97,7 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
                 </ActionRow>
             </DataCard>
 
-            <DataCard title="System & Logs" icon={<Settings size={14} strokeWidth={1.5} />}>
+            <DataCard title={t('settings_data_systemLogs_label')} icon={<Settings size={14} strokeWidth={1.5} />}>
                 <ActionRow label={t('settingsViewLogs')}>
                     <button onClick={onOpenLogViewer} className={outlineBtnClass}>{t('settingsViewLogs')}</button>
                     <button onClick={onClearLogs} className={`${outlineBtnClass} text-[var(--theme-text-danger)] hover:bg-[var(--theme-bg-danger)]/10 hover:text-[var(--theme-text-danger)] border-[var(--theme-bg-danger)]/30`}>
@@ -118,7 +118,7 @@ export const DataManagementSection: React.FC<DataManagementSectionProps> = ({
                 <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/10">
                     <AlertTriangle size={16} strokeWidth={2} className="text-white" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-white">
-                        Danger Zone
+                        {t('settings_data_dangerZone_label')}
                     </h4>
                 </div>
 

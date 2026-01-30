@@ -12,4 +12,6 @@ export const apiSettings = {
     apiConfig_testFailed: { en: 'Connection Failed', zh: '连接失败' },
     apiConfig_vertexExpress: { en: 'Use Vertex AI Express Endpoint', zh: '使用 Vertex AI Express 端点' },
     apiConfig_vertexExpress_btn: { en: 'Vertex Express', zh: 'Vertex Express' },
+    settings_api_overriding_key: { en: 'Overriding environment API key', zh: '覆盖环境变量中的 API Key' },
+    settings_api_preview_url: { en: 'Preview of actual request URL:', zh: '实际请求 URL 预览:' },
 };

@@ -16,9 +16,10 @@ interface SlashCommandMenuProps {
     onSelect: (command: Command) => void;
     selectedIndex: number;
     className?: string;
+    t: (key: string) => string;
 }
 
-export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({ isOpen, commands, onSelect, selectedIndex, className }) => {
+export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({ isOpen, commands, onSelect, selectedIndex, className, t }) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const selectedItemRef = useRef<HTMLLIElement>(null);
 
@@ -39,36 +40,36 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({ isOpen, comm
     const finalClassName = className || defaultClasses;
 
     return (
-        <div 
-          className={finalClassName}
-          style={{ animation: 'fadeInUp 0.15s cubic-bezier(0.16, 1, 0.3, 1) both' }}
+        <div
+            className={finalClassName}
+            style={{ animation: 'fadeInUp 0.15s cubic-bezier(0.16, 1, 0.3, 1) both' }}
         >
-            <div 
-                ref={scrollContainerRef} 
+            <div
+                ref={scrollContainerRef}
                 className="bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-secondary)] rounded-xl shadow-2xl max-h-80 overflow-y-auto custom-scrollbar flex flex-col overflow-hidden scroll-pt-10"
             >
                 {/* Header Strip */}
                 <div className="sticky top-0 z-10 bg-[var(--theme-bg-secondary)] border-b border-[var(--theme-border-secondary)] px-3 py-2 flex justify-between items-center">
                     <span className="text-[10px] font-bold text-[var(--theme-text-tertiary)] uppercase tracking-widest">
-                        Commands
+                        {t('slashMenu_commands')}
                     </span>
                     <div className="flex items-center gap-2">
                         <span className="text-[10px] text-[var(--theme-text-tertiary)] bg-[var(--theme-bg-primary)] px-1.5 py-0.5 rounded border border-[var(--theme-border-secondary)]">
-                            ↑↓ to navigate
+                            {t('slashMenu_navigate')}
                         </span>
                         <span className="text-[10px] text-[var(--theme-text-tertiary)] bg-[var(--theme-bg-primary)] px-1.5 py-0.5 rounded border border-[var(--theme-border-secondary)]">
-                            Tab to select
+                            {t('slashMenu_tab_to_select')}
                         </span>
                     </div>
                 </div>
-                
+
                 {/* Command List */}
                 <ul className="p-1.5 space-y-0.5">
                     {commands.map((command, index) => {
                         const isSelected = selectedIndex === index;
                         return (
-                            <li 
-                                key={command.name} 
+                            <li
+                                key={command.name}
                                 ref={isSelected ? selectedItemRef : null}
                                 className="relative"
                             >
@@ -77,8 +78,8 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({ isOpen, comm
                                     onClick={() => onSelect(command)}
                                     className={`
                                         group relative w-full text-left px-3 py-2.5 flex items-center gap-3 rounded-lg transition-all duration-150
-                                        ${isSelected 
-                                            ? 'bg-[var(--theme-bg-tertiary)]' 
+                                        ${isSelected
+                                            ? 'bg-[var(--theme-bg-tertiary)]'
                                             : 'hover:bg-[var(--theme-bg-tertiary)]/50'
                                         }
                                     `}
@@ -93,8 +94,8 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({ isOpen, comm
                                     {/* Icon Container */}
                                     <div className={`
                                         flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md transition-colors duration-200
-                                        ${isSelected 
-                                            ? 'bg-[var(--theme-bg-primary)] text-[var(--theme-text-primary)] shadow-sm ring-1 ring-[var(--theme-border-secondary)]' 
+                                        ${isSelected
+                                            ? 'bg-[var(--theme-bg-primary)] text-[var(--theme-text-primary)] shadow-sm ring-1 ring-[var(--theme-border-secondary)]'
                                             : 'bg-[var(--theme-bg-input)] text-[var(--theme-text-secondary)] border border-[var(--theme-border-secondary)]'
                                         }
                                     `}>

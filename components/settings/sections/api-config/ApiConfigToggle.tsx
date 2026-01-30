@@ -29,7 +29,7 @@ export const ApiConfigToggle: React.FC<ApiConfigToggleProps> = ({
                 </span>
                 <span className="text-xs text-[var(--theme-text-tertiary)] mt-0.5">
                     {useCustomApiConfig
-                        ? (hasEnvKey ? 'Overriding environment API key' : 'Using your own API keys')
+                        ? (hasEnvKey ? t('settings_api_overriding_key') : 'Using your own API keys')
                         : (hasEnvKey ? t('apiConfig_default_info') : 'No API key found in environment. Enable custom key to proceed.')
                     }
                 </span>

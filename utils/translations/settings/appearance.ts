@@ -35,4 +35,5 @@ export const appearanceSettings = {
     settings_pasteRichTextAsMarkdown_tooltip: { en: 'Automatically convert formatted text (HTML) from clipboard to Markdown when pasting.', zh: '粘贴时自动将剪贴板中的富文本（HTML）转换为 Markdown。' },
     settings_pasteAsTextFile_label: { en: 'Paste Large Text as File', zh: '长文本粘贴为文件' },
     settings_pasteAsTextFile_tooltip: { en: 'Automatically convert large pasted text (>5000 characters) into an attached .txt file.', zh: '粘贴大量文本（>5000 字符）时，自动将其转换为 .txt 附件。' },
+    settings_interfaceOptions_label: { en: 'Interface Options', zh: '界面选项' },
 };

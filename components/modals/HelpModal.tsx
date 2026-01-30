@@ -21,8 +21,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, commands,
     const filteredCommands = useMemo(() => {
         if (!searchQuery.trim()) return commands;
         const lowerQuery = searchQuery.toLowerCase();
-        return commands.filter(cmd => 
-            cmd.name.toLowerCase().includes(lowerQuery) || 
+        return commands.filter(cmd =>
+            cmd.name.toLowerCase().includes(lowerQuery) ||
             cmd.description.toLowerCase().includes(lowerQuery)
         );
     }, [commands, searchQuery]);
@@ -45,9 +45,9 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, commands,
                         <HelpCircle size={20} className="text-[var(--theme-text-link)]" />
                         {t('helpModal_title')}
                     </h2>
-                    <button 
-                        onClick={onClose} 
-                        className="text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors p-1.5 rounded-full" 
+                    <button
+                        onClick={onClose}
+                        className="text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] transition-colors p-1.5 rounded-full"
                         aria-label={t('helpModal_close_aria')}
                     >
                         <X size={20} />
@@ -74,8 +74,8 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, commands,
                     <div className="grid grid-cols-1 gap-2">
                         {filteredCommands.length > 0 ? (
                             filteredCommands.map((command) => (
-                                <div 
-                                    key={command.name} 
+                                <div
+                                    key={command.name}
                                     className="group flex items-center gap-4 p-3 rounded-xl hover:bg-[var(--theme-bg-tertiary)]/50 border border-transparent hover:border-[var(--theme-border-secondary)] transition-all duration-200"
                                 >
                                     {/* Icon */}
@@ -112,10 +112,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, commands,
                         )}
                     </div>
                 </div>
-                
+
                 <div className="p-3 border-t border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)]/30 text-center">
                     <p className="text-xs text-[var(--theme-text-tertiary)]">
-                        Tip: Type <code className="font-mono font-bold">/</code> in the chat input to open the command menu instantly.
+                        {t('helpModal_tip_type')} <code className="font-mono font-bold">/</code> {t('helpModal_tip_suffix')}
                     </p>
                 </div>
             </div>

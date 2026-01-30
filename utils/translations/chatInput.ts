@@ -104,8 +104,13 @@ export const chatInputTranslations = {
     help_cmd_canvas: { en: 'Toggle Canvas prompt', zh: '切换 Canvas 提示' },
     help_cmd_pip: { en: 'Toggle Picture-in-Picture mode', zh: '切换画中画模式' },
     help_cmd_fast: { en: 'Toggle Fast Thinking Mode', zh: '切换快速思考模式' },
-    
+
     // Help Modal
     helpModal_title: { en: 'Command Help', zh: '命令帮助' },
     helpModal_close_aria: { en: 'Close help modal', zh: '关闭帮助模态框' },
+    helpModal_tip_type: { en: 'Tip: Type', zh: '提示：输入' },
+    helpModal_tip_suffix: { en: 'in the chat input to open the command menu instantly.', zh: '即可立即打开命令菜单。' },
+    slashMenu_tab_to_select: { en: 'Tab to select', zh: 'Tab 选择' },
+    slashMenu_navigate: { en: '↑↓ to navigate', zh: '↑↓ 切换' },
+    slashMenu_commands: { en: 'Commands', zh: '命令' },
 };
