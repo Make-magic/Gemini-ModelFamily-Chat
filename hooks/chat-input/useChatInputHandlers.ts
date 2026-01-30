@@ -22,7 +22,7 @@ interface UseChatInputHandlersProps {
     setSelectedFiles: (files: UploadedFile[] | ((prevFiles: UploadedFile[]) => UploadedFile[])) => void;
     previewFile: UploadedFile | null;
     setPreviewFile: React.Dispatch<React.SetStateAction<UploadedFile | null>>;
-    
+
     // UI State
     isAddingById: boolean;
     setIsAddingById: React.Dispatch<React.SetStateAction<boolean>>;
@@ -41,14 +41,14 @@ interface UseChatInputHandlersProps {
     editMode: 'update' | 'resend';
     editingMessageId: string | null;
     setEditingMessageId: (id: string | null) => void;
-    
+
     // Modals
     showCreateTextFileEditor: boolean;
     showCamera: boolean;
     showRecorder: boolean;
     setShowAddByUrlInput: React.Dispatch<React.SetStateAction<boolean>>;
     setShowAddByIdInput: React.Dispatch<React.SetStateAction<boolean>>;
-    
+
     // Refs
     textareaRef: React.RefObject<HTMLTextAreaElement>;
     fileInputRef: React.RefObject<HTMLInputElement>;
@@ -57,20 +57,20 @@ interface UseChatInputHandlersProps {
     zipInputRef: React.RefObject<HTMLInputElement>;
     justInitiatedFileOpRef: React.MutableRefObject<boolean>;
     isComposingRef: React.MutableRefObject<boolean>;
-    
+
     // Settings & Config
     appSettings: AppSettings;
     currentChatSettings: IndividualChatSettings;
     setCurrentChatSettings: (updater: (prevSettings: IndividualChatSettings) => IndividualChatSettings) => void;
     setAppFileError: (error: string | null) => void;
-    
+
     // Slash Commands
     slashCommandState: { isOpen: boolean; filteredCommands: Command[]; selectedIndex: number; };
     setSlashCommandState: React.Dispatch<React.SetStateAction<any>>;
     handleCommandSelect: (command: Command) => void;
     handleSlashCommandExecution: (text: string) => void;
     handleSlashInputChange: (value: string) => void;
-    
+
     // Core Actions
     onProcessFiles: (files: FileList | File[]) => Promise<void>;
     onAddFileById: (fileId: string) => Promise<void>;
@@ -83,7 +83,7 @@ interface UseChatInputHandlersProps {
     onStopGenerating: () => void;
     onCancelEdit: () => void;
     onEditLastUserMessage: () => void;
-    
+
     // Environment
     isMobile: boolean;
     isDesktop: boolean;
@@ -153,6 +153,7 @@ export const useChatInputHandlers = (props: UseChatInputHandlersProps) => {
 
     // 4. Keyboard Handling
     const { handleKeyDown } = useKeyboardHandlers({
+        appSettings: props.appSettings,
         isComposingRef: props.isComposingRef,
         slashCommandState: props.slashCommandState,
         setSlashCommandState: props.setSlashCommandState,
@@ -162,7 +163,7 @@ export const useChatInputHandlers = (props: UseChatInputHandlersProps) => {
         isDesktop: props.isDesktop,
         handleSlashCommandExecution: props.handleSlashCommandExecution,
         canSend: props.canSend,
-        handleSubmit, 
+        handleSubmit,
         isFullscreen: props.isFullscreen,
         handleToggleFullscreen: props.handleToggleFullscreen,
         isLoading: props.isLoading,
@@ -173,15 +174,15 @@ export const useChatInputHandlers = (props: UseChatInputHandlersProps) => {
     });
 
     // 5. File Management (Remove, Add ID, Config, Preview Nav)
-    const { 
-        removeSelectedFile, 
-        handleAddFileByIdSubmit, 
-        handleToggleToolAndFocus, 
-        handleSaveFileConfig, 
-        handlePrevImage, 
-        handleNextImage, 
-        inputImages, 
-        currentImageIndex 
+    const {
+        removeSelectedFile,
+        handleAddFileByIdSubmit,
+        handleToggleToolAndFocus,
+        handleSaveFileConfig,
+        handlePrevImage,
+        handleNextImage,
+        inputImages,
+        currentImageIndex
     } = useFileManagementHandlers({
         selectedFiles: props.selectedFiles,
         setSelectedFiles: props.setSelectedFiles,

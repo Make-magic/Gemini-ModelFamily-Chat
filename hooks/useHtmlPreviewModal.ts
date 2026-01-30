@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback, RefObject } from 'react';
 import { useWindowContext } from '../contexts/WindowContext';
-import { sanitizeFilename, exportElementAsPng, triggerDownload } from '../utils/exportUtils';
+import { sanitizeFilename, exportElementAsPng, triggerDownload, createSnapshotContainer, embedImagesInClone } from '../utils/exportUtils';
 
 const ZOOM_STEP = 0.1;
 const MIN_ZOOM = 0.25;
@@ -26,10 +26,10 @@ export const useHtmlPreviewModal = ({
     const [isActuallyOpen, setIsActuallyOpen] = useState(isOpen);
     const [scale, setScale] = useState(1);
     const [isScreenshotting, setIsScreenshotting] = useState(false);
-    
+
     // Track if we are in the process of a direct launch to prevent UI flash
     const [isDirectFullscreenLaunch, setIsDirectFullscreenLaunch] = useState(initialTrueFullscreenRequest);
-    
+
     const { document: targetDocument } = useWindowContext();
 
     // Reset state when opening
@@ -99,10 +99,10 @@ export const useHtmlPreviewModal = ({
             }
             setIsTrueFullscreen(isNowInTrueFullscreenForIframe);
         };
-    
+
         targetDocument.addEventListener('fullscreenchange', handleFullscreenChange);
         targetDocument.addEventListener('webkitfullscreenchange', handleFullscreenChange); // Safari
-    
+
         return () => {
             targetDocument.removeEventListener('fullscreenchange', handleFullscreenChange);
             targetDocument.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
@@ -157,28 +157,43 @@ export const useHtmlPreviewModal = ({
     const handleScreenshot = useCallback(async () => {
         if (!iframeRef.current?.contentDocument?.body || isScreenshotting) return;
         setIsScreenshotting(true);
+        let cleanup = () => { };
         try {
             const iframeBody = iframeRef.current.contentDocument.body;
             const title = getPreviewTitle();
             const filename = `${sanitizeFilename(title)}-screenshot.png`;
-            
-            await exportElementAsPng(iframeBody, filename, {
-                backgroundColor: iframeRef.current.contentDocument.body.style.backgroundColor || getComputedStyle(iframeRef.current.contentDocument.body).backgroundColor || '#ffffff',
+
+            // Create a DOM-attached container for html2canvas (it needs elements in the DOM)
+            const themeId = document.body.className.includes('theme-onyx') ? 'onyx' : 'default';
+            const { container, innerContent, remove, rootBgColor } = await createSnapshotContainer(themeId, '100%');
+            cleanup = remove;
+
+            // Clone iframe content and embed images as base64 to avoid CORS/taint issues
+            const bodyClone = iframeBody.cloneNode(true) as HTMLElement;
+            await embedImagesInClone(bodyClone);
+            innerContent.appendChild(bodyClone);
+
+            // Wait for images and layout
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await exportElementAsPng(container, filename, {
+                backgroundColor: rootBgColor,
                 scale: 2,
             });
         } catch (err) {
             console.error("Failed to take screenshot of iframe content:", err);
             alert("Sorry, the screenshot could not be captured. Please check the console for errors.");
         } finally {
+            cleanup();
             setIsScreenshotting(false);
         }
     }, [isScreenshotting, iframeRef, getPreviewTitle]);
 
     const handleRefresh = useCallback(() => {
         if (iframeRef.current && htmlContent) {
-            iframeRef.current.srcdoc = ' '; 
+            iframeRef.current.srcdoc = ' ';
             requestAnimationFrame(() => {
-                if (iframeRef.current) { 
+                if (iframeRef.current) {
                     iframeRef.current.srcdoc = htmlContent;
                 }
             });

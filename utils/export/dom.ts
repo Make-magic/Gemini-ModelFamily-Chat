@@ -30,6 +30,7 @@ export const gatherPageStyles = async (): Promise<string> => {
 /**
  * Embeds images in a cloned DOM element by converting their sources to Base64 data URIs.
  * This allows the HTML to be self-contained (offline-capable).
+ * Images that fail to embed are removed to prevent canvas tainting during export.
  * @param clone The cloned HTMLElement to process.
  */
 export const embedImagesInClone = async (clone: HTMLElement): Promise<void> => {
@@ -42,23 +43,31 @@ export const embedImagesInClone = async (clone: HTMLElement): Promise<void> => {
 
             // Fetch the image content
             const response = await fetch(img.src);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch: ${response.status}`);
+            }
             const blob = await response.blob();
             const reader = new FileReader();
-            await new Promise<void>((resolve) => {
+            await new Promise<void>((resolve, reject) => {
                 reader.onloadend = () => {
                     if (typeof reader.result === 'string') {
                         img.src = reader.result;
                         // Remove attributes that might interfere with the data URI source
                         img.removeAttribute('srcset');
                         img.removeAttribute('loading');
+                        img.removeAttribute('crossorigin');
+                        resolve();
+                    } else {
+                        reject(new Error('FileReader result is not a string'));
                     }
-                    resolve();
                 };
-                reader.onerror = () => resolve(); // Resolve to continue even on error
+                reader.onerror = () => reject(new Error('FileReader error'));
                 reader.readAsDataURL(blob);
             });
         } catch (e) {
-            console.warn('Failed to embed image for export:', e);
+            console.warn('Failed to embed image for export, removing to prevent canvas taint:', img.src, e);
+            // Remove images that can't be embedded to prevent canvas tainting
+            img.remove();
         }
     }));
 };
@@ -81,7 +90,7 @@ export const createSnapshotContainer = async (
 
     const allStyles = await gatherPageStyles();
     const bodyClasses = document.body.className;
-    
+
     // Explicitly get the background color. 
     // We trim whitespace and provide a fallback to ensure html2canvas has a valid color.
     // If we rely solely on transparency + CSS variables in the clone, html2canvas often defaults to white background
@@ -103,7 +112,7 @@ export const createSnapshotContainer = async (
     `;
 
     document.body.appendChild(tempContainer);
-    
+
     const innerContent = tempContainer.querySelector('.exported-chat-container') as HTMLElement;
     const captureTarget = tempContainer.querySelector<HTMLElement>(':scope > div');
 

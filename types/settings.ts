@@ -29,16 +29,16 @@ export enum MediaResolution {
 }
 
 export interface SafetySetting {
-    category: HarmCategory;
-    threshold: HarmBlockThreshold;
+  category: HarmCategory;
+  threshold: HarmBlockThreshold;
 }
 
 export interface FilesApiConfig {
-    images: boolean;
-    pdfs: boolean;
-    audio: boolean;
-    video: boolean;
-    text: boolean;
+  images: boolean;
+  pdfs: boolean;
+  audio: boolean;
+  video: boolean;
+  text: boolean;
 }
 
 export interface ChatSettings {
@@ -57,33 +57,38 @@ export interface ChatSettings {
   isDeepSearchEnabled?: boolean;
   safetySettings?: SafetySetting[];
   mediaResolution?: MediaResolution;
+  shortcuts?: ShortcutsConfig;
+}
+
+export interface ShortcutsConfig {
+  [key: string]: string[]; // key is actionId, value is array of keys (e.g. ['Meta', 'Shift', 'n'])
 }
 
 export interface AppSettings extends ChatSettings {
- themeId: 'system' | 'onyx' | 'pearl';
- baseFontSize: number;
- useCustomApiConfig: boolean;
- apiKey: string | null;
- apiProxyUrl: string | null;
- useApiProxy?: boolean;
- language: 'en' | 'zh' | 'system';
- isStreamingEnabled: boolean;
- transcriptionModelId: string;
- filesApiConfig: FilesApiConfig;
- expandCodeBlocksByDefault: boolean;
- isAutoTitleEnabled: boolean;
- isMermaidRenderingEnabled: boolean;
- isGraphvizRenderingEnabled?: boolean;
- isCompletionNotificationEnabled: boolean;
- isSuggestionsEnabled: boolean;
- isAutoScrollOnSendEnabled?: boolean;
- isAutoSendOnSuggestionClick?: boolean;
- generateQuadImages?: boolean;
- autoFullscreenHtml?: boolean;
- showWelcomeSuggestions?: boolean;
- isAudioCompressionEnabled: boolean;
- autoCanvasVisualization?: boolean;
- autoCanvasModelId: string;
- isPasteRichTextAsMarkdownEnabled?: boolean;
- isPasteAsTextFileEnabled?: boolean;
+  themeId: 'system' | 'onyx' | 'pearl';
+  baseFontSize: number;
+  useCustomApiConfig: boolean;
+  apiKey: string | null;
+  apiProxyUrl: string | null;
+  useApiProxy?: boolean;
+  language: 'en' | 'zh' | 'system';
+  isStreamingEnabled: boolean;
+  transcriptionModelId: string;
+  filesApiConfig: FilesApiConfig;
+  expandCodeBlocksByDefault: boolean;
+  isAutoTitleEnabled: boolean;
+  isMermaidRenderingEnabled: boolean;
+  isGraphvizRenderingEnabled?: boolean;
+  isCompletionNotificationEnabled: boolean;
+  isSuggestionsEnabled: boolean;
+  isAutoScrollOnSendEnabled?: boolean;
+  isAutoSendOnSuggestionClick?: boolean;
+  generateQuadImages?: boolean;
+  autoFullscreenHtml?: boolean;
+  showWelcomeSuggestions?: boolean;
+  isAudioCompressionEnabled: boolean;
+  autoCanvasVisualization?: boolean;
+  autoCanvasModelId: string;
+  isPasteRichTextAsMarkdownEnabled?: boolean;
+  isPasteAsTextFileEnabled?: boolean;
 }

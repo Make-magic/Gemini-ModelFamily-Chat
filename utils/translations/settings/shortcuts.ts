@@ -14,7 +14,6 @@ export const shortcutsSettings = {
     shortcuts_clear_chat: { en: 'Clear Chat', zh: '清空对话' },
     shortcuts_slash_commands: { en: 'Slash Commands', zh: '斜杠命令' },
     shortcuts_focus_input: { en: 'Focus Input', zh: '聚焦输入框' },
-    shortcuts_clear_input_draft: { en: 'Clear Input Draft', zh: '清空输入草稿' },
     shortcuts_edit_last: { en: 'Edit Last Message', zh: '编辑上一条' },
     shortcuts_hold_record: { en: 'Hold to Record', zh: '按住录音' },
     shortcuts_any_key: { en: 'Any Key', zh: '任意键' },

@@ -7,7 +7,7 @@ import { triggerDownload } from './core';
  * @param options Configuration options for html2canvas.
  */
 export const exportElementAsPng = async (
-    element: HTMLElement, 
+    element: HTMLElement,
     filename: string,
     options?: { backgroundColor?: string | null, scale?: number }
 ) => {
@@ -30,25 +30,44 @@ export const exportElementAsPng = async (
         height: element.scrollHeight,
         width: element.scrollWidth,
         useCORS: true, // Important for cross-origin images
-        allowTaint: true,
+        allowTaint: false, // MUST be false for toBlob to work
         logging: false,
         backgroundColor: options?.backgroundColor ?? null,
         scale: options?.scale ?? 2, // Default to 2x for Retina sharpness
         ignoreElements: (el) => {
-            // Fallback check for ignoring elements if CSS fails
-            return el.classList.contains('no-export'); 
+            // Ignore elements that could taint the canvas
+            if (el.classList.contains('no-export')) return true;
+            // Ignore images that are not data URIs and might fail CORS
+            if (el.tagName === 'IMG') {
+                const src = (el as HTMLImageElement).src;
+                if (src && !src.startsWith('data:') && (src.startsWith('http') || src.startsWith('blob:'))) {
+                    return true;
+                }
+            }
+            return false;
+        },
+        onclone: (_doc, clonedElement) => {
+            // Final integrity check: ensures all images in the clone are data URIs
+            clonedElement.querySelectorAll('img').forEach(img => {
+                if (img.src && !img.src.startsWith('data:')) {
+                    img.remove();
+                }
+            });
         }
     });
-    
+
     // Convert to Blob to handle larger images better than data URI
-    canvas.toBlob((blob) => {
-        if (blob) {
-            const url = URL.createObjectURL(blob);
-            triggerDownload(url, filename);
-        } else {
-            console.error("Canvas to Blob conversion failed");
-        }
-    }, 'image/png');
+    await new Promise<void>((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (blob) {
+                const url = URL.createObjectURL(blob);
+                triggerDownload(url, filename);
+                resolve();
+            } else {
+                reject(new Error("Canvas to Blob conversion failed"));
+            }
+        }, 'image/png');
+    });
 };
 
 /**

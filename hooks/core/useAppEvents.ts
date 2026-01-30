@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AppSettings, ChatSettings } from '../../types';
-import { TAB_CYCLE_MODELS } from '../../constants/appConstants';
+import { TAB_CYCLE_MODELS, DEFAULT_SHORTCUTS } from '../../constants/appConstants';
 import { logService } from '../../utils/appUtils';
+import { isShortcutPressed } from '../../utils/shortcutUtils';
 
 interface AppEventsProps {
     appSettings: AppSettings;
@@ -74,53 +75,37 @@ export const useAppEvents = ({
             // Check active element in the document where the event occurred
             const targetDoc = event.view?.document || document;
             const activeElement = targetDoc.activeElement as HTMLElement;
-            
+
             const isGenerallyInputFocused = activeElement && (
-                activeElement.tagName.toLowerCase() === 'input' || 
-                activeElement.tagName.toLowerCase() === 'textarea' || 
-                activeElement.tagName.toLowerCase() === 'select' || 
+                activeElement.tagName.toLowerCase() === 'input' ||
+                activeElement.tagName.toLowerCase() === 'textarea' ||
+                activeElement.tagName.toLowerCase() === 'select' ||
                 activeElement.isContentEditable
             );
-            
-            // Stop Generation: Esc
+
+            const shortcuts = appSettings.shortcuts || DEFAULT_SHORTCUTS;
+
+            // Stop Generation (Hardcoded Escape)
             if (event.key === 'Escape' && isLoading) {
                 event.preventDefault();
                 onStopGenerating();
                 return;
             }
 
-            // New Chat: Cmd/Ctrl + Shift + N
-            if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'n') {
-                event.preventDefault();
-                startNewChat(); 
-            } 
-            // Open Logs: Cmd/Ctrl + Alt + L
-            else if ((event.ctrlKey || event.metaKey) && event.altKey && event.key.toLowerCase() === 'l') {
+            // Open Logs
+            if (isShortcutPressed(event, shortcuts.openLogs)) {
                 event.preventDefault();
                 setIsLogViewerOpen(prev => !prev);
-            } 
-            // PiP Mode: Cmd/Ctrl + Shift + P
-            else if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'p') {
+            }
+            // PiP Mode
+            else if (isShortcutPressed(event, shortcuts.togglePip)) {
                 if (isPipSupported) {
                     event.preventDefault();
                     onTogglePip();
                 }
-            } 
-            // Toggle Website Fullscreen: Cmd/Ctrl + Shift + F
-            else if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'f') {
-                event.preventDefault();
-                if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen().catch(err => {
-                        console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-                    });
-                } else {
-                    if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                    }
-                }
             }
-            // Cycle Models: Tab
-            else if (event.key === 'Tab' && TAB_CYCLE_MODELS.length > 0) {
+            // Cycle Models
+            else if (isShortcutPressed(event, shortcuts.cycleModels) && TAB_CYCLE_MODELS.length > 0) {
                 const isChatTextareaFocused = activeElement?.getAttribute('aria-label') === 'Chat message input';
                 if (isChatTextareaFocused || !isGenerallyInputFocused) {
                     event.preventDefault();
@@ -146,7 +131,7 @@ export const useAppEvents = ({
                 pipWindow.document.removeEventListener('keydown', handleKeyDown);
             }
         };
-    }, [startNewChat, isSettingsModalOpen, isPreloadedMessagesModalOpen, currentChatSettings.modelId, handleSelectModelInHeader, setIsLogViewerOpen, isPipSupported, onTogglePip, pipWindow, isLoading, onStopGenerating]);
+    }, [startNewChat, isSettingsModalOpen, isPreloadedMessagesModalOpen, currentChatSettings.modelId, handleSelectModelInHeader, setIsLogViewerOpen, isPipSupported, onTogglePip, pipWindow, isLoading, onStopGenerating, appSettings.shortcuts]);
 
     return {
         installPromptEvent,

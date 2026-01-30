@@ -1,8 +1,12 @@
 
 import { useCallback } from 'react';
 import { Command } from '../../components/chat/input/SlashCommandMenu';
+import { AppSettings } from '../../types';
+import { DEFAULT_SHORTCUTS } from '../../constants/appConstants';
+import { isShortcutPressed } from '../../utils/shortcutUtils';
 
 interface UseKeyboardHandlersProps {
+    appSettings: AppSettings;
     isComposingRef: React.MutableRefObject<boolean>;
     slashCommandState: { isOpen: boolean; filteredCommands: Command[]; selectedIndex: number; };
     setSlashCommandState: React.Dispatch<React.SetStateAction<any>>;
@@ -23,6 +27,7 @@ interface UseKeyboardHandlersProps {
 }
 
 export const useKeyboardHandlers = ({
+    appSettings,
     isComposingRef,
     slashCommandState,
     setSlashCommandState,
@@ -52,9 +57,9 @@ export const useKeyboardHandlers = ({
                 setSlashCommandState((prev: any) => {
                     const len = prev.filteredCommands?.length || 0;
                     if (len === 0) return prev;
-                    return { 
-                        ...prev, 
-                        selectedIndex: (prev.selectedIndex + 1) % len, 
+                    return {
+                        ...prev,
+                        selectedIndex: (prev.selectedIndex + 1) % len,
                     };
                 });
                 return;
@@ -63,9 +68,9 @@ export const useKeyboardHandlers = ({
                 setSlashCommandState((prev: any) => {
                     const len = prev.filteredCommands?.length || 0;
                     if (len === 0) return prev;
-                    return { 
-                        ...prev, 
-                        selectedIndex: (prev.selectedIndex - 1 + len) % len, 
+                    return {
+                        ...prev,
+                        selectedIndex: (prev.selectedIndex - 1 + len) % len,
                     };
                 });
                 return;
@@ -85,7 +90,9 @@ export const useKeyboardHandlers = ({
         // If we are composing text (IME), ignore other shortcuts to avoid interrupting input.
         if (isComposingRef.current) return;
 
-        // 3. Esc Hierarchical Logic
+        const shortcuts = appSettings.shortcuts || DEFAULT_SHORTCUTS;
+
+        // 3. Esc Hierarchical Logic (Stop / Cancel)
         if (e.key === 'Escape') {
             // Stop Generation
             if (isLoading) {
@@ -99,7 +106,7 @@ export const useKeyboardHandlers = ({
                 onCancelEdit();
                 return;
             }
-            // Close Slash Menu (Explicit close if not handled by blur/input change)
+            // Close Slash Menu
             if (slashCommandState.isOpen) {
                 e.preventDefault();
                 setSlashCommandState((prev: any) => ({ ...prev, isOpen: false }));
@@ -111,18 +118,39 @@ export const useKeyboardHandlers = ({
                 handleToggleFullscreen();
                 return;
             }
+            // If it was just Escape, we generally consume it or let it bubble?
+            // Existing logic consumed it.
             return;
         }
 
         // 4. Edit Last User Message (ArrowUp when empty)
-        if (e.key === 'ArrowUp' && !isLoading && inputText.length === 0) {
+        if (isShortcutPressed(e, shortcuts.editLastMessage) && !isLoading && inputText.length === 0) {
             e.preventDefault();
             onEditLastUserMessage();
             return;
         }
 
         // 5. Standard Message Submission
-        if (e.key === 'Enter' && !e.shiftKey && (!isMobile || isDesktop)) {
+        // We need to differentiate "Send Message" (Enter) vs "New Line" (Shift+Enter).
+        // If user binds Send to Shift+Enter, checking order matters?
+        // Usually checks are specific.
+        // Existing logic: Enter && !Shift -> Send.
+        // New logic: Check isShortcutPressed(sendMessage).
+        // But if sendMessage is same as newLine? (Conflict).
+        // "New Line" is usually handled natively by textarea unless prevented.
+        // If we configure "New Line" to something else, we might need to manually insert newline?
+        // ShortcutsSection has "New Line", but implementing custom Insert Newline logic is complex (cursor position etc).
+        // For now, let's assume "New Line" is informative or allows preventing default send.
+
+        // Check for Slash Command Trigger first
+        // If Input starts with / and user hits Enter?
+        // Actually, if they type '/' it triggers menu.
+        // 'slashCommands' shortcut is likely just to Type '/'? Or focus input and type '/'?
+        // ShortcutsSection just says "/" for slash commands.
+        // If I press '/', it types /.
+
+        // Handling Send Message
+        if (isShortcutPressed(e, shortcuts.sendMessage) && (!isMobile || isDesktop)) {
             const trimmedInput = inputText.trim();
             // Double check: If it looks like a command but menu wasn't open (edge case), try executing
             if (trimmedInput.startsWith('/')) {
@@ -130,6 +158,7 @@ export const useKeyboardHandlers = ({
                 handleSlashCommandExecution(trimmedInput);
                 return;
             }
+
             if (canSend) {
                 e.preventDefault();
                 handleSubmit(e as unknown as React.FormEvent);

@@ -2,12 +2,12 @@
 import React, { useCallback } from 'react';
 import { SavedChatSession, Theme } from '../../types';
 import { logService } from '../../utils/appUtils';
-import { 
-    sanitizeFilename, 
-    exportElementAsPng, 
-    exportHtmlStringAsFile, 
-    exportTextStringAsFile, 
-    gatherPageStyles, 
+import {
+    sanitizeFilename,
+    exportElementAsPng,
+    exportHtmlStringAsFile,
+    exportTextStringAsFile,
+    gatherPageStyles,
     triggerDownload,
     generateExportHtmlTemplate,
     generateExportTxtTemplate,
@@ -34,7 +34,7 @@ export const useChatSessionExport = ({
 
     const exportChatLogic = useCallback(async (format: 'png' | 'html' | 'txt' | 'json') => {
         if (!activeChat) return;
-        
+
         const safeTitle = sanitizeFilename(activeChat.title);
         const dateObj = new Date();
         const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString();
@@ -45,7 +45,7 @@ export const useChatSessionExport = ({
         if (format === 'png') {
             if (!scrollContainer) return;
 
-            let cleanup = () => {};
+            let cleanup = () => { };
             try {
                 const { container, innerContent, remove, rootBgColor } = await createSnapshotContainer(
                     currentTheme.id,
@@ -55,7 +55,7 @@ export const useChatSessionExport = ({
 
                 // Clone the chat container
                 const chatClone = scrollContainer.cloneNode(true) as HTMLElement;
-                
+
                 // Pre-process the clone
                 chatClone.querySelectorAll('details').forEach(details => {
                     details.setAttribute('open', '');
@@ -79,19 +79,22 @@ export const useChatSessionExport = ({
                     </div>
                 `;
 
+                // Embed images in the clone before injecting (handles avatars, generated images)
+                await embedImagesInClone(chatClone);
+
                 innerContent.innerHTML = `
                     ${headerHtml}
                     <div style="padding: 0 2rem 2rem 2rem;">
                         ${chatClone.innerHTML}
                     </div>
                 `;
-                
+
                 // Wait for rendering
-                await new Promise(resolve => setTimeout(resolve, 800)); 
+                await new Promise(resolve => setTimeout(resolve, 800));
 
                 await exportElementAsPng(container, filename, {
                     backgroundColor: rootBgColor,
-                    scale: 2, 
+                    scale: 2,
                 });
 
             } finally {
@@ -108,17 +111,17 @@ export const useChatSessionExport = ({
 
             // 2. Clean UI elements that shouldn't be in the export
             const selectorsToRemove = [
-                'button', 
-                '.message-actions', 
-                '.sticky', 
-                'input', 
-                'textarea', 
+                'button',
+                '.message-actions',
+                '.sticky',
+                'input',
+                'textarea',
                 '.code-block-utility-button',
                 '[role="tooltip"]',
                 '.loading-dots-container'
             ];
             chatClone.querySelectorAll(selectorsToRemove.join(',')).forEach(el => el.remove());
-            
+
             // 3. Expand all details elements (thoughts) so they are visible in export
             chatClone.querySelectorAll('details').forEach(el => el.setAttribute('open', 'true'));
 
@@ -142,7 +145,7 @@ export const useChatSessionExport = ({
                 rootBgColor,
                 bodyClasses
             });
-            
+
             exportHtmlStringAsFile(fullHtml, filename);
         } else if (format === 'txt') {
             const txtContent = generateExportTxtTemplate({
