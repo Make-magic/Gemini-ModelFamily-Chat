@@ -12,14 +12,15 @@ declare global {
 }
 
 export const usePictureInPicture = (setIsHistorySidebarOpen: (value: boolean | ((prev: boolean) => boolean)) => void) => {
-    const [isPipSupported, setIsPipSupported] = useState(false);
+    // Always true as we have a fallback using window.open
+    const [isPipSupported, setIsPipSupported] = useState(true);
     const [pipWindow, setPipWindow] = useState<Window | null>(null);
     const [pipContainer, setPipContainer] = useState<HTMLElement | null>(null);
 
+    // No longer need to check for documentPictureInPicture availability for "support"
+    // since we fallback to window.open
     useEffect(() => {
-        if ('documentPictureInPicture' in window) {
-            setIsPipSupported(true);
-        }
+        setIsPipSupported(true);
     }, []);
 
     const closePip = useCallback(() => {
@@ -29,6 +30,49 @@ export const usePictureInPicture = (setIsHistorySidebarOpen: (value: boolean | (
         }
     }, [pipWindow]);
 
+    const setupPipWindow = useCallback((win: Window) => {
+        // Copy all head elements from the main document to the PiP window.
+        Array.from(document.head.childNodes).forEach(node => {
+            if (node.nodeName === 'SCRIPT' && (node as HTMLScriptElement).src && (node as HTMLScriptElement).src.includes('index.tsx')) {
+                return;
+            }
+            win.document.head.appendChild(node.cloneNode(true));
+        });
+
+        win.document.title = "All Model Chat - PiP";
+        win.document.body.className = document.body.className;
+        win.document.body.style.margin = '0';
+        win.document.body.style.overflow = 'hidden';
+
+        // Ensure full height/width for layout
+        win.document.documentElement.style.height = '100%';
+        win.document.body.style.height = '100%';
+        win.document.body.style.width = '100%';
+
+        // Create a root container for the React portal
+        const container = win.document.createElement('div');
+        container.id = 'pip-root';
+        container.style.height = '100%';
+        container.style.width = '100%';
+        win.document.body.appendChild(container);
+
+        // Listen for when the user closes the PiP window
+        const cleanup = () => {
+            setPipWindow(null);
+            setPipContainer(null);
+            // Expand sidebar when exiting PiP mode
+            setIsHistorySidebarOpen(true);
+            logService.info('PiP window closed.');
+        };
+
+        // 'pagehide' generally works for PiP, 'beforeunload' is safer for popups
+        win.addEventListener('pagehide', cleanup, { once: true });
+        win.addEventListener('beforeunload', cleanup, { once: true });
+
+        setPipWindow(win);
+        setPipContainer(container);
+    }, [setIsHistorySidebarOpen]);
+
     const openPip = useCallback(async () => {
         if (!isPipSupported || pipWindow) return;
 
@@ -36,51 +80,35 @@ export const usePictureInPicture = (setIsHistorySidebarOpen: (value: boolean | (
         setIsHistorySidebarOpen(false);
 
         try {
-            const pipWin = await window.documentPictureInPicture!.requestWindow({
-                width: 500, // A reasonable default width
-                height: 700, // A reasonable default height
-            });
+            let pipWin: Window | null = null;
 
-            // Copy all head elements from the main document to the PiP window.
-            // This ensures styles, scripts (like Tailwind), and other configurations are available.
-            // IMPORTANT: Filter out the main application script to prevent it from re-executing 
-            // and trying to mount to #root in the PiP window, which causes errors.
-            Array.from(document.head.childNodes).forEach(node => {
-                if (node.nodeName === 'SCRIPT' && (node as HTMLScriptElement).src && (node as HTMLScriptElement).src.includes('index.tsx')) {
-                    return;
-                }
-                pipWin.document.head.appendChild(node.cloneNode(true));
-            });
-            
-            pipWin.document.title = "All Model Chat - PiP";
-            pipWin.document.body.className = document.body.className;
-            pipWin.document.body.style.margin = '0';
-            pipWin.document.body.style.overflow = 'hidden';
+            if ('documentPictureInPicture' in window && window.documentPictureInPicture) {
+                // Native PiP API
+                pipWin = await window.documentPictureInPicture.requestWindow({
+                    width: 500,
+                    height: 700,
+                });
+            } else {
+                // Fallback: Popup Window
+                // Calculate position to be somewhat centered or slightly offset
+                const width = 500;
+                const height = 700;
+                const left = window.screen.width / 2 - width / 2;
+                const top = window.screen.height / 2 - height / 2;
 
-            // Ensure full height/width for layout
-            pipWin.document.documentElement.style.height = '100%';
-            pipWin.document.body.style.height = '100%';
-            pipWin.document.body.style.width = '100%';
+                pipWin = window.open(
+                    '',
+                    'AMC_PiP',
+                    `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
+                );
+            }
 
-            // Create a root container for the React portal
-            const container = pipWin.document.createElement('div');
-            container.id = 'pip-root';
-            container.style.height = '100%';
-            container.style.width = '100%';
-            pipWin.document.body.appendChild(container);
-
-            // Listen for when the user closes the PiP window
-            pipWin.addEventListener('pagehide', () => {
-                setPipWindow(null);
-                setPipContainer(null);
-                // Expand sidebar when exiting PiP mode
-                setIsHistorySidebarOpen(true);
-                logService.info('PiP window closed.');
-            }, { once: true });
-
-            setPipWindow(pipWin);
-            setPipContainer(container);
-            logService.info('PiP window opened.');
+            if (pipWin) {
+                setupPipWindow(pipWin);
+                logService.info('PiP window opened.');
+            } else {
+                throw new Error("Failed to create PiP window");
+            }
 
         } catch (error) {
             logService.error('Error opening Picture-in-Picture window:', error);
@@ -89,7 +117,7 @@ export const usePictureInPicture = (setIsHistorySidebarOpen: (value: boolean | (
             // If opening fails, revert the sidebar state
             setIsHistorySidebarOpen(true);
         }
-    }, [isPipSupported, pipWindow, setIsHistorySidebarOpen]);
+    }, [isPipSupported, pipWindow, setIsHistorySidebarOpen, setupPipWindow]);
 
     const togglePip = useCallback(() => {
         if (pipWindow) {
