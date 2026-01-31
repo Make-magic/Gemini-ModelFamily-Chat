@@ -10,10 +10,12 @@ import {
     pyriteScenario,
     annaScenario,
     voxelScenario,
+    defaultScenario,
     reasonerScenario,
     succinctScenario,
     socraticScenario,
-    formalScenario,
+    Gemini3Scenario,
+    StandardPromptScenario,
     SYSTEM_SCENARIO_IDS
 } from '../constants/defaultScenarios';
 
@@ -84,10 +86,12 @@ export const usePreloadedScenarios = ({
         return [
             // FOP, Unrestricted, Pyrite, Anna are now in filteredUserScenarios
             voxelScenario,
+            defaultScenario,
             reasonerScenario,
             succinctScenario,
             socraticScenario,
-            formalScenario,
+            StandardPromptScenario,
+            Gemini3Scenario,
             ...filteredUserScenarios
         ];
     }, [userSavedScenarios]);

@@ -6,7 +6,7 @@ import { triggerDownload, sanitizeFilename } from '../utils/exportUtils';
 
 export type ModalView = 'list' | 'editor';
 
-const SYSTEM_SCENARIO_IDS = ['succinct-scenario-default', 'socratic-scenario-default', 'formal-scenario-default', 'reasoner-scenario-default'];
+const SYSTEM_SCENARIO_IDS = ['succinct-scenario-default', 'socratic-scenario-default', 'default-scenario-default', 'Gemini3-scenario-default', 'reasoner-scenario-default'];
 
 interface UseScenarioManagerProps {
   isOpen: boolean;
@@ -28,7 +28,7 @@ export const useScenarioManager = ({
   const [editingScenario, setEditingScenario] = useState<SavedScenario | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
-  
+
   const importInputRef = useRef<HTMLInputElement>(null);
 
   // Reset state when modal opens
@@ -64,7 +64,7 @@ export const useScenarioManager = ({
       title: `${scenario.title} (Copy)`,
       messages: scenario.messages.map(m => ({ ...m, id: generateUniqueId() })) // Deep copy messages with new IDs
     };
-    
+
     setScenarios(prev => [newScenario, ...prev]);
     showFeedback('success', t('scenarios_feedback_duplicated'));
   }, [showFeedback, t]);
@@ -103,16 +103,16 @@ export const useScenarioManager = ({
 
   const handleExportScenarios = useCallback(() => {
     const scenariosToExport = scenarios.filter(s => !SYSTEM_SCENARIO_IDS.includes(s.id));
-    
+
     if (scenariosToExport.length === 0) {
       showFeedback('info', t('scenarios_feedback_emptyExport'));
       return;
     }
 
-    const dataToExport = { 
-      type: 'AllModelChat-Scenarios', 
-      version: 1, 
-      scenarios: scenariosToExport 
+    const dataToExport = {
+      type: 'AllModelChat-Scenarios',
+      version: 1,
+      scenarios: scenariosToExport
     };
     const jsonString = JSON.stringify(dataToExport, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
@@ -143,7 +143,7 @@ export const useScenarioManager = ({
       try {
         const text = event.target?.result as string;
         const data = JSON.parse(text);
-        
+
         if (data && data.type === 'AllModelChat-Scenarios' && Array.isArray(data.scenarios)) {
           const importedScenarios = data.scenarios as SavedScenario[];
           // Re-generate IDs to avoid collision
@@ -151,7 +151,7 @@ export const useScenarioManager = ({
             ...s,
             id: generateUniqueId()
           }));
-          
+
           setScenarios(prev => [...prev, ...sanitizedImport]);
           showFeedback('success', t('scenarios_feedback_imported'));
         } else {
