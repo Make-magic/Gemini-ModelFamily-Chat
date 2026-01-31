@@ -38,6 +38,7 @@ export interface HistorySidebarProps {
   t: (key: keyof typeof translations, fallback?: string) => string;
   language: 'en' | 'zh';
   themeId: string;
+  isPipActive?: boolean;
 }
 
 export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
@@ -47,7 +48,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
     onDeleteGroup, onToggleGroupExpansion, themeId, t,
     onNewChat, onDeleteSession, onTogglePinSession, onDuplicateSession,
 
-    onOpenSettingsModal, onGenerateTitle
+    onOpenSettingsModal, onGenerateTitle, isPipActive
   } = props;
 
   const {
@@ -106,13 +107,17 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
                  transition-all duration-300 ease-[cubic-bezier(0.19,1,0.22,1)]
                  absolute md:static top-0 left-0 z-50
                  overflow-hidden
-                 ${isOpen ? 'w-64 md:w-72 translate-x-0' : 'w-64 md:w-[68px] -translate-x-full md:translate-x-0'}
+                 ${isOpen
+          ? 'w-64 md:w-72 translate-x-0'
+          : isPipActive
+            ? 'w-[68px] translate-x-0'
+            : 'w-64 md:w-[68px] -translate-x-full md:translate-x-0'}
                  
                  border-r border-[var(--theme-border-primary)]`}
       role="complementary" aria-label={t('history_title')}
     >
       {isOpen ? (
-        <div className="w-64 md:w-72 h-full flex flex-col min-w-[16rem] md:min-w-[18rem]">
+        <div className={`w-64 md:w-72 h-full flex flex-col ${isPipActive ? '' : 'min-w-[16rem] md:min-w-[18rem]'}`}>
           <SidebarHeader isOpen={isOpen} onToggle={onToggle} t={t} />
           <SidebarActions
             onNewChat={onNewChat}
@@ -188,7 +193,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = (props) => {
         </div>
       ) : (
         <div
-          className="hidden md:flex flex-col items-center py-4 h-full gap-4 w-full min-w-[68px] cursor-pointer hover:bg-[var(--theme-bg-tertiary)]/30 transition-colors"
+          className={`${isPipActive ? 'flex' : 'hidden md:flex'} flex-col items-center py-4 h-full gap-4 w-full min-w-[68px] cursor-pointer hover:bg-[var(--theme-bg-tertiary)]/30 transition-colors`}
           onClick={onToggle}
         >
           <MiniSidebarButton onClick={onToggle} icon={IconSidebarToggle} title={t('historySidebarOpen')} />

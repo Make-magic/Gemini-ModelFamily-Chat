@@ -39,6 +39,12 @@ export const usePictureInPicture = (setIsHistorySidebarOpen: (value: boolean | (
             win.document.head.appendChild(node.cloneNode(true));
         });
 
+        // Add a <base> tag to ensure relative assets (like styles) load correctly
+        // especially important for 'about:blank' popups used as fallbacks
+        const base = win.document.createElement('base');
+        base.href = window.location.origin + window.location.pathname;
+        win.document.head.appendChild(base);
+
         win.document.title = "All Model Chat - PiP";
         win.document.body.className = document.body.className;
         win.document.body.style.margin = '0';

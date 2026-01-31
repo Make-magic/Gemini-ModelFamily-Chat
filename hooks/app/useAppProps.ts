@@ -56,9 +56,11 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     t,
     themeId: currentTheme.id,
     language,
+    isPipActive: pipState.isPipActive,
   }), [
     uiState.isHistorySidebarOpen, chatState.savedSessions, chatState.savedGroups, chatState.activeSessionId,
-    chatState.loadingSessionIds, chatState.generatingTitleSessionIds, currentTheme, language, t
+    chatState.loadingSessionIds, chatState.generatingTitleSessionIds, currentTheme, language, t,
+    pipState.isPipActive
   ]);
 
   // Chat Area Props
