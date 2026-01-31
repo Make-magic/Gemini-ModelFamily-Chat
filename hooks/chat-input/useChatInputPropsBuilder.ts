@@ -100,6 +100,8 @@ export const useChatInputPropsBuilder = (
         // Handlers
         handlers: {
             ...handlers,
+            adjustTextareaHeight: inputState.adjustTextareaHeight,
+            handleCommandSelect: slashCommandState.handleCommandSelect,
             onCompositionStart: () => inputState.isComposingRef.current = true,
             onCompositionEnd: () => inputState.isComposingRef.current = false,
             onStartLiveSession: liveAPI.isConnected ? liveAPI.disconnect : liveAPI.connect,
@@ -120,6 +122,8 @@ export const useChatInputPropsBuilder = (
         showEmptyStateSuggestions: props.showEmptyStateSuggestions && !capabilities.isImagenModel && !capabilities.isTtsModel && !capabilities.isNativeAudioModel,
         onSuggestionClick: props.onSuggestionClick,
         onOrganizeInfoClick: props.onOrganizeInfoClick,
+        onBboxClick: props.onBboxClick,
+        isBboxPromptActive: props.isBboxPromptActive,
         onOpenScenariosModal: props.onOpenScenariosModal,
         onToggleCanvasPrompt: props.onToggleCanvasPrompt,
         isCanvasPromptActive: props.isCanvasPromptActive,

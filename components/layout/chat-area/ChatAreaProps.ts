@@ -1,6 +1,6 @@
 
 import { ChatSettings, ChatMessage, UploadedFile, AppSettings, ModelOption, SideViewContent, VideoMetadata, InputCommand } from '../../../types';
-import { ThemeColors } from '../../../constants/themeConstants';
+import { ThemeColors } from '../../../types/theme';
 import { translations } from '../../../utils/appUtils';
 import { MediaResolution } from '../../../types/settings';
 
@@ -31,9 +31,10 @@ export interface ChatAreaProps {
   isHistorySidebarOpen: boolean;
   onLoadCanvasPrompt: () => void;
   isCanvasPromptActive: boolean;
+  isBboxPromptActive: boolean;
   isKeyLocked: boolean;
   themeId: string;
-  onSetThinkingLevel: (level: 'LOW' | 'HIGH') => void;
+  onSetThinkingLevel: (level: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH') => void;
 
   // Models Error
   modelsLoadingError: string | null;
@@ -54,6 +55,7 @@ export interface ChatAreaProps {
   isGraphvizRenderingEnabled: boolean;
   onSuggestionClick: (suggestion: string) => void;
   onOrganizeInfoClick: (suggestion: string) => void;
+  onBboxClick: (suggestion: string) => void;
   onFollowUpSuggestionClick: (suggestion: string) => void;
   onTextToSpeech: (messageId: string, text: string) => void;
   onGenerateCanvas: (messageId: string, text: string) => void;
@@ -62,7 +64,7 @@ export interface ChatAreaProps {
   scrollNavVisibility: { up: boolean; down: boolean };
   onScrollToPrevTurn: () => void;
   onScrollToNextTurn: () => void;
-  
+
   // Edit Content
   onEditMessageContent: (message: ChatMessage) => void;
   onUpdateMessageFile: (messageId: string, fileId: string, updates: { videoMetadata?: VideoMetadata, mediaResolution?: MediaResolution }) => void;
@@ -109,6 +111,8 @@ export interface ChatAreaProps {
   onEditLastUserMessage: () => void;
   onOpenLogViewer: () => void;
   onClearAllHistory: () => void;
+  onToggleAutoCanvas?: () => void;
+  isAutoCanvasEnabled?: boolean;
   setCurrentChatSettings: (updater: (prevSettings: ChatSettings) => ChatSettings) => void;
   onUpdateMessageContent: (messageId: string, content: string) => void;
   onAddUserMessage: (text: string, files?: UploadedFile[]) => void;

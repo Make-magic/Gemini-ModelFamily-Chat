@@ -7,58 +7,64 @@ export const messagesTranslations = {
     welcome_greeting: { en: 'How can I help you today?', zh: '有什么可以帮忙的？' },
     welcome_suggestion_title: { en: 'Suggested', zh: '建议' },
     suggestion_summarize_title: { en: 'Summarize article', zh: '一句话概括' },
-    suggestion_summarize_desc: { 
-        en: 'Please read the following content and distill its core theme into a single sentence. This sentence should include key elements (who, did what, what was the result) and remain concise and powerful:', 
-        zh: '请阅读以下内容，并用一句话精准提炼其核心主旨。这一句话需要包含关键要素（谁、做了什么、结果如何），保持简练有力：' 
+    suggestion_summarize_desc: {
+        en: 'Please read the following content and distill its core theme into a single sentence. This sentence should include key elements (who, did what, what was the result) and remain concise and powerful:',
+        zh: '请阅读以下内容，并用一句话精准提炼其核心主旨。这一句话需要包含关键要素（谁、做了什么、结果如何），保持简练有力：'
     },
     suggestion_summarize_short: { en: 'Quickly extract the core theme.', zh: '快速提炼核心主旨。' },
     suggestion_organize_title: { en: 'Organize Information', zh: '信息整理' },
-    suggestion_organize_desc: { 
-        en: 'As an information organization expert, please de-duplicate, categorize, and structure the following content. Extract key points, ignore irrelevant details, and make the logic clear and readable:', 
-        zh: '作为信息整理专家，请对以下内容进行去重、分类和结构化整理。请提取关键点，忽略无关细节，使逻辑清晰易读：' 
+    suggestion_organize_desc: {
+        en: 'As an information organization expert, please de-duplicate, categorize, and structure the following content. Extract key points, ignore irrelevant details, and make the logic clear and readable:',
+        zh: '作为信息整理专家，请对以下内容进行去重、分类和结构化整理。请提取关键点，忽略无关细节，使逻辑清晰易读：'
     },
     suggestion_organize_short: { en: 'Structure and categorize messy info.', zh: '结构化整理杂乱信息。' },
     suggestion_translate_title: { en: 'Bilingual Translation', zh: '中英互译' },
-    suggestion_translate_desc: { 
-        en: `You are a professional translator proficient in Chinese and English. Please translate the following text (Chinese to English, or English to Chinese). Aim for accuracy, fluency, and elegance, preserving the original meaning and tone. Do not add any explanations or extra symbols:`, 
-        zh: `你是一位精通中英文的专业翻译。请将以下文本进行互译（中文转英文，英文转中文）。要求信达雅，保留原意和语气，不要添加任何解释或多余的符号：` 
+    suggestion_translate_desc: {
+        en: `You are a professional translator proficient in Chinese and English. Please translate the following text (Chinese to English, or English to Chinese). Aim for accuracy, fluency, and elegance, preserving the original meaning and tone. Do not add any explanations or extra symbols:`,
+        zh: `你是一位精通中英文的专业翻译。请将以下文本进行互译（中文转英文，英文转中文）。要求信达雅，保留原意和语气，不要添加任何解释或多余的符号：`
     },
     suggestion_translate_short: { en: 'Professional bidirectional translation.', zh: '专业的中英双向互译。' },
     suggestion_ocr_title: { en: 'OCR', zh: 'OCR' },
-    suggestion_ocr_desc: { 
-        en: 'Please recognize and extract all text content from the attached image. Maintain original formatting and paragraph structure. If it contains tables, output them in Markdown table format. Do not add any opening or closing remarks:', 
-        zh: '请识别并提取附加图片中的所有文字内容。保持原始排版和段落结构，如果包含表格请使用Markdown表格格式输出。不要添加任何开场白或结束语：' 
+    suggestion_ocr_desc: {
+        en: 'Please recognize and extract all text content from the attached image. Maintain original formatting and paragraph structure. If it contains tables, output them in Markdown table format. Do not add any opening or closing remarks:',
+        zh: '请识别并提取附加图片中的所有文字内容。保持原始排版和段落结构，如果包含表格请使用Markdown表格格式输出。不要添加任何开场白或结束语：'
     },
     suggestion_ocr_short: { en: 'Extract text from images.', zh: '提取图片中的文字内容。' },
     suggestion_explain_title: { en: 'Explain Concept', zh: '概念解释' },
-    suggestion_explain_desc: { 
-        en: 'Please explain the following concept in simple language. Use analogies or real-life examples to aid understanding, avoiding overly technical jargon so that a beginner with no prior knowledge can easily grasp it:', 
-        zh: '请用通俗易懂的语言解释以下概念。使用类比或生活中的例子来帮助理解，避免使用过于专业的术语，使零基础的初学者也能轻松掌握：' 
+    suggestion_explain_desc: {
+        en: 'Please explain the following concept in simple language. Use analogies or real-life examples to aid understanding, avoiding overly technical jargon so that a beginner with no prior knowledge can easily grasp it:',
+        zh: '请用通俗易懂的语言解释以下概念。使用类比或生活中的例子来帮助理解，避免使用过于专业的术语，使零基础的初学者也能轻松掌握：'
     },
     suggestion_explain_short: { en: 'Simplify complex concepts.', zh: '通俗易懂地解释复杂概念。' },
     suggestion_prompt_label: { en: 'Prompt', zh: '提示' },
-    
+
     // New ASR and SRT Translations
     suggestion_asr_title: { en: 'Audio to Text', zh: '音频转文字' },
-    suggestion_asr_desc: { 
-        en: 'Please perform Automatic Speech Recognition (ASR) on the attached audio file. Transcribe the spoken content verbatim into text. Do not summarize, just output the exact words spoken:', 
-        zh: '请对附加的音频文件进行自动语音识别（ASR）。将语音内容逐字转录为文本。不要总结，请直接输出所说的确切文字：' 
+    suggestion_asr_desc: {
+        en: 'Please perform Automatic Speech Recognition (ASR) on the attached audio file. Transcribe the spoken content verbatim into text. Do not summarize, just output the exact words spoken:',
+        zh: '请对附加的音频文件进行自动语音识别（ASR）。将语音内容逐字转录为文本。不要总结，请直接输出所说的确切文字：'
     },
     suggestion_asr_short: { en: 'Transcribe audio files verbatim.', zh: '逐字转录音频文件内容。' },
     suggestion_srt_title: { en: 'Generate Subtitles', zh: '生成字幕' },
-    suggestion_srt_desc: { 
-        en: 'Please generate a standard SRT subtitle file for the attached video. Ensure accurate timestamps (format: 00:00:00,000 --> 00:00:00,000) and transcribe the dialogue. Output ONLY the SRT content inside a code block:', 
-        zh: '请为附加的视频文件生成标准的 SRT 字幕文件。确保时间戳准确（格式：00:00:00,000 --> 00:00:00,000）并转录对话。请仅在代码块中输出 SRT 内容：' 
+    suggestion_srt_desc: {
+        en: 'Please generate a standard SRT subtitle file for the attached video. Ensure accurate timestamps (format: 00:00:00,000 --> 00:00:00,000) and transcribe the dialogue. Output ONLY the SRT content inside a code block:',
+        zh: '请为附加的视频文件生成标准的 SRT 字幕文件。确保时间戳准确（格式：00:00:00,000 --> 00:00:00,000）并转录对话。请仅在代码块中输出 SRT 内容：'
     },
     suggestion_srt_short: { en: 'Generate SRT subtitles from video.', zh: '从视频生成 SRT 字幕文件。' },
 
     // HTML Generation Translations
     suggestion_html_title: { en: 'Smart Board', zh: '智能看板' },
-    suggestion_html_desc: { 
-        en: 'You are a layout artist. Please use the Canvas system to organize the provided information into a structured, interactive HTML page. Ensure the design is modern and responsive. Please keep all information:', 
-        zh: '你是一位排版艺术家。请利用 Canvas 系统，将提供的信息整理成一个结构化、交互式的 HTML 页面。确保设计现代、响应式。请保留所有信息：' 
+    suggestion_html_desc: {
+        en: 'You are a layout artist. Please use the Canvas system to organize the provided information into a structured, interactive HTML page. Ensure the design is modern and responsive. Please keep all information:',
+        zh: '你是一位排版艺术家。请利用 Canvas 系统，将提供的信息整理成一个结构化、交互式的 HTML 页面。确保设计现代、响应式。请保留所有信息：'
     },
     suggestion_html_short: { en: 'Create interactive HTML board.', zh: '创建交互式 HTML 看板。' },
+    suggestion_bbox_title: { en: 'BBox', zh: '目标检测标注' },
+    suggestion_bbox_desc: {
+        en: 'Please use Python code to perform object detection on the attached image and visualize the results with normalized bounding boxes.',
+        zh: '请使用 Python 代码对附加图片进行目标检测，并使用归一化边界框可视化标注结果。'
+    },
+    suggestion_bbox_short: { en: 'Object detection with BBox.', zh: '使用边界框进行目标检测。' },
 
     welcome_title: { en: 'Welcome to All Model Chat', zh: '欢迎使用 All Model Chat' },
     welcome_p1: { en: 'Start a conversation by typing below. You can also attach files, load scenarios via the', zh: '在下方输入文字开始对话。您也可以附加文件，或通过' },

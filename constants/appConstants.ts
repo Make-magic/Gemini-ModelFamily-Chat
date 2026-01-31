@@ -130,4 +130,5 @@ export const SUGGESTIONS_KEYS = [
   { titleKey: 'suggestion_srt_title', descKey: 'suggestion_srt_desc', shortKey: 'suggestion_srt_short', icon: 'Captions' },
   { titleKey: 'suggestion_explain_title', descKey: 'suggestion_explain_desc', shortKey: 'suggestion_explain_short', icon: 'Lightbulb' },
   { titleKey: 'suggestion_summarize_title', descKey: 'suggestion_summarize_desc', shortKey: 'suggestion_summarize_short', icon: 'FileText' },
+  { titleKey: 'suggestion_bbox_title', descKey: 'suggestion_bbox_desc', shortKey: 'suggestion_bbox_short', specialAction: 'bbox', icon: 'Square' },
 ];

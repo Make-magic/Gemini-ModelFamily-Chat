@@ -194,6 +194,7 @@ export interface ChatInputActionsProps {
   onOpenScenariosModal: () => void;
   onToggleCanvasPrompt?: () => void;
   isCanvasPromptActive?: boolean;
+  isBboxPromptActive?: boolean;
   onToggleAutoCanvas?: () => void;
   isAutoCanvasEnabled?: boolean;
 }
@@ -250,6 +251,7 @@ export interface ChatInputProps {
   setCurrentChatSettings: (updater: (prevSettings: ChatSettings) => ChatSettings) => void;
   onSuggestionClick?: (suggestion: string) => void;
   onOrganizeInfoClick?: (suggestion: string) => void;
+  onBboxClick?: (suggestion: string) => void;
   showEmptyStateSuggestions?: boolean;
   editMode: 'update' | 'resend';
   onUpdateMessageContent: (messageId: string, content: string) => void;
@@ -259,6 +261,7 @@ export interface ChatInputProps {
   onLiveTranscript?: (text: string, role: 'user' | 'model', isFinal: boolean) => void;
   onOpenScenariosModal: () => void;
   isCanvasPromptActive?: boolean;
+  isBboxPromptActive?: boolean;
   onToggleAutoCanvas?: () => void;
   isAutoCanvasEnabled?: boolean;
 }

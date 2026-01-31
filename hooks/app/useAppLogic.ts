@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { AppSettings, ChatMessage, SideViewContent } from '../../types';
-import { CANVAS_SYSTEM_PROMPT, DEFAULT_SYSTEM_INSTRUCTION } from '../../constants/appConstants';
+import { CANVAS_SYSTEM_PROMPT, DEFAULT_SYSTEM_INSTRUCTION, BBOX_SYSTEM_PROMPT } from '../../constants/appConstants';
 import { useAppSettings } from '../core/useAppSettings';
 import { useChat } from '../chat/useChat';
 import { useAppUI } from '../core/useAppUI';
@@ -17,44 +17,44 @@ export const useAppLogic = () => {
 
   // Initialize Network Interceptor
   useEffect(() => {
-      networkInterceptor.mount();
+    networkInterceptor.mount();
   }, []);
 
   // Update Interceptor Configuration when settings change
   useEffect(() => {
-      const shouldUseProxy = appSettings.useCustomApiConfig && appSettings.useApiProxy;
-      networkInterceptor.configure(!!shouldUseProxy, appSettings.apiProxyUrl);
+    const shouldUseProxy = appSettings.useCustomApiConfig && appSettings.useApiProxy;
+    networkInterceptor.configure(!!shouldUseProxy, appSettings.apiProxyUrl);
   }, [appSettings.useCustomApiConfig, appSettings.useApiProxy, appSettings.apiProxyUrl]);
 
   const chatState = useChat(appSettings, setAppSettings, language);
-  
+
   const uiState = useAppUI();
   const { setIsHistorySidebarOpen } = uiState;
-  
+
   // Side Panel State
   const [sidePanelContent, setSidePanelContent] = useState<SideViewContent | null>(null);
-  
+
   const handleOpenSidePanel = useCallback((content: SideViewContent) => {
-      setSidePanelContent(content);
-      // Auto-collapse sidebar on smaller screens if opening side panel
-      if (window.innerWidth < 1280) {
-          setIsHistorySidebarOpen(false);
-      }
+    setSidePanelContent(content);
+    // Auto-collapse sidebar on smaller screens if opening side panel
+    if (window.innerWidth < 1280) {
+      setIsHistorySidebarOpen(false);
+    }
   }, [setIsHistorySidebarOpen]);
 
   const handleCloseSidePanel = useCallback(() => {
-      setSidePanelContent(null);
+    setSidePanelContent(null);
   }, []);
 
   // Close SidePanel on window resize if width is too narrow
   useEffect(() => {
-      const handleResize = () => {
-          if (window.innerWidth < 768) {
-              setSidePanelContent(null);
-          }
-      };
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidePanelContent(null);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const pipState = usePictureInPicture(uiState.setIsHistorySidebarOpen);
@@ -62,7 +62,7 @@ export const useAppLogic = () => {
   // Sync styles to PiP window when theme changes
   useEffect(() => {
     if (pipState.pipWindow && pipState.pipWindow.document) {
-        applyThemeToDocument(pipState.pipWindow.document, currentTheme, appSettings);
+      applyThemeToDocument(pipState.pipWindow.document, currentTheme, appSettings);
     }
   }, [pipState.pipWindow, currentTheme, appSettings]);
 
@@ -84,23 +84,23 @@ export const useAppLogic = () => {
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [exportStatus, setExportStatus] = useState<'idle' | 'exporting'>('idle');
-  
+
   const activeChat = chatState.savedSessions.find(s => s.id === chatState.activeSessionId);
   const sessionTitle = activeChat?.title || t('newChat');
 
   const dataManagement = useDataManagement({
-    appSettings, 
-    setAppSettings, 
-    savedSessions: chatState.savedSessions, 
+    appSettings,
+    setAppSettings,
+    savedSessions: chatState.savedSessions,
     updateAndPersistSessions: chatState.updateAndPersistSessions,
-    savedGroups: chatState.savedGroups, 
-    updateAndPersistGroups: chatState.updateAndPersistGroups, 
-    savedScenarios: chatState.savedScenarios, 
+    savedGroups: chatState.savedGroups,
+    updateAndPersistGroups: chatState.updateAndPersistGroups,
+    savedScenarios: chatState.savedScenarios,
     handleSaveAllScenarios: chatState.handleSaveAllScenarios,
-    t, 
-    activeChat, 
-    scrollContainerRef: chatState.scrollContainerRef, 
-    currentTheme, 
+    t,
+    activeChat,
+    scrollContainerRef: chatState.scrollContainerRef,
+    currentTheme,
     language,
   });
 
@@ -110,18 +110,18 @@ export const useAppLogic = () => {
     try {
       await dataManagement.exportChatLogic(format);
     } catch (error) {
-        logService.error(`Chat export failed (format: ${format})`, { error });
-        alert(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
+      logService.error(`Chat export failed (format: ${format})`, { error });
+      alert(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
-        setExportStatus('idle');
-        setIsExportModalOpen(false);
+      setExportStatus('idle');
+      setIsExportModalOpen(false);
     }
   }, [activeChat, dataManagement]);
 
   useEffect(() => {
     logService.info('App initialized.');
   }, []);
-  
+
   const { activeSessionId, setCurrentChatSettings } = chatState;
 
   const handleSaveSettings = useCallback((newSettings: AppSettings) => {
@@ -148,46 +148,59 @@ export const useAppLogic = () => {
   const handleLoadCanvasPromptAndSave = useCallback(() => {
     const isCurrentlyCanvasPrompt = currentChatSettings.systemInstruction === CANVAS_SYSTEM_PROMPT;
     const newSystemInstruction = isCurrentlyCanvasPrompt ? DEFAULT_SYSTEM_INSTRUCTION : CANVAS_SYSTEM_PROMPT;
-    setAppSettings(prev => ({...prev, systemInstruction: newSystemInstruction}));
+    setAppSettings(prev => ({ ...prev, systemInstruction: newSystemInstruction }));
     if (activeSessionId && setCurrentChatSettings) {
-        setCurrentChatSettings(prevSettings => ({ ...prevSettings, systemInstruction: newSystemInstruction }));
+      setCurrentChatSettings(prevSettings => ({ ...prevSettings, systemInstruction: newSystemInstruction }));
     }
-    
+
     // Focus input after toggling canvas mode
     setTimeout(() => {
-        const textarea = document.querySelector('textarea[aria-label="Chat message input"]') as HTMLTextAreaElement;
-        if (textarea) textarea.focus();
+      const textarea = document.querySelector('textarea[aria-label="Chat message input"]') as HTMLTextAreaElement;
+      if (textarea) textarea.focus();
     }, 50);
   }, [currentChatSettings.systemInstruction, setAppSettings, activeSessionId, setCurrentChatSettings]);
-  
+
   const { isAutoSendOnSuggestionClick } = appSettings;
   const { handleSendMessage, setCommandedInput } = chatState;
 
-  const handleSuggestionClick = useCallback((type: 'homepage' | 'organize' | 'follow-up', text: string) => {
-    if (type === 'organize') {
-        if (currentChatSettings.systemInstruction !== CANVAS_SYSTEM_PROMPT) {
-            const newSystemInstruction = CANVAS_SYSTEM_PROMPT;
-            setAppSettings(prev => ({...prev, systemInstruction: newSystemInstruction}));
-            if (activeSessionId && setCurrentChatSettings) {
-                setCurrentChatSettings(prevSettings => ({ ...prevSettings, systemInstruction: newSystemInstruction }));
-            }
-        }
+  const handleSuggestionClick = useCallback((type: 'homepage' | 'organize' | 'follow-up' | 'bbox', text: string) => {
+    if (type === 'organize' || type === 'bbox') {
+      const targetPrompt = type === 'organize' ? CANVAS_SYSTEM_PROMPT : BBOX_SYSTEM_PROMPT;
+      const isCurrentlyTarget = currentChatSettings.systemInstruction === targetPrompt;
+      const newSystemInstruction = isCurrentlyTarget ? DEFAULT_SYSTEM_INSTRUCTION : targetPrompt;
+
+      // For BBox, we also want to ensure code execution is enabled when turning it on
+      const shouldEnableCode = type === 'bbox' && !isCurrentlyTarget;
+
+      setAppSettings(prev => ({
+        ...prev,
+        systemInstruction: newSystemInstruction,
+        isCodeExecutionEnabled: shouldEnableCode ? true : prev.isCodeExecutionEnabled
+      }));
+
+      if (activeSessionId && setCurrentChatSettings) {
+        setCurrentChatSettings(prevSettings => ({
+          ...prevSettings,
+          systemInstruction: newSystemInstruction,
+          isCodeExecutionEnabled: shouldEnableCode ? true : prevSettings.isCodeExecutionEnabled
+        }));
+      }
     }
     if (type === 'follow-up' && (isAutoSendOnSuggestionClick ?? true)) {
-        handleSendMessage({ text });
+      handleSendMessage({ text });
     } else {
-        setCommandedInput({ text: text + '\n', id: Date.now() });
-        setTimeout(() => {
-            const textarea = document.querySelector('textarea[aria-label="Chat message input"]') as HTMLTextAreaElement;
-            if (textarea) textarea.focus();
-        }, 0);
+      setCommandedInput({ text: text + '\n', id: Date.now() });
+      setTimeout(() => {
+        const textarea = document.querySelector('textarea[aria-label="Chat message input"]') as HTMLTextAreaElement;
+        if (textarea) textarea.focus();
+      }, 0);
     }
   }, [currentChatSettings.systemInstruction, isAutoSendOnSuggestionClick, handleSendMessage, setCommandedInput, setAppSettings, activeSessionId, setCurrentChatSettings]);
 
-  const handleSetThinkingLevel = useCallback((level: 'LOW' | 'HIGH') => {
+  const handleSetThinkingLevel = useCallback((level: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH') => {
     setAppSettings(prev => ({ ...prev, thinkingLevel: level }));
     if (activeSessionId && setCurrentChatSettings) {
-        setCurrentChatSettings(prev => ({ ...prev, thinkingLevel: level }));
+      setCurrentChatSettings(prev => ({ ...prev, thinkingLevel: level }));
     }
   }, [setAppSettings, activeSessionId, setCurrentChatSettings]);
 
@@ -198,9 +211,9 @@ export const useAppLogic = () => {
     if (isSwitchingModel) return t('appSwitchingModel');
     const model = apiModels.find(m => m.id === modelIdToDisplay);
     if (model) return model.name;
-    if (modelIdToDisplay) { 
-        let n = modelIdToDisplay.split('/').pop()?.replace('gemini-','Gemini ') || modelIdToDisplay; 
-        return n.split('-').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ').replace(' Preview ',' Preview ');
+    if (modelIdToDisplay) {
+      let n = modelIdToDisplay.split('/').pop()?.replace('gemini-', 'Gemini ') || modelIdToDisplay;
+      return n.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ').replace(' Preview ', ' Preview ');
     }
     return apiModels.length === 0 ? t('appNoModelsAvailable') : t('appNoModelSelected');
   }, [currentChatSettings.modelId, appSettings.modelId, isSwitchingModel, apiModels, t]);

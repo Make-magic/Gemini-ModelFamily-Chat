@@ -9,11 +9,17 @@ interface ChatSuggestionsProps {
     show: boolean;
     onSuggestionClick?: (suggestion: string) => void;
     onOrganizeInfoClick?: (suggestion: string) => void;
+    onBboxClick?: (suggestion: string) => void;
     t: (key: keyof typeof translations) => string;
     isFullscreen: boolean;
+    isBboxActive?: boolean;
+    isCanvasActive?: boolean;
 }
 
-export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({ show, onSuggestionClick, onOrganizeInfoClick, t, isFullscreen }) => {
+export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
+    show, onSuggestionClick, onOrganizeInfoClick, onBboxClick, t, isFullscreen,
+    isBboxActive, isCanvasActive
+}) => {
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
     const [showRightArrow, setShowRightArrow] = useState(false);
@@ -46,12 +52,12 @@ export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({ show, onSugges
     if (!show || isFullscreen) return null;
 
     return (
-        <div 
+        <div
             className="relative group/suggestions mb-2"
             onMouseEnter={() => setIsSuggestionsHovered(true)}
             onMouseLeave={() => setIsSuggestionsHovered(false)}
         >
-            <div 
+            <div
                 ref={suggestionsRef}
                 onScroll={checkScroll}
                 className="flex gap-2 overflow-x-auto pb-2 px-1 no-scrollbar fade-mask-x scroll-smooth"
@@ -64,18 +70,20 @@ export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({ show, onSugges
                             const text = t(s.descKey as any);
                             if ((s as any).specialAction === 'organize' && onOrganizeInfoClick) {
                                 onOrganizeInfoClick(text);
+                            } else if ((s as any).specialAction === 'bbox' && onBboxClick) {
+                                onBboxClick(text);
                             } else if (onSuggestionClick) {
                                 onSuggestionClick(text);
                             }
                         }}
-                        className="
+                        className={`
                             flex items-center gap-2 px-4 py-2.5 rounded-xl
-                            bg-[var(--theme-bg-input)] hover:bg-[var(--theme-bg-tertiary)]
-                            border border-[var(--theme-border-secondary)]
-                            text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]
-                            text-sm font-medium whitespace-nowrap
-                            transition-all active:scale-95 shadow-sm
-                        "
+                            border transition-all active:scale-95 shadow-sm text-sm font-medium whitespace-nowrap
+                            ${((s as any).specialAction === 'organize' && isCanvasActive) || ((s as any).specialAction === 'bbox' && isBboxActive)
+                                ? 'bg-[var(--theme-border-focus)] border-[var(--theme-border-focus)] text-white shadow-indigo-500/20'
+                                : 'bg-[var(--theme-bg-input)] hover:bg-[var(--theme-bg-tertiary)] border-[var(--theme-border-secondary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'
+                            }
+                        `}
                     >
                         <SuggestionIcon iconName={(s as any).icon} />
                         <span>{t(s.titleKey as any)}</span>

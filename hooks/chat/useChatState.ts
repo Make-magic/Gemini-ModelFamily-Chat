@@ -36,7 +36,7 @@ export const useChatState = (appSettings: AppSettings) => {
                 // Optimization: Granular updates based on reference equality
                 const updates: Promise<void>[] = [];
                 const newSessionsMap = new Map(newSessions.map(s => [s.id, s]));
-                
+
                 // 1. Detect Updated or Added sessions
                 // We rely on React immutability: if reference changes, object changed.
                 newSessions.forEach(session => {
@@ -62,7 +62,7 @@ export const useChatState = (appSettings: AppSettings) => {
             return newSessions;
         });
     }, []);
-    
+
     const updateAndPersistGroups = useCallback(async (updater: (prev: ChatGroup[]) => ChatGroup[]) => {
         setSavedGroups(prevGroups => {
             const newGroups = updater(prevGroups);
@@ -73,9 +73,9 @@ export const useChatState = (appSettings: AppSettings) => {
 
     const activeChat = useMemo(() => savedSessions.find(s => s.id === activeSessionId), [savedSessions, activeSessionId]);
     const messages = useMemo(() => activeChat?.messages || [], [activeChat]);
-    const currentChatSettings = useMemo(() => activeChat?.settings || DEFAULT_CHAT_SETTINGS, [activeChat]);
+    const currentChatSettings = useMemo(() => activeChat?.settings || appSettings, [activeChat, appSettings]);
     const isLoading = useMemo(() => loadingSessionIds.has(activeSessionId ?? ''), [loadingSessionIds, activeSessionId]);
-    
+
     const setCurrentChatSettings = useCallback((updater: (prevSettings: IndividualChatSettings) => IndividualChatSettings) => {
         if (!activeSessionId) return;
         updateAndPersistSessions(prevSessions =>

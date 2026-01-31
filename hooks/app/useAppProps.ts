@@ -1,7 +1,7 @@
 
 import { useMemo } from 'react';
 import { useAppLogic } from './useAppLogic';
-import { CANVAS_SYSTEM_PROMPT } from '../../constants/appConstants';
+import { CANVAS_SYSTEM_PROMPT, BBOX_SYSTEM_PROMPT } from '../../constants/appConstants';
 
 export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
   const {
@@ -85,6 +85,7 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     isHistorySidebarOpen: uiState.isHistorySidebarOpen,
     onLoadCanvasPrompt: handleLoadCanvasPromptAndSave,
     isCanvasPromptActive: chatState.currentChatSettings.systemInstruction === CANVAS_SYSTEM_PROMPT,
+    isBboxPromptActive: chatState.currentChatSettings.systemInstruction === BBOX_SYSTEM_PROMPT,
     isKeyLocked: !!chatState.currentChatSettings.lockedApiKey,
     themeId: currentTheme.id,
     modelsLoadingError: null,
@@ -105,6 +106,7 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     isGraphvizRenderingEnabled: appSettings.isGraphvizRenderingEnabled ?? true,
     onSuggestionClick: (text: string) => handleSuggestionClick('homepage', text),
     onOrganizeInfoClick: (text: string) => handleSuggestionClick('organize', text),
+    onBboxClick: (text: string) => handleSuggestionClick('bbox', text),
     onFollowUpSuggestionClick: (text: string) => handleSuggestionClick('follow-up', text),
     onTextToSpeech: chatState.handleTextToSpeech,
     onGenerateCanvas: chatState.handleGenerateCanvas,
