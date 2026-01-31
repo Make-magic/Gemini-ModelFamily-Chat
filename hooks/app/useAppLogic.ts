@@ -124,6 +124,18 @@ export const useAppLogic = () => {
 
   const { activeSessionId, setCurrentChatSettings } = chatState;
 
+  // Track which suggestion was used to activate a special mode (Canvas/BBox)
+  const [activeSuggestionType, setActiveSuggestionType] = useState<'organize' | 'smart_board' | 'bbox' | null>(null);
+
+  const { currentChatSettings } = chatState;
+
+  // Clear active suggestion if system instruction is reset to default
+  useEffect(() => {
+    if (currentChatSettings.systemInstruction === DEFAULT_SYSTEM_INSTRUCTION) {
+      setActiveSuggestionType(null);
+    }
+  }, [currentChatSettings.systemInstruction]);
+
   const handleSaveSettings = useCallback((newSettings: AppSettings) => {
     setAppSettings(newSettings);
     if (activeSessionId && setCurrentChatSettings) {
@@ -143,11 +155,13 @@ export const useAppLogic = () => {
     }
   }, [setAppSettings, activeSessionId, setCurrentChatSettings]);
 
-  const { currentChatSettings } = chatState;
-
   const handleLoadCanvasPromptAndSave = useCallback(() => {
     const isCurrentlyCanvasPrompt = currentChatSettings.systemInstruction === CANVAS_SYSTEM_PROMPT;
     const newSystemInstruction = isCurrentlyCanvasPrompt ? DEFAULT_SYSTEM_INSTRUCTION : CANVAS_SYSTEM_PROMPT;
+
+    // Toggling from toolbar clears any suggestion-specific highlight
+    setActiveSuggestionType(null);
+
     setAppSettings(prev => ({ ...prev, systemInstruction: newSystemInstruction }));
     if (activeSessionId && setCurrentChatSettings) {
       setCurrentChatSettings(prevSettings => ({ ...prevSettings, systemInstruction: newSystemInstruction }));
@@ -163,14 +177,30 @@ export const useAppLogic = () => {
   const { isAutoSendOnSuggestionClick } = appSettings;
   const { handleSendMessage, setCommandedInput } = chatState;
 
-  const handleSuggestionClick = useCallback((type: 'homepage' | 'organize' | 'follow-up' | 'bbox', text: string) => {
-    if (type === 'organize' || type === 'bbox') {
-      const targetPrompt = type === 'organize' ? CANVAS_SYSTEM_PROMPT : BBOX_SYSTEM_PROMPT;
+  const handleSuggestionClick = useCallback((type: 'homepage' | 'organize' | 'smart_board' | 'follow-up' | 'bbox', text: string) => {
+    if (type === 'organize' || type === 'smart_board' || type === 'bbox') {
+      const targetPrompt = (type === 'organize' || type === 'smart_board') ? CANVAS_SYSTEM_PROMPT : BBOX_SYSTEM_PROMPT;
       const isCurrentlyTarget = currentChatSettings.systemInstruction === targetPrompt;
-      const newSystemInstruction = isCurrentlyTarget ? DEFAULT_SYSTEM_INSTRUCTION : targetPrompt;
+      const isCurrentlyThisSuggestion = activeSuggestionType === type;
+
+      let newSystemInstruction = DEFAULT_SYSTEM_INSTRUCTION;
+
+      if (!isCurrentlyTarget) {
+        // Not in this mode at all -> Turn it on and highlight this suggestion
+        newSystemInstruction = targetPrompt;
+        setActiveSuggestionType(type);
+      } else if (isCurrentlyThisSuggestion) {
+        // Already in this mode AND this suggestion is highlighted -> Turn it off
+        newSystemInstruction = DEFAULT_SYSTEM_INSTRUCTION;
+        setActiveSuggestionType(null);
+      } else {
+        // Already in this mode but a DIFFERENT suggestion or toolbar activated it -> Keep mode ON but switch highlight to this one
+        newSystemInstruction = targetPrompt;
+        setActiveSuggestionType(type);
+      }
 
       // For BBox, we also want to ensure code execution is enabled when turning it on
-      const shouldEnableCode = type === 'bbox' && !isCurrentlyTarget;
+      const shouldEnableCode = type === 'bbox' && newSystemInstruction === BBOX_SYSTEM_PROMPT;
 
       setAppSettings(prev => ({
         ...prev,
@@ -228,6 +258,7 @@ export const useAppLogic = () => {
     handleLoadCanvasPromptAndSave,
     handleSuggestionClick,
     handleSetThinkingLevel,
-    getCurrentModelDisplayName
+    getCurrentModelDisplayName,
+    activeSuggestionType,
   };
 };

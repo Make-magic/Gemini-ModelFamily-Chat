@@ -9,16 +9,19 @@ interface ChatSuggestionsProps {
     show: boolean;
     onSuggestionClick?: (suggestion: string) => void;
     onOrganizeInfoClick?: (suggestion: string) => void;
+    onSmartBoardClick?: (suggestion: string) => void;
     onBboxClick?: (suggestion: string) => void;
     t: (key: keyof typeof translations) => string;
     isFullscreen: boolean;
     isBboxActive?: boolean;
     isCanvasActive?: boolean;
+    isSmartBoardActive?: boolean;
+    isOrganizeActive?: boolean;
 }
 
 export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
-    show, onSuggestionClick, onOrganizeInfoClick, onBboxClick, t, isFullscreen,
-    isBboxActive, isCanvasActive
+    show, onSuggestionClick, onOrganizeInfoClick, onSmartBoardClick, onBboxClick, t, isFullscreen,
+    isBboxActive, isCanvasActive, isSmartBoardActive, isOrganizeActive
 }) => {
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -68,7 +71,9 @@ export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
                         type="button"
                         onClick={() => {
                             const text = t(s.descKey as any);
-                            if ((s as any).specialAction === 'organize' && onOrganizeInfoClick) {
+                            if ((s as any).specialAction === 'smart_board' && onSmartBoardClick) {
+                                onSmartBoardClick(text);
+                            } else if ((s as any).specialAction === 'organize' && onOrganizeInfoClick) {
                                 onOrganizeInfoClick(text);
                             } else if ((s as any).specialAction === 'bbox' && onBboxClick) {
                                 onBboxClick(text);
@@ -79,7 +84,9 @@ export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
                         className={`
                             flex items-center gap-2 px-4 py-2.5 rounded-xl
                             border transition-all active:scale-95 shadow-sm text-sm font-medium whitespace-nowrap
-                            ${((s as any).specialAction === 'organize' && isCanvasActive) || ((s as any).specialAction === 'bbox' && isBboxActive)
+                            ${((s as any).specialAction === 'smart_board' && isSmartBoardActive) ||
+                                ((s as any).specialAction === 'organize' && isOrganizeActive) ||
+                                ((s as any).specialAction === 'bbox' && isBboxActive)
                                 ? 'bg-[var(--theme-border-focus)] border-[var(--theme-border-focus)] text-white shadow-indigo-500/20'
                                 : 'bg-[var(--theme-bg-input)] hover:bg-[var(--theme-bg-tertiary)] border-[var(--theme-border-secondary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'
                             }

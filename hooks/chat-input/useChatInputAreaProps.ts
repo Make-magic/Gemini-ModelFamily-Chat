@@ -45,12 +45,16 @@ interface FactoryParams {
     showEmptyStateSuggestions?: boolean;
     onSuggestionClick?: (suggestion: string) => void;
     onOrganizeInfoClick?: (suggestion: string) => void;
+    onSmartBoardClick?: (suggestion: string) => void;
     onBboxClick?: (suggestion: string) => void;
     isNativeAudioModel?: boolean;
     onOpenScenariosModal: () => void;
     onToggleCanvasPrompt: () => void;
     isCanvasPromptActive?: boolean;
     isBboxPromptActive?: boolean;
+    isSmartBoardActive?: boolean;
+    isOrganizeActive?: boolean;
+    isBboxActive?: boolean;
     onToggleAutoCanvas: () => void;
     isAutoCanvasEnabled?: boolean;
 
@@ -137,9 +141,9 @@ export const useChatInputAreaProps = (params: FactoryParams): ChatInputAreaProps
         handlers,
         setShowAddByIdInput, setShowAddByUrlInput, setShowTokenModal,
         handleAttachmentAction, handleVoiceInputClick, handleCancelRecording, handleToggleFullscreen,
-        showEmptyStateSuggestions, onSuggestionClick, onOrganizeInfoClick, onBboxClick,
+        showEmptyStateSuggestions, onSuggestionClick, onOrganizeInfoClick, onSmartBoardClick, onBboxClick,
         onOpenScenariosModal, onToggleCanvasPrompt, isCanvasPromptActive,
-        isBboxPromptActive,
+        isBboxPromptActive, isSmartBoardActive, isOrganizeActive, isBboxActive,
         onToggleAutoCanvas, isAutoCanvasEnabled
     } = params;
 
@@ -268,9 +272,12 @@ export const useChatInputAreaProps = (params: FactoryParams): ChatInputAreaProps
             show: showEmptyStateSuggestions,
             onSuggestionClick,
             onOrganizeInfoClick,
+            onSmartBoardClick,
             onBboxClick,
-            isBboxActive: isBboxPromptActive,
-            isCanvasActive: isCanvasPromptActive
+            isBboxActive: isBboxActive,
+            isCanvasActive: isCanvasPromptActive,
+            isSmartBoardActive,
+            isOrganizeActive
         } : undefined,
         t: t as any
     };

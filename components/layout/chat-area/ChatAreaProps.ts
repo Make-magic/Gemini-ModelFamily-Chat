@@ -55,10 +55,14 @@ export interface ChatAreaProps {
   isGraphvizRenderingEnabled: boolean;
   onSuggestionClick: (suggestion: string) => void;
   onOrganizeInfoClick: (suggestion: string) => void;
+  onSmartBoardClick: (suggestion: string) => void;
   onBboxClick: (suggestion: string) => void;
   onFollowUpSuggestionClick: (suggestion: string) => void;
   onTextToSpeech: (messageId: string, text: string) => void;
   onGenerateCanvas: (messageId: string, text: string) => void;
+  isSmartBoardActive?: boolean;
+  isOrganizeActive?: boolean;
+  isBboxActive?: boolean;
   ttsMessageId: string | null;
   language: 'en' | 'zh';
   scrollNavVisibility: { up: boolean; down: boolean };

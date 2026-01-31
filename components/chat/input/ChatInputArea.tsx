@@ -70,9 +70,12 @@ export interface ChatInputAreaProps {
         show: boolean;
         onSuggestionClick: (suggestion: string) => void;
         onOrganizeInfoClick: (suggestion: string) => void;
+        onSmartBoardClick: (suggestion: string) => void;
         onBboxClick: (suggestion: string) => void;
         isBboxActive?: boolean;
         isCanvasActive?: boolean;
+        isSmartBoardActive?: boolean;
+        isOrganizeActive?: boolean;
     };
     liveStatusProps?: {
         isConnected: boolean;
@@ -127,9 +130,12 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
                         show={suggestionsProps.show}
                         onSuggestionClick={suggestionsProps.onSuggestionClick}
                         onOrganizeInfoClick={suggestionsProps.onOrganizeInfoClick}
+                        onSmartBoardClick={suggestionsProps.onSmartBoardClick}
                         onBboxClick={suggestionsProps.onBboxClick}
                         isBboxActive={suggestionsProps.isBboxActive}
                         isCanvasActive={suggestionsProps.isCanvasActive}
+                        isSmartBoardActive={suggestionsProps.isSmartBoardActive}
+                        isOrganizeActive={suggestionsProps.isOrganizeActive}
                         t={t}
                         isFullscreen={isFullscreen}
                     />

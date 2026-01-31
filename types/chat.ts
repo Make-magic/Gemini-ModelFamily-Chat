@@ -251,6 +251,7 @@ export interface ChatInputProps {
   setCurrentChatSettings: (updater: (prevSettings: ChatSettings) => ChatSettings) => void;
   onSuggestionClick?: (suggestion: string) => void;
   onOrganizeInfoClick?: (suggestion: string) => void;
+  onSmartBoardClick?: (suggestion: string) => void;
   onBboxClick?: (suggestion: string) => void;
   showEmptyStateSuggestions?: boolean;
   editMode: 'update' | 'resend';
@@ -262,6 +263,9 @@ export interface ChatInputProps {
   onOpenScenariosModal: () => void;
   isCanvasPromptActive?: boolean;
   isBboxPromptActive?: boolean;
+  isSmartBoardActive?: boolean;
+  isOrganizeActive?: boolean;
+  isBboxActive?: boolean;
   onToggleAutoCanvas?: () => void;
   isAutoCanvasEnabled?: boolean;
 }

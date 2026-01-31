@@ -25,6 +25,7 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     handleExportChat,
     exportStatus,
     handleOpenSidePanel,
+    activeSuggestionType,
   } = logic;
 
   // Sidebar Props
@@ -106,8 +107,12 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     isGraphvizRenderingEnabled: appSettings.isGraphvizRenderingEnabled ?? true,
     onSuggestionClick: (text: string) => handleSuggestionClick('homepage', text),
     onOrganizeInfoClick: (text: string) => handleSuggestionClick('organize', text),
+    onSmartBoardClick: (text: string) => handleSuggestionClick('smart_board', text),
     onBboxClick: (text: string) => handleSuggestionClick('bbox', text),
     onFollowUpSuggestionClick: (text: string) => handleSuggestionClick('follow-up', text),
+    isSmartBoardActive: activeSuggestionType === 'smart_board',
+    isOrganizeActive: activeSuggestionType === 'organize',
+    isBboxActive: activeSuggestionType === 'bbox',
     onTextToSpeech: chatState.handleTextToSpeech,
     onGenerateCanvas: chatState.handleGenerateCanvas,
     ttsMessageId: chatState.ttsMessageId,

@@ -122,7 +122,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
 };
 
 export const SUGGESTIONS_KEYS = [
-  { titleKey: 'suggestion_html_title', descKey: 'suggestion_html_desc', shortKey: 'suggestion_html_short', specialAction: 'organize', icon: 'AppWindow' },
+  { titleKey: 'suggestion_html_title', descKey: 'suggestion_html_desc', shortKey: 'suggestion_html_short', specialAction: 'smart_board', icon: 'AppWindow' },
   { titleKey: 'suggestion_organize_title', descKey: 'suggestion_organize_desc', shortKey: 'suggestion_organize_short', specialAction: 'organize', icon: 'Layers' },
   { titleKey: 'suggestion_translate_title', descKey: 'suggestion_translate_desc', shortKey: 'suggestion_translate_short', icon: 'Languages' },
   { titleKey: 'suggestion_ocr_title', descKey: 'suggestion_ocr_desc', shortKey: 'suggestion_ocr_short', icon: 'ScanText' },
