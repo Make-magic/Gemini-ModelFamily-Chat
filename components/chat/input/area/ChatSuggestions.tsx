@@ -11,17 +11,19 @@ interface ChatSuggestionsProps {
     onOrganizeInfoClick?: (suggestion: string) => void;
     onSmartBoardClick?: (suggestion: string) => void;
     onBboxClick?: (suggestion: string) => void;
+    onResearchSearchClick?: (suggestion: string) => void;
     t: (key: keyof typeof translations) => string;
     isFullscreen: boolean;
     isBboxActive?: boolean;
     isCanvasActive?: boolean;
     isSmartBoardActive?: boolean;
     isOrganizeActive?: boolean;
+    isResearchActive?: boolean;
 }
 
 export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
-    show, onSuggestionClick, onOrganizeInfoClick, onSmartBoardClick, onBboxClick, t, isFullscreen,
-    isBboxActive, isCanvasActive, isSmartBoardActive, isOrganizeActive
+    show, onSuggestionClick, onOrganizeInfoClick, onSmartBoardClick, onBboxClick, onResearchSearchClick, t, isFullscreen,
+    isBboxActive, isCanvasActive, isSmartBoardActive, isOrganizeActive, isResearchActive
 }) => {
     const suggestionsRef = useRef<HTMLDivElement>(null);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -77,6 +79,8 @@ export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
                                 onOrganizeInfoClick(text);
                             } else if ((s as any).specialAction === 'bbox' && onBboxClick) {
                                 onBboxClick(text);
+                            } else if ((s as any).specialAction === 'research' && onResearchSearchClick) {
+                                onResearchSearchClick(text);
                             } else if (onSuggestionClick) {
                                 onSuggestionClick(text);
                             }
@@ -86,7 +90,8 @@ export const ChatSuggestions: React.FC<ChatSuggestionsProps> = ({
                             border transition-all active:scale-95 shadow-sm text-sm font-medium whitespace-nowrap
                             ${((s as any).specialAction === 'smart_board' && isSmartBoardActive) ||
                                 ((s as any).specialAction === 'organize' && isOrganizeActive) ||
-                                ((s as any).specialAction === 'bbox' && isBboxActive)
+                                ((s as any).specialAction === 'bbox' && isBboxActive) ||
+                                ((s as any).specialAction === 'research' && isResearchActive)
                                 ? 'bg-[var(--theme-border-focus)] border-[var(--theme-border-focus)] text-white shadow-indigo-500/20'
                                 : 'bg-[var(--theme-bg-input)] hover:bg-[var(--theme-bg-tertiary)] border-[var(--theme-border-secondary)] text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)]'
                             }

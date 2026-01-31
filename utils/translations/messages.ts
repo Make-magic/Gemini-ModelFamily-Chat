@@ -12,6 +12,12 @@ export const messagesTranslations = {
         zh: '请阅读以下内容，并用一句话精准提炼其核心主旨。这一句话需要包含关键要素（谁、做了什么、结果如何），保持简练有力：'
     },
     suggestion_summarize_short: { en: 'Quickly extract the core theme.', zh: '快速提炼核心主旨。' },
+    suggestion_research_title: { en: 'Research & Search', zh: '研究与搜索' },
+    suggestion_research_desc: {
+        en: 'As a research expert, please perform a deep search and analysis on the following topic. Maintain objectivity, provide high-quality information, and cite all sources clearly:',
+        zh: '作为研究专家，请对以下主题进行深度搜索和分析。保持客观，提供高质量信息，并清晰引用所有来源：'
+    },
+    suggestion_research_short: { en: 'Collaborative deep search and research.', zh: '协同深度搜索与课题研究。' },
     suggestion_organize_title: { en: 'Organize Information', zh: '信息整理' },
     suggestion_organize_desc: {
         en: 'As an information organization expert, please de-duplicate, categorize, and structure the following content. Extract key points, ignore irrelevant details, and make the logic clear and readable:',

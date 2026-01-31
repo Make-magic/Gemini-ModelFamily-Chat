@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { AppSettings, ChatMessage, SideViewContent } from '../../types';
-import { CANVAS_SYSTEM_PROMPT, DEFAULT_SYSTEM_INSTRUCTION, BBOX_SYSTEM_PROMPT } from '../../constants/appConstants';
+import { CANVAS_SYSTEM_PROMPT, DEFAULT_SYSTEM_INSTRUCTION, BBOX_SYSTEM_PROMPT, RESEARCH_SYSTEM_PROMPT } from '../../constants/appConstants';
 import { useAppSettings } from '../core/useAppSettings';
 import { useChat } from '../chat/useChat';
 import { useAppUI } from '../core/useAppUI';
@@ -124,8 +124,8 @@ export const useAppLogic = () => {
 
   const { activeSessionId, setCurrentChatSettings } = chatState;
 
-  // Track which suggestion was used to activate a special mode (Canvas/BBox)
-  const [activeSuggestionType, setActiveSuggestionType] = useState<'organize' | 'smart_board' | 'bbox' | null>(null);
+  // Track which suggestion was used to activate a special mode (Canvas/BBox/Research)
+  const [activeSuggestionType, setActiveSuggestionType] = useState<'organize' | 'smart_board' | 'bbox' | 'research' | null>(null);
 
   const { currentChatSettings } = chatState;
 
@@ -177,9 +177,12 @@ export const useAppLogic = () => {
   const { isAutoSendOnSuggestionClick } = appSettings;
   const { handleSendMessage, setCommandedInput } = chatState;
 
-  const handleSuggestionClick = useCallback((type: 'homepage' | 'organize' | 'smart_board' | 'follow-up' | 'bbox', text: string) => {
-    if (type === 'organize' || type === 'smart_board' || type === 'bbox') {
-      const targetPrompt = (type === 'organize' || type === 'smart_board') ? CANVAS_SYSTEM_PROMPT : BBOX_SYSTEM_PROMPT;
+  const handleSuggestionClick = useCallback((type: 'homepage' | 'organize' | 'smart_board' | 'follow-up' | 'bbox' | 'research', text: string) => {
+    if (type === 'organize' || type === 'smart_board' || type === 'bbox' || type === 'research') {
+      let targetPrompt = CANVAS_SYSTEM_PROMPT;
+      if (type === 'bbox') targetPrompt = BBOX_SYSTEM_PROMPT;
+      if (type === 'research') targetPrompt = RESEARCH_SYSTEM_PROMPT;
+
       const isCurrentlyTarget = currentChatSettings.systemInstruction === targetPrompt;
       const isCurrentlyThisSuggestion = activeSuggestionType === type;
 
@@ -201,18 +204,22 @@ export const useAppLogic = () => {
 
       // For BBox, we also want to ensure code execution is enabled when turning it on
       const shouldEnableCode = type === 'bbox' && newSystemInstruction === BBOX_SYSTEM_PROMPT;
+      // For Research, we want to ensure deep search is enabled when turning it on
+      const shouldEnableDeepSearch = type === 'research' && newSystemInstruction === RESEARCH_SYSTEM_PROMPT;
 
       setAppSettings(prev => ({
         ...prev,
         systemInstruction: newSystemInstruction,
-        isCodeExecutionEnabled: shouldEnableCode ? true : prev.isCodeExecutionEnabled
+        isCodeExecutionEnabled: shouldEnableCode ? true : prev.isCodeExecutionEnabled,
+        isDeepSearchEnabled: shouldEnableDeepSearch ? true : prev.isDeepSearchEnabled
       }));
 
       if (activeSessionId && setCurrentChatSettings) {
         setCurrentChatSettings(prevSettings => ({
           ...prevSettings,
           systemInstruction: newSystemInstruction,
-          isCodeExecutionEnabled: shouldEnableCode ? true : prevSettings.isCodeExecutionEnabled
+          isCodeExecutionEnabled: shouldEnableCode ? true : prevSettings.isCodeExecutionEnabled,
+          isDeepSearchEnabled: shouldEnableDeepSearch ? true : prevSettings.isDeepSearchEnabled
         }));
       }
     }

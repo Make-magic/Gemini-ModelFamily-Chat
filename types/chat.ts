@@ -253,6 +253,7 @@ export interface ChatInputProps {
   onOrganizeInfoClick?: (suggestion: string) => void;
   onSmartBoardClick?: (suggestion: string) => void;
   onBboxClick?: (suggestion: string) => void;
+  onResearchSearchClick?: (suggestion: string) => void;
   showEmptyStateSuggestions?: boolean;
   editMode: 'update' | 'resend';
   onUpdateMessageContent: (messageId: string, content: string) => void;
@@ -266,6 +267,7 @@ export interface ChatInputProps {
   isSmartBoardActive?: boolean;
   isOrganizeActive?: boolean;
   isBboxActive?: boolean;
+  isResearchActive?: boolean;
   onToggleAutoCanvas?: () => void;
   isAutoCanvasEnabled?: boolean;
 }

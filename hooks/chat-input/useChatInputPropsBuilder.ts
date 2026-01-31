@@ -124,6 +124,7 @@ export const useChatInputPropsBuilder = (
         onOrganizeInfoClick: props.onOrganizeInfoClick,
         onSmartBoardClick: props.onSmartBoardClick,
         onBboxClick: props.onBboxClick,
+        onResearchSearchClick: props.onResearchSearchClick,
         isBboxPromptActive: props.isBboxPromptActive,
         isBboxActive: props.isBboxActive,
         onOpenScenariosModal: props.onOpenScenariosModal,
@@ -131,6 +132,7 @@ export const useChatInputPropsBuilder = (
         isCanvasPromptActive: props.isCanvasPromptActive,
         isSmartBoardActive: props.isSmartBoardActive,
         isOrganizeActive: props.isOrganizeActive,
+        isResearchActive: props.isResearchActive,
         onToggleAutoCanvas: props.onToggleAutoCanvas,
         isAutoCanvasEnabled: props.isAutoCanvasEnabled,
     });

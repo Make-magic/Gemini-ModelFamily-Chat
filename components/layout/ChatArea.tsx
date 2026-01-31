@@ -23,8 +23,8 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
     messages, scrollContainerRef, setScrollContainerRef, onScrollContainerScroll, onEditMessage,
     onDeleteMessage, onRetryMessage, showThoughts, themeColors, baseFontSize,
     expandCodeBlocksByDefault, isMermaidRenderingEnabled, isGraphvizRenderingEnabled,
-    onSuggestionClick, onOrganizeInfoClick, onSmartBoardClick, onBboxClick, onFollowUpSuggestionClick, onTextToSpeech, onGenerateCanvas, ttsMessageId, language, scrollNavVisibility,
-    isSmartBoardActive, isOrganizeActive, isBboxActive,
+    onSuggestionClick, onOrganizeInfoClick, onSmartBoardClick, onBboxClick, onResearchSearchClick, onFollowUpSuggestionClick, onTextToSpeech, onGenerateCanvas, ttsMessageId, language, scrollNavVisibility,
+    isSmartBoardActive, isOrganizeActive, isBboxActive, isResearchActive,
     onScrollToPrevTurn, onScrollToNextTurn, onEditMessageContent, onUpdateMessageFile,
     appSettings, commandedInput, setCommandedInput, onMessageSent,
     selectedFiles, setSelectedFiles, onSendMessage, isEditing, editMode, editingMessageId, setEditingMessageId, onStopGenerating,
@@ -175,6 +175,7 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
             onOrganizeInfoClick={onOrganizeInfoClick}
             onSmartBoardClick={onSmartBoardClick}
             onBboxClick={onBboxClick}
+            onResearchSearchClick={onResearchSearchClick}
             showEmptyStateSuggestions={messages.length === 0}
             onUpdateMessageContent={onUpdateMessageContent}
             onAddUserMessage={onAddUserMessage}
@@ -184,6 +185,7 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
             isSmartBoardActive={isSmartBoardActive}
             isOrganizeActive={isOrganizeActive}
             isBboxActive={isBboxActive}
+            isResearchActive={isResearchActive}
             onToggleAutoCanvas={onToggleAutoCanvas}
             isAutoCanvasEnabled={isAutoCanvasEnabled}
           />

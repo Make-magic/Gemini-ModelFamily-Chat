@@ -47,6 +47,7 @@ interface FactoryParams {
     onOrganizeInfoClick?: (suggestion: string) => void;
     onSmartBoardClick?: (suggestion: string) => void;
     onBboxClick?: (suggestion: string) => void;
+    onResearchSearchClick?: (suggestion: string) => void;
     isNativeAudioModel?: boolean;
     onOpenScenariosModal: () => void;
     onToggleCanvasPrompt: () => void;
@@ -55,6 +56,7 @@ interface FactoryParams {
     isSmartBoardActive?: boolean;
     isOrganizeActive?: boolean;
     isBboxActive?: boolean;
+    isResearchActive?: boolean;
     onToggleAutoCanvas: () => void;
     isAutoCanvasEnabled?: boolean;
 
@@ -141,9 +143,9 @@ export const useChatInputAreaProps = (params: FactoryParams): ChatInputAreaProps
         handlers,
         setShowAddByIdInput, setShowAddByUrlInput, setShowTokenModal,
         handleAttachmentAction, handleVoiceInputClick, handleCancelRecording, handleToggleFullscreen,
-        showEmptyStateSuggestions, onSuggestionClick, onOrganizeInfoClick, onSmartBoardClick, onBboxClick,
+        showEmptyStateSuggestions, onSuggestionClick, onOrganizeInfoClick, onSmartBoardClick, onBboxClick, onResearchSearchClick,
         onOpenScenariosModal, onToggleCanvasPrompt, isCanvasPromptActive,
-        isBboxPromptActive, isSmartBoardActive, isOrganizeActive, isBboxActive,
+        isBboxPromptActive, isSmartBoardActive, isOrganizeActive, isBboxActive, isResearchActive,
         onToggleAutoCanvas, isAutoCanvasEnabled
     } = params;
 
@@ -274,10 +276,12 @@ export const useChatInputAreaProps = (params: FactoryParams): ChatInputAreaProps
             onOrganizeInfoClick,
             onSmartBoardClick,
             onBboxClick,
+            onResearchSearchClick,
             isBboxActive: isBboxActive,
             isCanvasActive: isCanvasPromptActive,
             isSmartBoardActive,
-            isOrganizeActive
+            isOrganizeActive,
+            isResearchActive
         } : undefined,
         t: t as any
     };
