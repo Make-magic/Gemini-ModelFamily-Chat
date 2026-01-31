@@ -1,6 +1,6 @@
 
 import { succinctScenario, socraticScenario, Gemini3Scenario, defaultScenario, reasonerScenario } from './scenarios/utility';
-import { voxelScenario, StandardPromptScenario } from './scenarios/demo';
+import { voxelScenario, StandardPromptScenario, AbsoluteTruthScenario } from './scenarios/demo';
 
 // Re-export all scenarios
 export * from './scenarios/jailbreak';
@@ -15,5 +15,6 @@ export const SYSTEM_SCENARIO_IDS = [
     defaultScenario.id,
     reasonerScenario.id,
     voxelScenario.id,
-    StandardPromptScenario.id
+    StandardPromptScenario.id,
+    AbsoluteTruthScenario.id
 ];

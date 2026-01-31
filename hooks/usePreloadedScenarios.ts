@@ -16,6 +16,7 @@ import {
     socraticScenario,
     Gemini3Scenario,
     StandardPromptScenario,
+    AbsoluteTruthScenario,
     SYSTEM_SCENARIO_IDS
 } from '../constants/defaultScenarios';
 
@@ -91,6 +92,7 @@ export const usePreloadedScenarios = ({
             succinctScenario,
             socraticScenario,
             StandardPromptScenario,
+            AbsoluteTruthScenario,
             Gemini3Scenario,
             ...filteredUserScenarios
         ];
