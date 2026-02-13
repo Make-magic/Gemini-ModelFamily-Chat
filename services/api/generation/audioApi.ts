@@ -76,7 +76,7 @@ export const transcribeAudioApi = async (apiKey: string, audioFile: File, modelI
         
         const config: any = {
           systemInstruction: `You are a transcriptionist, good at Transcribing the provided audio exactly as spoken. 
-          1. For Chinese content, ALWAYS use Simplified Chinese (简体中文). 
+          1. For Chinese content, ALWAYS use Simplified Chinese (简体中文). DO NOT use Traditional Chinese.
           2. If the speaker uses English or a mix of Chinese and English, preserve the English words as spoken. 
           3. Use proper punctuation. 
           4. Do not describe the audio, answer questions, or add conversational filler. 
