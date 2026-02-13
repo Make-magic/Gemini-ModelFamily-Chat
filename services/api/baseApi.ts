@@ -106,7 +106,7 @@ export const buildGenerationConfig = (
     safetySettings?: SafetySetting[],
     mediaResolution?: MediaResolution
 ): any => {
-    if (modelId === 'gemini-2.5-flash-image-preview' || modelId === 'gemini-2.5-flash-image') {
+    if (modelId === 'gemini-2.5-flash-image') {
         const imageConfig: any = {};
         if (aspectRatio && aspectRatio !== 'Auto') imageConfig.aspectRatio = aspectRatio;
         

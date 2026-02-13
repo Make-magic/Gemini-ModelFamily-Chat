@@ -6,6 +6,7 @@ export const DEFAULT_MODEL_ID = 'gemini-3-flash-preview';
 export const TAB_CYCLE_MODELS: string[] = [
     'gemini-3-flash-preview',
     'gemini-3-pro-preview',
+    'gemini-2.5-pro',
 ];
 
 export const INITIAL_PINNED_MODELS: string[] = [
@@ -44,10 +45,10 @@ export const DEFAULT_THINKING_LEVEL = 'HIGH';
 export const THINKING_BUDGET_RANGES: { [key: string]: { min: number; max: number } } = {
     'gemini-2.5-flash-preview-09-2025': { min: 0, max: 24576 },
     'gemini-2.5-pro': { min: 128, max: 32768 },
-    'gemini-3-pro-preview': { min: 128, max: 32768 },
-    'models/gemini-3-pro-preview': { min: 128, max: 32768 },
-    'gemini-3-flash-preview': { min: 128, max: 32768 },
-    'models/gemini-3-flash-preview': { min: 128, max: 32768 },
+    'gemini-3-pro-preview': { min: 32768, max: 32768 },
+    'models/gemini-3-pro-preview': { min: 32768, max: 32768 },
+    'gemini-3-flash-preview': { min: 32768, max: 32768 },
+    'models/gemini-3-flash-preview': { min: 32768, max: 32768 },
     'gemini-2.5-flash-lite-preview-09-2025': { min: 512, max: 24576 },
     'gemini-2.5-flash-native-audio-preview-12-2025': { min: 0, max: 24576 },
 };
@@ -67,7 +68,7 @@ export const STATIC_TTS_MODELS: ModelOption[] = [
 ];
 
 export const STATIC_IMAGEN_MODELS: ModelOption[] = [
-    { id: 'gemini-2.5-flash-image-preview', name: 'Nano Banana', isPinned: true },
+    { id: 'gemini-2.5-flash-image', name: 'Nano Banana', isPinned: true },
     { id: 'gemini-3-pro-image-preview', name: 'Nano Banana Pro', isPinned: true },
     { id: 'imagen-4.0-fast-generate-001', name: 'Imagen 4.0 Fast', isPinned: true },
     { id: 'imagen-4.0-generate-001', name: 'Imagen 4.0', isPinned: true },
