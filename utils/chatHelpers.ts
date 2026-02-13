@@ -226,11 +226,24 @@ export const createChatHistoryForApi = async (msgs: ChatMessage[]): Promise<Chat
     return Promise.all(historyItemsPromises);
 };
 
-export const rehydrateSessionFiles = (session: SavedChatSession): SavedChatSession => {
+export const rehydrateSession = (session: SavedChatSession): SavedChatSession => {
     const newMessages = session.messages.map(message => {
-        if (!message.files?.length) return message;
+        let currentMessage = { ...message };
 
-        const newFiles = message.files.map(file => {
+        // Rehydrate Dates
+        if (typeof currentMessage.timestamp === 'string') {
+            currentMessage.timestamp = new Date(currentMessage.timestamp);
+        }
+        if (currentMessage.generationStartTime && typeof currentMessage.generationStartTime === 'string') {
+            currentMessage.generationStartTime = new Date(currentMessage.generationStartTime);
+        }
+        if (currentMessage.generationEndTime && typeof currentMessage.generationEndTime === 'string') {
+            currentMessage.generationEndTime = new Date(currentMessage.generationEndTime);
+        }
+
+        if (!currentMessage.files?.length) return currentMessage;
+
+        const newFiles = currentMessage.files.map(file => {
             // Check if it's an image that was stored locally (has rawFile)
             if (SUPPORTED_IMAGE_MIME_TYPES.includes(file.type) && file.rawFile) {
                 try {
@@ -246,7 +259,7 @@ export const rehydrateSessionFiles = (session: SavedChatSession): SavedChatSessi
             return file;
         });
 
-        return { ...message, files: newFiles };
+        return { ...currentMessage, files: newFiles };
     });
 
     return { ...session, messages: newMessages };

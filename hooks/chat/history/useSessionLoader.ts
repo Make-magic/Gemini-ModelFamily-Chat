@@ -2,7 +2,7 @@
 import { useCallback, Dispatch, SetStateAction } from 'react';
 import { AppSettings, SavedChatSession, ChatGroup, UploadedFile, ChatSettings } from '../../../types';
 import { DEFAULT_CHAT_SETTINGS } from '../../../constants/appConstants';
-import { createNewSession, rehydrateSessionFiles, logService } from '../../../utils/appUtils';
+import { createNewSession, rehydrateSession, logService } from '../../../utils/appUtils';
 import { dbService } from '../../../utils/db';
 
 interface UseSessionLoaderProps {
@@ -112,7 +112,7 @@ export const useSessionLoader = ({
                 dbService.getActiveSessionId()
             ]);
 
-            const rehydratedSessions = sessions.map(rehydrateSessionFiles);
+            const rehydratedSessions = sessions.map(rehydrateSession);
             rehydratedSessions.sort((a,b) => b.timestamp - a.timestamp);
             
             setSavedSessions(rehydratedSessions);
