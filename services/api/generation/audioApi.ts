@@ -75,7 +75,12 @@ export const transcribeAudioApi = async (apiKey: string, audioFile: File, modelI
         };
         
         const config: any = {
-          systemInstruction: "Transcribe the audio exactly as spoken. Use proper punctuation. Do not describe the audio, answer questions, or add conversational filler. Return ONLY the text.",
+          systemInstruction: `You are a transcriptionist, good at Transcribing the provided audio exactly as spoken. 
+          1. For Chinese content, ALWAYS use Simplified Chinese (简体中文). 
+          2. If the speaker uses English or a mix of Chinese and English, preserve the English words as spoken. 
+          3. Use proper punctuation. 
+          4. Do not describe the audio, answer questions, or add conversational filler. 
+          5. Return ONLY the transcribed text.`,
         };
 
         // Apply specific defaults based on model
