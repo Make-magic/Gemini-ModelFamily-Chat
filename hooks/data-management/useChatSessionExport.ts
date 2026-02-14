@@ -42,6 +42,12 @@ export const useChatSessionExport = ({
         const filename = `chat-${safeTitle}-${isoDate}.${format}`;
         const scrollContainer = scrollContainerRef.current;
 
+        // Small delay to allow MessageList to render all messages (bypassing virtualization)
+        // when exportStatus is set to 'exporting' in the parent.
+        if (format === 'png' || format === 'html') {
+            await new Promise(resolve => setTimeout(resolve, 800));
+        }
+
         if (format === 'png') {
             if (!scrollContainer) return;
 

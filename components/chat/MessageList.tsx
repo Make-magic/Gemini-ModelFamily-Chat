@@ -49,6 +49,7 @@ export interface MessageListProps {
   onOpenSidePanel: (content: SideViewContent) => void;
   onQuote: (text: string) => void;
   onEditMessageContent: (message: ChatMessage) => void;
+  exportStatus?: 'idle' | 'exporting';
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
@@ -56,7 +57,8 @@ export const MessageList: React.FC<MessageListProps> = ({
   onEditMessage, onDeleteMessage, onRetryMessage, onUpdateMessageFile, showThoughts, themeColors, baseFontSize,
   expandCodeBlocksByDefault, isMermaidRenderingEnabled, isGraphvizRenderingEnabled, onSuggestionClick, onOrganizeInfoClick, onFollowUpSuggestionClick, onTextToSpeech, onGenerateCanvas, ttsMessageId, t, language, themeId,
   scrollNavVisibility, onScrollToPrevTurn, onScrollToNextTurn,
-  chatInputHeight, appSettings, currentModelId, onOpenSidePanel, onQuote, onEditMessageContent
+  chatInputHeight, appSettings, currentModelId, onOpenSidePanel, onQuote, onEditMessageContent,
+  exportStatus
 }) => {
   const {
     previewFile,
@@ -107,7 +109,7 @@ export const MessageList: React.FC<MessageListProps> = ({
         ) : (
           <div className="w-full max-w-7xl mx-auto">
             {messages.map((msg: ChatMessage, index: number) => {
-              if (visibleMessages.has(msg.id)) {
+              if (exportStatus === 'exporting' || visibleMessages.has(msg.id)) {
                 return (
                   <Message
                     key={msg.id}

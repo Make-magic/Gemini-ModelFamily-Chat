@@ -157,7 +157,7 @@ export const useMessageExport = ({ message, sessionTitle, messageIndex, themeId 
                         files: message.files?.map(f => ({ name: f.name }))
                     }]
                 });
-                exportTextStringAsFile(txtContent, `${filenameBase}.txt`);
+                exportTextStringAsFile(txtContent, `${filenameBase}.md`);
             } else if (type === 'json') {
                 const blob = new Blob([JSON.stringify(message, null, 2)], { type: 'application/json' });
                 triggerDownload(URL.createObjectURL(blob), `${filenameBase}.json`);

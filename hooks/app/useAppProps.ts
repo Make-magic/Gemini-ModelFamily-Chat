@@ -178,11 +178,12 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     onUpdateMessageContent: chatState.handleUpdateMessageContent,
     handleUpdateMessageFile: chatState.handleUpdateMessageFile,
     onAddUserMessage: chatState.handleAddUserMessage,
+    exportStatus,
     t,
   }), [
     chatState, uiState, appSettings, currentTheme, language, t, sessionTitle,
     pipState, handleLoadCanvasPromptAndSave, handleSuggestionClick, handleSetThinkingLevel,
-    handleOpenSidePanel, getCurrentModelDisplayName
+    handleOpenSidePanel, getCurrentModelDisplayName, exportStatus
   ]);
 
   // Merge active chat settings into app settings for the modal so controls reflect current session

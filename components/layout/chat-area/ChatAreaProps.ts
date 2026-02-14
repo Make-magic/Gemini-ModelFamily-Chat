@@ -70,6 +70,7 @@ export interface ChatAreaProps {
   scrollNavVisibility: { up: boolean; down: boolean };
   onScrollToPrevTurn: () => void;
   onScrollToNextTurn: () => void;
+  exportStatus?: 'idle' | 'exporting';
 
   // Edit Content
   onEditMessageContent: (message: ChatMessage) => void;
