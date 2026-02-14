@@ -68,17 +68,44 @@ export const useMessageExport = ({ message, sessionTitle, messageIndex, themeId 
                     // Clone the full bubble (includes files, thoughts, and formatted content)
                     contentNode = messageBubble.cloneNode(true) as HTMLElement;
 
+                    // Clean UI elements that shouldn't be in the export
+                    const selectorsToRemove = [
+                        'button',
+                        '.message-actions',
+                        '.sticky',
+                        'input',
+                        'textarea',
+                        '.code-block-utility-button',
+                        '[role="tooltip"]',
+                        '.loading-dots-container'
+                    ];
+                    contentNode.querySelectorAll(selectorsToRemove.join(',')).forEach(el => el.remove());
+
                     // Embed images to ensure they render in the screenshot (handles CORS/Blob URLs)
                     await embedImagesInClone(contentNode);
 
                     // Expand any collapsed details (like thoughts) so they are visible in export.
                     contentNode.querySelectorAll('details').forEach(details => details.setAttribute('open', 'true'));
+                    
+                    // Reset animations and ensure full opacity
+                    contentNode.style.animation = 'none';
+                    contentNode.style.opacity = '1';
+                    contentNode.style.transform = 'none';
+                    contentNode.style.transition = 'none';
+                    contentNode.style.margin = '0';
+                    contentNode.style.width = '100%';
+                    contentNode.querySelectorAll('*').forEach(el => {
+                        (el as HTMLElement).style.animation = 'none';
+                        (el as HTMLElement).style.transition = 'none';
+                    });
                 } else {
                     // Fallback to raw markdown parsing if DOM finding fails
                     const rawHtml = marked.parse(markdownContent);
                     const sanitizedHtml = DOMPurify.sanitize(rawHtml as string);
                     const wrapper = document.createElement('div');
                     wrapper.className = 'markdown-body';
+                    wrapper.style.padding = '1rem';
+                    wrapper.style.backgroundColor = 'transparent';
                     wrapper.innerHTML = sanitizedHtml;
 
                     wrapper.querySelectorAll('pre code').forEach((block) => {
@@ -97,8 +124,8 @@ export const useMessageExport = ({ message, sessionTitle, messageIndex, themeId 
                     cleanup = remove;
 
                     const headerHtml = `
-                        <div style="padding: 2rem 2rem 1rem 2rem; border-bottom: 1px solid var(--theme-border-secondary); margin-bottom: 1rem;">
-                            <h1 style="font-size: 1.5rem; font-weight: bold; color: var(--theme-text-primary); margin-bottom: 0.5rem;">Exported Message</h1>
+                        <div style="padding: 2rem 2rem 1.5rem 2rem; border-bottom: 1px solid var(--theme-border-secondary); margin-bottom: 1.5rem;">
+                            <h1 style="font-size: 1.5rem; font-weight: bold; color: var(--theme-text-primary); margin: 0 0 0.5rem 0;">Exported Message</h1>
                             <div style="font-size: 0.875rem; color: var(--theme-text-tertiary); display: flex; gap: 1rem;">
                                 <span>${dateStr}</span>
                                 <span>•</span>
@@ -107,17 +134,21 @@ export const useMessageExport = ({ message, sessionTitle, messageIndex, themeId 
                         </div>
                     `;
 
-                    const headerDiv = document.createElement('div');
-                    headerDiv.innerHTML = headerHtml;
-                    innerContent.appendChild(headerDiv);
+                    const exportWrapper = document.createElement('div');
+                    exportWrapper.style.display = 'block';
+                    exportWrapper.style.width = '100%';
+                    exportWrapper.innerHTML = headerHtml;
 
                     const bodyDiv = document.createElement('div');
                     bodyDiv.style.padding = '0 2rem 2rem 2rem';
+                    bodyDiv.style.display = 'block';
                     bodyDiv.appendChild(contentNode);
-                    innerContent.appendChild(bodyDiv);
+                    exportWrapper.appendChild(bodyDiv);
+                    
+                    innerContent.appendChild(exportWrapper);
 
                     // Wait for layout/images
-                    await new Promise(resolve => setTimeout(resolve, 800));
+                    await new Promise(resolve => setTimeout(resolve, 1000));
 
                     await exportElementAsPng(container, `${filenameBase}.png`, { backgroundColor: rootBgColor, scale: 2.5 });
                 } finally {

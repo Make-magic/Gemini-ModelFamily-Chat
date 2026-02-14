@@ -80,31 +80,32 @@ export const createSnapshotContainer = async (
     width: string = '800px'
 ): Promise<{ container: HTMLElement, innerContent: HTMLElement, remove: () => void, rootBgColor: string }> => {
     const tempContainer = document.createElement('div');
+    tempContainer.id = `export-container-${Date.now()}`;
     tempContainer.style.position = 'absolute';
     tempContainer.style.left = '-9999px';
     tempContainer.style.top = '0px';
-    tempContainer.style.width = width;
+    tempContainer.style.width = width.includes('%') ? '1200px' : width; // Avoid 100% in detached container
+    tempContainer.style.height = 'auto';
     tempContainer.style.padding = '0';
+    tempContainer.style.margin = '0';
     tempContainer.style.zIndex = '-1';
     tempContainer.style.boxSizing = 'border-box';
+    tempContainer.style.overflow = 'visible';
 
     const allStyles = await gatherPageStyles();
     const bodyClasses = document.body.className;
 
-    // Explicitly get the background color. 
-    // We trim whitespace and provide a fallback to ensure html2canvas has a valid color.
-    // If we rely solely on transparency + CSS variables in the clone, html2canvas often defaults to white background
-    // but effectively transparent, which looks white in many viewers if the text is white.
     let rootBgColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-primary').trim();
-    if (!rootBgColor) {
+    if (!rootBgColor || rootBgColor === 'transparent' || rootBgColor === 'rgba(0, 0, 0, 0)') {
         rootBgColor = themeId === 'onyx' ? '#09090b' : '#FFFFFF';
     }
 
     tempContainer.innerHTML = `
         ${allStyles}
-        <div class="theme-${themeId} ${bodyClasses} is-exporting-png" style="background-color: ${rootBgColor}; color: var(--theme-text-primary); min-height: 100vh;">
-            <div style="background-color: ${rootBgColor}; padding: 0;">
-                <div class="exported-chat-container" style="width: 100%; max-width: 100%; margin: 0 auto;">
+        <div class="export-root theme-${themeId} ${bodyClasses} is-exporting-png" 
+             style="background-color: ${rootBgColor}; color: var(--theme-text-primary); min-height: 500px; width: 100%; display: block !important;">
+            <div class="export-inner" style="background-color: ${rootBgColor}; padding: 0; display: block !important;">
+                <div class="exported-chat-container" style="width: 100%; max-width: 100%; margin: 0 auto; display: block !important;">
                     <!-- Content will be injected here -->
                 </div>
             </div>
@@ -114,7 +115,7 @@ export const createSnapshotContainer = async (
     document.body.appendChild(tempContainer);
 
     const innerContent = tempContainer.querySelector('.exported-chat-container') as HTMLElement;
-    const captureTarget = tempContainer.querySelector<HTMLElement>(':scope > div');
+    const captureTarget = tempContainer.querySelector('.export-root') as HTMLElement;
 
     if (!innerContent || !captureTarget) {
         document.body.removeChild(tempContainer);
@@ -122,8 +123,8 @@ export const createSnapshotContainer = async (
     }
 
     return {
-        container: captureTarget, // The element to pass to html2canvas
-        innerContent,             // The element to append content to
+        container: captureTarget,
+        innerContent,
         remove: () => {
             if (document.body.contains(tempContainer)) {
                 document.body.removeChild(tempContainer);

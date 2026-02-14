@@ -61,42 +61,68 @@ export const useChatSessionExport = ({
 
                 // Clone the chat container
                 const chatClone = scrollContainer.cloneNode(true) as HTMLElement;
+                chatClone.style.height = 'auto';
+                chatClone.style.maxHeight = 'none';
+                chatClone.style.overflow = 'visible';
+                chatClone.style.paddingBottom = '2rem'; // Add some breathing room at the bottom
+
+                // Clean UI elements that shouldn't be in the export
+                const selectorsToRemove = [
+                    'button',
+                    '.message-actions',
+                    '.sticky',
+                    'input',
+                    'textarea',
+                    '.code-block-utility-button',
+                    '[role="tooltip"]',
+                    '.loading-dots-container',
+                    '.scroll-navigation',
+                    '[aria-label*="Scroll to"]'
+                ];
+                chatClone.querySelectorAll(selectorsToRemove.join(',')).forEach(el => el.remove());
 
                 // Pre-process the clone
                 chatClone.querySelectorAll('details').forEach(details => {
-                    details.setAttribute('open', '');
+                    details.setAttribute('open', 'true');
                 });
-                chatClone.querySelectorAll('.sticky').forEach(el => el.remove());
+                
                 chatClone.querySelectorAll('[data-message-id]').forEach(el => {
                     (el as HTMLElement).style.animation = 'none';
                     (el as HTMLElement).style.opacity = '1';
                     (el as HTMLElement).style.transform = 'none';
+                    (el as HTMLElement).style.transition = 'none';
                 });
-
-                // Create header
-                const headerHtml = `
-                    <div style="padding: 2rem 2rem 1rem 2rem; border-bottom: 1px solid var(--theme-border-secondary); margin-bottom: 1rem;">
-                        <h1 style="font-size: 1.5rem; font-weight: bold; color: var(--theme-text-primary); margin-bottom: 0.5rem;">${activeChat.title}</h1>
-                        <div style="font-size: 0.875rem; color: var(--theme-text-tertiary); display: flex; gap: 1rem;">
-                            <span>${dateStr}</span>
-                            <span>•</span>
-                            <span>${activeChat.settings.modelId}</span>
-                        </div>
-                    </div>
-                `;
 
                 // Embed images in the clone before injecting (handles avatars, generated images)
                 await embedImagesInClone(chatClone);
 
-                innerContent.innerHTML = `
-                    ${headerHtml}
-                    <div style="padding: 0 2rem 2rem 2rem;">
-                        ${chatClone.innerHTML}
+                // Create header
+                const headerHtml = `
+                    <div style="padding: 2.5rem 2rem 1.5rem 2rem; border-bottom: 1px solid var(--theme-border-secondary); margin-bottom: 1.5rem;">
+                        <h1 style="font-size: 1.75rem; font-weight: bold; color: var(--theme-text-primary); margin: 0 0 0.75rem 0; line-height: 1.2;">${activeChat.title}</h1>
+                        <div style="font-size: 0.875rem; color: var(--theme-text-tertiary); display: flex; gap: 1.25rem; align-items: center;">
+                            <span style="display: flex; align-items: center; gap: 0.5rem;">${dateStr}</span>
+                            <span style="opacity: 0.5;">•</span>
+                            <span style="font-family: monospace; background: var(--theme-bg-tertiary); padding: 0.125rem 0.375rem; border-radius: 0.25rem;">${activeChat.settings.modelId}</span>
+                        </div>
                     </div>
                 `;
 
+                const exportWrapper = document.createElement('div');
+                exportWrapper.className = 'png-export-wrapper';
+                exportWrapper.style.width = '100%';
+                exportWrapper.style.display = 'block';
+                exportWrapper.innerHTML = headerHtml;
+                
+                const bodyDiv = document.createElement('div');
+                bodyDiv.style.padding = '0 2rem 2rem 2rem';
+                bodyDiv.appendChild(chatClone);
+                exportWrapper.appendChild(bodyDiv);
+
+                innerContent.appendChild(exportWrapper);
+
                 // Wait for rendering
-                await new Promise(resolve => setTimeout(resolve, 800));
+                await new Promise(resolve => setTimeout(resolve, 1000));
 
                 await exportElementAsPng(container, filename, {
                     backgroundColor: rootBgColor,

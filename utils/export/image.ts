@@ -6,6 +6,14 @@ import { triggerDownload } from './core';
  * @param filename The desired filename for the downloaded PNG.
  * @param options Configuration options for html2canvas.
  */
+import { triggerDownload } from './core';
+
+/**
+ * Exports a given HTML element as a PNG image.
+ * @param element The HTML element to capture.
+ * @param filename The desired filename for the downloaded PNG.
+ * @param options Configuration options for html2canvas.
+ */
 export const exportElementAsPng = async (
     element: HTMLElement,
     filename: string,
@@ -24,50 +32,109 @@ export const exportElementAsPng = async (
     }));
 
     // Force a layout recalc/paint wait to ensure styles are applied in the detached container
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 800));
 
-    const canvas = await html2canvas(element, {
-        height: element.scrollHeight,
-        width: element.scrollWidth,
-        useCORS: true, // Important for cross-origin images
-        allowTaint: false, // MUST be false for toBlob to work
-        logging: false,
-        backgroundColor: options?.backgroundColor ?? null,
-        scale: options?.scale ?? 2, // Default to 2x for Retina sharpness
-        ignoreElements: (el) => {
-            // Ignore elements that could taint the canvas
-            if (el.classList.contains('no-export')) return true;
-            // Ignore images that are not data URIs and might fail CORS
-            if (el.tagName === 'IMG') {
-                const src = (el as HTMLImageElement).src;
-                if (src && !src.startsWith('data:') && (src.startsWith('http') || src.startsWith('blob:'))) {
-                    return true;
-                }
-            }
-            return false;
-        },
-        onclone: (_doc, clonedElement) => {
-            // Final integrity check: ensures all images in the clone are data URIs
-            clonedElement.querySelectorAll('img').forEach(img => {
-                if (img.src && !img.src.startsWith('data:')) {
-                    img.remove();
-                }
-            });
+    // Calculate dimensions with multiple fallbacks
+    let width = Math.ceil(element.scrollWidth);
+    let height = Math.ceil(element.scrollHeight);
+
+    // If scrollWidth/Height are zero, try BoundingClientRect
+    if (width === 0 || height === 0) {
+        const rect = element.getBoundingClientRect();
+        width = Math.ceil(rect.width);
+        height = Math.ceil(rect.height);
+    }
+
+    // If still zero, check children
+    if (height === 0 && element.firstElementChild) {
+        height = Math.ceil((element.firstElementChild as HTMLElement).scrollHeight || 0);
+    }
+
+    console.log(`[Export] Dimension check: scroll=${element.scrollWidth}x${element.scrollHeight}, offset=${element.offsetWidth}x${element.offsetHeight}, rect=${width}x${height}`);
+
+    if (width === 0 || height === 0) {
+        // Last ditch effort: if it's the container we created, it might just need a fixed width
+        if (width === 0) width = 800;
+        if (height === 0) {
+            console.error("[Export] Element has zero height, cannot proceed.", element);
+            throw new Error(`Export target has no height (${height}px). Content might be empty or hidden.`);
         }
-    });
+    }
 
-    // Convert to Blob to handle larger images better than data URI
-    await new Promise<void>((resolve, reject) => {
-        canvas.toBlob((blob) => {
+    // Browser limits (Chrome/Firefox/Safari typically around 65535 or 16384 depending on area)
+    const MAX_DIMENSION = 32767;
+    const MAX_AREA = 256 * 1024 * 1024; // 256M pixels
+
+    let scale = options?.scale ?? 2;
+    
+    // Adjust scale if it would exceed limits
+    if (width * scale > MAX_DIMENSION) scale = MAX_DIMENSION / width;
+    if (height * scale > MAX_DIMENSION) scale = MAX_DIMENSION / height;
+    if (width * height * scale * scale > MAX_AREA) {
+        scale = Math.sqrt(MAX_AREA / (width * height));
+    }
+
+    // Final safety check: ensure scale is reasonable
+    scale = Math.max(0.5, Math.min(scale, options?.scale ?? 2));
+
+    console.log(`[Export] Capturing: ${width}x${height} at scale ${scale.toFixed(2)}`);
+
+    try {
+        const canvas = await html2canvas(element, {
+            height: height,
+            width: width,
+            useCORS: true,
+            allowTaint: false,
+            logging: false,
+            backgroundColor: options?.backgroundColor ?? null,
+            scale: scale,
+            ignoreElements: (el) => {
+                if (el.classList.contains('no-export')) return true;
+                if (el.tagName === 'IMG') {
+                    const src = (el as HTMLImageElement).src;
+                    if (src && !src.startsWith('data:') && (src.startsWith('http') || src.startsWith('blob:'))) {
+                        return true;
+                    }
+                }
+                return false;
+            },
+            onclone: (_doc, clonedElement) => {
+                clonedElement.querySelectorAll('img').forEach(img => {
+                    if (img.src && !img.src.startsWith('data:')) {
+                        img.remove();
+                    }
+                });
+            }
+        });
+
+        // Convert to Blob or DataURL with fallback
+        try {
+            const blob = await new Promise<Blob | null>((resolve) => {
+                canvas.toBlob((b) => resolve(b), 'image/png');
+            });
+
             if (blob) {
                 const url = URL.createObjectURL(blob);
                 triggerDownload(url, filename);
-                resolve();
-            } else {
-                reject(new Error("Canvas to Blob conversion failed"));
+                // URL.revokeObjectURL(url); // Should be revoked after download started, but core.ts handles it or it's fine for simple apps
+                return;
             }
-        }, 'image/png');
-    });
+        } catch (blobError) {
+            console.warn("[Export] toBlob failed, falling back to toDataURL", blobError);
+        }
+
+        // Fallback to DataURL
+        const dataUrl = canvas.toDataURL('image/png');
+        if (dataUrl && dataUrl !== 'data:,') {
+            triggerDownload(dataUrl, filename);
+        } else {
+            throw new Error("Canvas to Image conversion failed (both Blob and DataURL).");
+        }
+
+    } catch (error) {
+        console.error("[Export] PNG export error:", error);
+        throw error;
+    }
 };
 
 /**
