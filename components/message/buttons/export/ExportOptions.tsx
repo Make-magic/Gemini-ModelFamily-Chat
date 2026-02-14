@@ -14,7 +14,7 @@ export const ExportOptions: React.FC<ExportOptionsProps> = ({ onExport }) => {
     const options = [
         { id: 'png' as const, icon: ImageIcon, label: 'PNG Image', desc: 'Visual snapshot', colorClass: 'text-[var(--theme-text-link)]' },
         { id: 'html' as const, icon: FileCode2, label: 'HTML File', desc: 'Web page format', colorClass: 'text-green-500' },
-        { id: 'txt' as const, icon: FileText, label: 'TXT File', desc: 'Plain text', colorClass: 'text-blue-500' },
+        { id: 'txt' as const, icon: FileText, label: 'Markdown', desc: 'Text file (.md)', colorClass: 'text-blue-500' },
         { id: 'json' as const, icon: FileJson, label: 'JSON File', desc: 'Raw data', colorClass: 'text-orange-500' },
     ];
 

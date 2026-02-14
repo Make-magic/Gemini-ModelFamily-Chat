@@ -8,7 +8,7 @@ import { useResponsiveValue } from '../../hooks/useDevice';
 interface ExportChatModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onExport: (format: 'png' | 'html' | 'txt' | 'json') => void;
+  onExport: (format: 'png' | 'html' | 'md' | 'json') => void;
   exportStatus: 'idle' | 'exporting';
   t: (key: keyof typeof translations, fallback?: string) => string;
 }
@@ -69,8 +69,8 @@ export const ExportChatModal: React.FC<ExportChatModalProps> = ({ isOpen, onClos
                                 className="flex flex-col items-center justify-center gap-3 p-6 bg-[var(--theme-bg-secondary)] hover:bg-[var(--theme-bg-tertiary)] rounded-lg border border-[var(--theme-border-secondary)] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[var(--theme-bg-primary)] focus:ring-[var(--theme-border-focus)] transform hover:-translate-y-1 hover:shadow-lg"
                             >
                                 <FileText size={buttonIconSize} className="text-blue-500" />
-                                <span className="font-semibold text-base text-[var(--theme-text-primary)]">TXT File</span>
-                                <span className="text-xs text-center text-[var(--theme-text-tertiary)]">A simple text file with the conversation content.</span>
+                                <span className="font-semibold text-base text-[var(--theme-text-primary)]">Markdown</span>
+                                <span className="text-xs text-center text-[var(--theme-text-tertiary)]">A formatted text file (.md) with the conversation content.</span>
                             </button>
                             <button 
                                 onClick={() => onExport('json')} 

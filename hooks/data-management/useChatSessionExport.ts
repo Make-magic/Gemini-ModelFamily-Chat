@@ -32,14 +32,17 @@ export const useChatSessionExport = ({
     t
 }: UseChatSessionExportProps) => {
 
-    const exportChatLogic = useCallback(async (format: 'png' | 'html' | 'txt' | 'json') => {
+    const exportChatLogic = useCallback(async (format: 'png' | 'html' | 'txt' | 'md' | 'json') => {
         if (!activeChat) return;
 
         const safeTitle = sanitizeFilename(activeChat.title);
         const dateObj = new Date();
         const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString();
         const isoDate = dateObj.toISOString().slice(0, 10);
-        const filename = `chat-${safeTitle}-${isoDate}.${format}`;
+        
+        // Use .md extension for both 'txt' and 'md' formats
+        const extension = (format === 'txt' || format === 'md') ? 'md' : format;
+        const filename = `chat-${safeTitle}-${isoDate}.${extension}`;
         const scrollContainer = scrollContainerRef.current;
 
         // Small delay to allow MessageList to render all messages (bypassing virtualization)
@@ -179,7 +182,7 @@ export const useChatSessionExport = ({
             });
 
             exportHtmlStringAsFile(fullHtml, filename);
-        } else if (format === 'txt') {
+        } else if (format === 'txt' || format === 'md') {
             const txtContent = generateExportTxtTemplate({
                 title: activeChat.title,
                 date: dateStr,

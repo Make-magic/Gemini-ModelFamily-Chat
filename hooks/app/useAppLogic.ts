@@ -104,7 +104,7 @@ export const useAppLogic = () => {
     language,
   });
 
-  const handleExportChat = useCallback(async (format: 'png' | 'html' | 'txt' | 'json') => {
+  const handleExportChat = useCallback(async (format: 'png' | 'html' | 'txt' | 'md' | 'json') => {
     if (!activeChat) return;
     setExportStatus('exporting');
     try {
