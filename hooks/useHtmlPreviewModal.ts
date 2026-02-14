@@ -159,22 +159,31 @@ export const useHtmlPreviewModal = ({
         setIsScreenshotting(true);
         let cleanup = () => { };
         try {
-            const iframeBody = iframeRef.current.contentDocument.body;
+            const iframeDoc = iframeRef.current.contentDocument;
+            const iframeBody = iframeDoc.body;
             const title = getPreviewTitle();
             const filename = `${sanitizeFilename(title)}-screenshot.png`;
 
             // Create a DOM-attached container for html2canvas (it needs elements in the DOM)
             const themeId = document.body.className.includes('theme-onyx') ? 'onyx' : 'default';
-            const { container, innerContent, remove, rootBgColor } = await createSnapshotContainer(themeId, '100%');
+            const { container, innerContent, remove, rootBgColor } = await createSnapshotContainer(themeId, '1200px');
             cleanup = remove;
 
-            // Clone iframe content and embed images as base64 to avoid CORS/taint issues
+            // Copy styles from the iframe's head to preserve layout/styling
+            const styles = Array.from(iframeDoc.head.querySelectorAll('style, link[rel="stylesheet"]'));
+            styles.forEach(style => {
+                innerContent.appendChild(style.cloneNode(true));
+            });
+
+            // Clone iframe body content
             const bodyClone = iframeBody.cloneNode(true) as HTMLElement;
-            await embedImagesInClone(bodyClone);
             innerContent.appendChild(bodyClone);
 
-            // Wait for images and layout
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Embed images as base64 to avoid CORS/taint issues (process the newly injected content)
+            await embedImagesInClone(innerContent);
+
+            // Wait for images and layout to settle
+            await new Promise(resolve => setTimeout(resolve, 800));
 
             await exportElementAsPng(container, filename, {
                 backgroundColor: rootBgColor,
