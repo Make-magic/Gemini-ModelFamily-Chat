@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Check, Info } from 'lucide-react';
+import { Check, Info, ExternalLink } from 'lucide-react';
 import { SETTINGS_INPUT_CLASS } from '../../../../constants/appConstants';
 
 interface ApiKeyInputProps {
@@ -17,11 +17,26 @@ export const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ apiKey, setApiKey, t, 
     const apiKeyBlurClass = !isFocused && apiKey ? 'text-transparent [text-shadow:0_0_6px_var(--theme-text-primary)] tracking-widest' : '';
     const inputBaseClasses = "w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 focus:ring-offset-0 text-sm custom-scrollbar font-mono";
 
+    const handleOpenDocs = () => {
+        window.open('https://ai.google.dev/gemini-api/docs', '_blank', 'noopener,noreferrer');
+    };
+
     return (
         <div className="space-y-2">
-            <label htmlFor="api-key-input" className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)]">
-                {t('settingsApiKey')}
-            </label>
+            <div className="flex items-center gap-2">
+                <label htmlFor="api-key-input" className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)]">
+                    {t('settingsApiKey')}
+                </label>
+                <button
+                    type="button"
+                    onClick={handleOpenDocs}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors border text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] border-transparent hover:border-[var(--theme-border-secondary)]"
+                    title="Open Gemini API Documentation"
+                >
+                    <ExternalLink size={10} strokeWidth={1.5} />
+                    <span>{t('apiConfig_docs_btn') || 'API DOC'}</span>
+                </button>
+            </div>
             <div className="relative">
                 <textarea
                     id="api-key-input"
