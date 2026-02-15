@@ -14,7 +14,8 @@ import {
     generateExportTxtTemplate,
     gatherPageStyles,
     createSnapshotContainer,
-    embedImagesInClone
+    embedImagesInClone,
+    exportChatAsPdfDocument
 } from '../utils/exportUtils';
 
 interface UseMessageExportProps {
@@ -24,7 +25,7 @@ interface UseMessageExportProps {
     themeId: string;
 }
 
-export type ExportType = 'png' | 'html' | 'txt' | 'json';
+export type ExportType = 'png' | 'html' | 'txt' | 'json' | 'pdf';
 
 export const useMessageExport = ({ message, sessionTitle, messageIndex, themeId }: UseMessageExportProps) => {
     const [exportingType, setExportingType] = useState<ExportType | null>(null);
@@ -58,7 +59,13 @@ export const useMessageExport = ({ message, sessionTitle, messageIndex, themeId 
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
 
-            if (type === 'png') {
+            if (type === 'pdf') {
+                await exportChatAsPdfDocument(
+                    sessionTitle || `Message ${shortId}`,
+                    [message],
+                    'Single Message'
+                );
+            } else if (type === 'png') {
                 // Attempt to find the rendered DOM bubble to preserve Math/Syntax/Diagrams
                 const messageBubble = document.querySelector(`[data-message-id="${message.id}"] > div > .shadow-sm`);
 

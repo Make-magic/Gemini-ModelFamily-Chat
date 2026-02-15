@@ -4,3 +4,4 @@ export * from './export/dom';
 export * from './export/image';
 export * from './export/files';
 export * from './export/templates';
+export * from './export/pdfFromMarkdown';

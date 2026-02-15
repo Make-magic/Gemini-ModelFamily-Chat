@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ImageIcon, FileCode2, FileText, FileJson } from 'lucide-react';
+import { ImageIcon, FileCode2, FileText, FileJson, FileDown } from 'lucide-react';
 import { ExportType } from '../../../../hooks/useMessageExport';
 import { useResponsiveValue } from '../../../../hooks/useDevice';
 
@@ -14,12 +14,13 @@ export const ExportOptions: React.FC<ExportOptionsProps> = ({ onExport }) => {
     const options = [
         { id: 'png' as const, icon: ImageIcon, label: 'PNG Image', desc: 'Visual snapshot', colorClass: 'text-[var(--theme-text-link)]' },
         { id: 'html' as const, icon: FileCode2, label: 'HTML File', desc: 'Web page format', colorClass: 'text-green-500' },
+        { id: 'pdf' as const, icon: FileDown, label: 'PDF Document', desc: 'A4 Document', colorClass: 'text-red-500' },
         { id: 'txt' as const, icon: FileText, label: 'Markdown', desc: 'Text file (.md)', colorClass: 'text-blue-500' },
         { id: 'json' as const, icon: FileJson, label: 'JSON File', desc: 'Raw data', colorClass: 'text-orange-500' },
     ];
 
     return (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             {options.map((opt) => (
                 <button
                     key={opt.id}

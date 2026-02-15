@@ -30,6 +30,7 @@
     "github-markdown-css": "^5.9.0",
     "highlight.js": "^11.9.0",
     "html2canvas": "^1.4.1",
+    "html2pdf.js": "^0.14.0",
     "jszip": "^3.10.1",
     "katex": "^0.16.10",
     "lamejs": "^1.2.1",
@@ -54,6 +55,7 @@
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.5",
+    "@types/html2pdf.js": "^0.10.0",
     "@types/katex": "^0.16.7",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",

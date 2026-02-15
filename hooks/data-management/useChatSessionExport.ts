@@ -12,7 +12,8 @@ import {
     generateExportHtmlTemplate,
     generateExportTxtTemplate,
     embedImagesInClone,
-    createSnapshotContainer
+    createSnapshotContainer,
+    exportChatAsPdfDocument
 } from '../../utils/exportUtils';
 import DOMPurify from 'dompurify';
 
@@ -32,7 +33,7 @@ export const useChatSessionExport = ({
     t
 }: UseChatSessionExportProps) => {
 
-    const exportChatLogic = useCallback(async (format: 'png' | 'html' | 'txt' | 'md' | 'json') => {
+    const exportChatLogic = useCallback(async (format: 'png' | 'html' | 'txt' | 'md' | 'json' | 'pdf') => {
         if (!activeChat) return;
 
         const safeTitle = sanitizeFilename(activeChat.title);
@@ -49,6 +50,15 @@ export const useChatSessionExport = ({
         // when exportStatus is set to 'exporting' in the parent.
         if (format === 'png' || format === 'html') {
             await new Promise(resolve => setTimeout(resolve, 800));
+        }
+
+        if (format === 'pdf') {
+            await exportChatAsPdfDocument(
+                activeChat.title,
+                activeChat.messages,
+                activeChat.settings.modelId
+            );
+            return;
         }
 
         if (format === 'png') {

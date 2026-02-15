@@ -200,3 +200,26 @@ code.hljs {
     border: 1px solid var(--theme-border-secondary);
     background-color: var(--theme-bg-primary); /* Slightly elevate the code block */
 }
+
+/* PDF 导出专用样式，强制白底黑字，覆盖可能的暗色主题变量 */
+.pdf-export-container .markdown-body {
+    background-color: white !important;
+    color: black !important;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+}
+
+.pdf-export-container .markdown-body pre {
+    background-color: #f6f8fa !important; /* 浅灰色代码块背景 */
+    border: 1px solid #e1e4e8 !important;
+    color: #24292e !important;
+}
+
+.pdf-export-container .markdown-body code {
+    color: #24292e !important;
+}
+
+.pdf-export-container .markdown-body table th,
+.pdf-export-container .markdown-body table td {
+    border-color: #dfe2e5 !important;
+    color: black !important;
+}
