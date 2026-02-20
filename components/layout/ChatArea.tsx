@@ -40,6 +40,12 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
     onSetThinkingLevel, setCurrentChatSettings, onUpdateMessageContent, onAddUserMessage,
     onOpenSidePanel,
     exportStatus,
+    pullStatus,
+    pushStatus,
+    lastPullTime,
+    lastPushTime,
+    onPullFromServer,
+    onPushToServer,
     t
   } = props;
 
@@ -77,6 +83,12 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
         themeId={themeId}
         thinkingLevel={currentChatSettings.thinkingLevel}
         onSetThinkingLevel={onSetThinkingLevel}
+        pullStatus={pullStatus}
+        pushStatus={pushStatus}
+        lastPullTime={lastPullTime}
+        lastPushTime={lastPushTime}
+        onPullFromServer={onPullFromServer}
+        onPushToServer={onPushToServer}
       />
 
       <ModelsErrorDisplay error={modelsLoadingError} />

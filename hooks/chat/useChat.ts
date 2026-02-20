@@ -37,7 +37,7 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
         userScrolledUp,
         activeChat, messages, currentChatSettings, isLoading,
         setCurrentChatSettings, updateAndPersistSessions, updateAndPersistGroups,
-        fileDraftsRef
+        fileDraftsRef, isHistoryLoaded, setIsHistoryLoaded
     } = chatState;
 
     // Ref to track which API key was last used for a session (for sticky affinity)
@@ -50,7 +50,7 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
         appSettings, setSavedSessions, setSavedGroups, setActiveSessionId,
         setEditingMessageId, setCommandedInput, setSelectedFiles, activeJobs,
         updateAndPersistSessions, activeChat, language, updateAndPersistGroups,
-        userScrolledUp, selectedFiles, fileDraftsRef, activeSessionId
+        userScrolledUp, selectedFiles, fileDraftsRef, activeSessionId, setIsHistoryLoaded
     });
 
     const fileHandler = useFileHandling({
@@ -169,8 +169,11 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
         imageSize,
         setImageSize,
         ttsMessageId,
+        isHistoryLoaded,
 
         // Persistence
+        setSavedSessions,
+        setSavedGroups,
         updateAndPersistSessions,
         updateAndPersistGroups,
 
@@ -222,6 +225,7 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
 
         // Scenarios
         savedScenarios: scenarioHandler.savedScenarios,
+        setUserSavedScenarios: scenarioHandler.setUserSavedScenarios,
         handleSaveAllScenarios: scenarioHandler.handleSaveAllScenarios,
         handleLoadPreloadedScenario: scenarioHandler.handleLoadPreloadedScenario,
 

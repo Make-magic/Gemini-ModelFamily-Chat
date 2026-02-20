@@ -243,22 +243,22 @@ export const rehydrateSession = (session: SavedChatSession): SavedChatSession =>
 
         if (!currentMessage.files?.length) return currentMessage;
 
-        const newFiles = currentMessage.files.map(file => {
-            // Check if it's an image that was stored locally (has rawFile)
-            if (SUPPORTED_IMAGE_MIME_TYPES.includes(file.type) && file.rawFile) {
-                try {
-                    // Create a new blob URL. The browser will handle the old invalid one on page unload.
-                    const dataUrl = URL.createObjectURL(file.rawFile);
-                    return { ...file, dataUrl: dataUrl };
-                } catch (error) {
-                    logService.error("Failed to create object URL for file on load", { fileId: file.id, error });
-                    // Keep the file but mark that preview failed
-                    return { ...file, dataUrl: undefined, error: "Preview failed to load" };
-                }
-            }
-            return file;
-        });
-
+                const newFiles = currentMessage.files.map(file => {
+                    // Check if it's an image that was stored locally (has rawFile)
+                    // JSON serialization from server turns Blob into {}, which breaks URL.createObjectURL.
+                    if (SUPPORTED_IMAGE_MIME_TYPES.includes(file.type) && file.rawFile instanceof Blob) {
+                        try {
+                            // Create a new blob URL. The browser will handle the old invalid one on page unload.
+                            const dataUrl = URL.createObjectURL(file.rawFile);
+                            return { ...file, dataUrl: dataUrl };
+                        } catch (error) {
+                            logService.error("Failed to create object URL for file on load", { fileId: file.id, error }); 
+                            // Keep the file but mark that preview failed
+                            return { ...file, dataUrl: undefined, error: "Preview failed to load" };
+                        }
+                    }
+                    return file;
+                });
         return { ...currentMessage, files: newFiles };
     });
 

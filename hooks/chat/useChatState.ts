@@ -22,6 +22,7 @@ export const useChatState = (appSettings: AppSettings) => {
     const [imageSize, setImageSize] = useState<string>('1K');
     const [ttsMessageId, setTtsMessageId] = useState<string | null>(null);
     const [isSwitchingModel, setIsSwitchingModel] = useState<boolean>(false);
+    const [isHistoryLoaded, setIsHistoryLoaded] = useState<boolean>(false);
     const userScrolledUp = useRef<boolean>(false);
     const fileDraftsRef = useRef<Record<string, UploadedFile[]>>({});
 
@@ -30,15 +31,18 @@ export const useChatState = (appSettings: AppSettings) => {
         options: { persist?: boolean } = {}
     ) => {
         const { persist = true } = options;
+        const now = Date.now();
         setSavedSessions(prevSessions => {
-            const newSessions = updater(prevSessions);
+            const sessionsAfterUpdate = updater(prevSessions);
+            const newSessions = sessionsAfterUpdate.map(session => {
+                const prevSession = prevSessions.find(s => s.id === session.id);
+                return prevSession !== session ? { ...session, updatedAt: now } : session;
+            });
+
             if (persist) {
-                // Optimization: Granular updates based on reference equality
                 const updates: Promise<void>[] = [];
                 const newSessionsMap = new Map(newSessions.map(s => [s.id, s]));
 
-                // 1. Detect Updated or Added sessions
-                // We rely on React immutability: if reference changes, object changed.
                 newSessions.forEach(session => {
                     const prevSession = prevSessions.find(s => s.id === session.id);
                     if (prevSession !== session) {
@@ -46,7 +50,6 @@ export const useChatState = (appSettings: AppSettings) => {
                     }
                 });
 
-                // 2. Detect Deleted sessions
                 prevSessions.forEach(session => {
                     if (!newSessionsMap.has(session.id)) {
                         updates.push(dbService.deleteSession(session.id));
@@ -54,9 +57,7 @@ export const useChatState = (appSettings: AppSettings) => {
                 });
 
                 if (updates.length > 0) {
-                    Promise.all(updates)
-                        // .then(() => logService.debug(`Persisted ${updates.length} session updates atomically.`))
-                        .catch(e => logService.error('Failed to persist session updates', { error: e }));
+                    Promise.all(updates).catch(e => logService.error('Failed to persist session updates', { error: e }));
                 }
             }
             return newSessions;
@@ -64,8 +65,13 @@ export const useChatState = (appSettings: AppSettings) => {
     }, []);
 
     const updateAndPersistGroups = useCallback(async (updater: (prev: ChatGroup[]) => ChatGroup[]) => {
+        const now = Date.now();
         setSavedGroups(prevGroups => {
-            const newGroups = updater(prevGroups);
+            const groupsAfterUpdate = updater(prevGroups);
+            const newGroups = groupsAfterUpdate.map(g => {
+                const prevGroup = prevGroups.find(pg => pg.id === g.id);
+                return prevGroup !== g ? { ...g, updatedAt: now } : g;
+            });
             dbService.setAllGroups(newGroups);
             return newGroups;
         });
@@ -113,5 +119,7 @@ export const useChatState = (appSettings: AppSettings) => {
         updateAndPersistSessions,
         updateAndPersistGroups,
         fileDraftsRef,
+        isHistoryLoaded,
+        setIsHistoryLoaded
     };
 };

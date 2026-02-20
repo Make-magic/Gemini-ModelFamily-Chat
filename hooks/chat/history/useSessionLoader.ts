@@ -18,6 +18,7 @@ interface UseSessionLoaderProps {
     selectedFiles: UploadedFile[];
     fileDraftsRef: React.MutableRefObject<Record<string, UploadedFile[]>>;
     activeSessionId: string | null;
+    setIsHistoryLoaded: Dispatch<SetStateAction<boolean>>;
 }
 
 export const useSessionLoader = ({
@@ -33,6 +34,7 @@ export const useSessionLoader = ({
     selectedFiles,
     fileDraftsRef,
     activeSessionId,
+    setIsHistoryLoaded,
 }: UseSessionLoaderProps) => {
 
     const startNewChat = useCallback(() => {
@@ -130,8 +132,10 @@ export const useSessionLoader = ({
         } catch (error) {
             logService.error("Error loading chat history:", error);
             startNewChat();
+        } finally {
+            setIsHistoryLoaded(true);
         }
-    }, [setSavedSessions, setSavedGroups, loadChatSession, startNewChat]);
+    }, [setSavedSessions, setSavedGroups, loadChatSession, startNewChat, setIsHistoryLoaded]);
 
     return {
         startNewChat,

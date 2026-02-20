@@ -26,6 +26,12 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     exportStatus,
     handleOpenSidePanel,
     activeSuggestionType,
+    pullStatus,
+    pushStatus,
+    lastPullTime,
+    lastPushTime,
+    pullFromServer,
+    pushToServer
   } = logic;
 
   // Sidebar Props
@@ -178,12 +184,19 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     onUpdateMessageContent: chatState.handleUpdateMessageContent,
     handleUpdateMessageFile: chatState.handleUpdateMessageFile,
     onAddUserMessage: chatState.handleAddUserMessage,
+    pullStatus,
+    pushStatus,
+    lastPullTime,
+    lastPushTime,
+    onPullFromServer: pullFromServer,
+    onPushToServer: pushToServer,
     exportStatus,
     t,
   }), [
     chatState, uiState, appSettings, currentTheme, language, t, sessionTitle,
     pipState, handleLoadCanvasPromptAndSave, handleSuggestionClick, handleSetThinkingLevel,
-    handleOpenSidePanel, getCurrentModelDisplayName, exportStatus
+    handleOpenSidePanel, getCurrentModelDisplayName, exportStatus,
+    pullStatus, pushStatus, lastPullTime, lastPushTime, pullFromServer, pushToServer
   ]);
 
   // Merge active chat settings into app settings for the modal so controls reflect current session

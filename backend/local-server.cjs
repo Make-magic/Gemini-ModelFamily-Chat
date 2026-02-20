@@ -5,6 +5,7 @@ const express = require('express');
 const WebSocket = require('ws');
 const http = require('http');
 const path = require('path');
+const fs = require('fs').promises;
 const { EventEmitter } = require('events');
 const fetch = require('node-fetch');
 const { createProxyMiddleware } = require('http-proxy-middleware');
@@ -38,6 +39,150 @@ class LoggingService {
 
   debug(message) {
     console.debug(this._formatMessage('DEBUG', message));
+  }
+}
+
+// 同步服务模块
+class SyncService {
+  constructor(logger, connectionRegistry) {
+    this.logger = logger;
+    this.connectionRegistry = connectionRegistry;
+    this.storagePath = path.join(__dirname, '../storage');
+    this.sessionsPath = path.join(this.storagePath, 'sessions');
+  }
+
+  async init() {
+    try {
+      await fs.mkdir(this.storagePath, { recursive: true });
+      await fs.mkdir(this.sessionsPath, { recursive: true });
+      this.logger.info('同步存储目录已就绪');
+    } catch (error) {
+      this.logger.error(`初始化同步目录失败: ${error.message}`);
+    }
+  }
+
+  async getMetadata() {
+    const metadata = {
+      sessions: {},
+      groups: { updatedAt: 0 },
+      settings: { updatedAt: 0 },
+      scenarios: { updatedAt: 0 }
+    };
+
+    try {
+      // Sessions
+      const files = await fs.readdir(this.sessionsPath);
+      for (const file of files) {
+        if (file.endsWith('.json')) {
+          const content = await fs.readFile(path.join(this.sessionsPath, file), 'utf-8');
+          const session = JSON.parse(content);
+          // Fallback to timestamp if updatedAt is missing
+          metadata.sessions[session.id] = session.updatedAt || session.timestamp || 0;
+        }
+      }
+
+      // Other files
+      const otherFiles = ['groups', 'settings', 'scenarios'];
+      for (const type of otherFiles) {
+        const filePath = path.join(this.storagePath, `${type}.json`);
+        try {
+          const stats = await fs.stat(filePath);
+          const content = await fs.readFile(filePath, 'utf-8');
+          const data = JSON.parse(content);
+          
+          let internalMax = 0;
+          if (Array.isArray(data)) {
+             internalMax = Math.max(...data.map(item => item.updatedAt || item.timestamp || 0), 0);
+          } else {
+             internalMax = data.updatedAt || 0;
+          }
+          
+          // Use the greater of internal timestamp or file system mtime
+          metadata[type].updatedAt = Math.max(internalMax, stats.mtimeMs);
+        } catch (e) {
+          // File might not exist yet
+        }
+      }
+    } catch (error) {
+      this.logger.error(`获取同步元数据失败: ${error.message}`);
+    }
+    return metadata;
+  }
+
+  async saveItem(type, data) {
+    try {
+      let filePath;
+      if (type === 'session') {
+        filePath = path.join(this.sessionsPath, `${data.id}.json`);
+      } else {
+        filePath = path.join(this.storagePath, `${type}.json`);
+      }
+
+      await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+      
+      // 广播更新
+      this.connectionRegistry.broadcast({
+        type: 'SYNC_EVENT',
+        dataType: type,
+        itemId: data.id,
+        updatedAt: data.updatedAt
+      });
+      
+      return true;
+    } catch (error) {
+      this.logger.error(`保存同步项失败 (${type}): ${error.message}`);
+      return false;
+    }
+  }
+
+  async deleteItem(type, id) {
+    try {
+      if (type === 'session') {
+        const filePath = path.join(this.sessionsPath, `${id}.json`);
+        await fs.unlink(filePath);
+        
+        this.connectionRegistry.broadcast({
+          type: 'SYNC_DELETE_EVENT',
+          dataType: type,
+          itemId: id
+        });
+      }
+      return true;
+    } catch (error) {
+      this.logger.error(`删除同步项失败 (${type}): ${error.message}`);
+      return false;
+    }
+  }
+
+  async getItem(type, id) {
+    try {
+      let filePath;
+      if (type === 'session') {
+        filePath = path.join(this.sessionsPath, `${id}.json`);
+      } else {
+        filePath = path.join(this.storagePath, `${type}.json`);
+      }
+      const content = await fs.readFile(filePath, 'utf-8');
+      return JSON.parse(content);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async getAll(type) {
+    if (type === 'sessions') {
+      const sessions = [];
+      const files = await fs.readdir(this.sessionsPath);
+      for (const file of files) {
+        if (file.endsWith('.json')) {
+          const content = await fs.readFile(path.join(this.sessionsPath, file), 'utf-8');
+          sessions.push(JSON.parse(content));
+        }
+      }
+      return sessions;
+    } else {
+      return this.getItem(type);
+    }
   }
 }
 
@@ -104,16 +249,16 @@ class ConnectionRegistry extends EventEmitter {
   constructor(logger) {
     super();
     this.logger = logger;
-    this.connections = new Set();
+    this.proxyClients = new Set();
+    this.syncClients = new Set();
     this.messageQueues = new Map();
   }
 
   addConnection(websocket, clientInfo) {
-    this.connections.add(websocket);
-    this.logger.info(`新客户端连接: ${clientInfo.address}`);
+    this.logger.info(`新连接尝试: ${clientInfo.address}`);
 
     websocket.on('message', (data) => {
-      this._handleIncomingMessage(data.toString());
+      this._handleIncomingMessage(websocket, data.toString());
     });
 
     websocket.on('close', () => {
@@ -124,35 +269,47 @@ class ConnectionRegistry extends EventEmitter {
       this.logger.error(`WebSocket连接错误: ${error.message}`);
     });
 
+    // 默认作为 proxyClient，直到它声明自己是 syncClient
+    this.proxyClients.add(websocket);
     this.emit('connectionAdded', websocket);
   }
 
   _removeConnection(websocket) {
-    this.connections.delete(websocket);
+    this.proxyClients.delete(websocket);
+    this.syncClients.delete(websocket);
     this.logger.info('客户端连接断开');
 
-    // 关闭所有相关的消息队列
-    this.messageQueues.forEach(queue => queue.close());
-    this.messageQueues.clear();
+    // 如果没有 proxy 客户端了，才考虑关闭队列（或者按 request_id 管理）
+    // 这里的逻辑可以优化，但目前保持简单
+    if (this.proxyClients.size === 0) {
+        this.messageQueues.forEach(queue => queue.close());
+        this.messageQueues.clear();
+    }
 
     this.emit('connectionRemoved', websocket);
   }
 
-  _handleIncomingMessage(messageData) {
+  _handleIncomingMessage(websocket, messageData) {
     try {
       const parsedMessage = JSON.parse(messageData);
+
+      // 处理注册消息
+      if (parsedMessage.type === 'REGISTER_SYNC_CLIENT') {
+        this.logger.info('已注册同步客户端');
+        this.proxyClients.delete(websocket);
+        this.syncClients.add(websocket);
+        return;
+      }
+
       const requestId = parsedMessage.request_id;
 
       if (!requestId) {
-        this.logger.warn('收到无效消息：缺少request_id');
         return;
       }
 
       const queue = this.messageQueues.get(requestId);
       if (queue) {
         this._routeMessage(parsedMessage, queue);
-      } else {
-        this.logger.warn(`收到未知请求ID的消息: ${requestId}`);
       }
     } catch (error) {
       this.logger.error('解析WebSocket消息失败');
@@ -177,11 +334,11 @@ class ConnectionRegistry extends EventEmitter {
   }
 
   hasActiveConnections() {
-    return this.connections.size > 0;
+    return this.proxyClients.size > 0;
   }
 
   getFirstConnection() {
-    return this.connections.values().next().value;
+    return this.proxyClients.values().next().value;
   }
 
   createMessageQueue(requestId) {
@@ -196,6 +353,16 @@ class ConnectionRegistry extends EventEmitter {
       queue.close();
       this.messageQueues.delete(requestId);
     }
+  }
+
+  broadcast(message) {
+    const messageString = JSON.stringify(message);
+    // 广播给所有同步客户端
+    this.syncClients.forEach(ws => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(messageString);
+      }
+    });
   }
 }
 
@@ -399,6 +566,7 @@ class ProxyServerSystem extends EventEmitter {
 
     this.logger = new LoggingService('ProxyServer');
     this.connectionRegistry = new ConnectionRegistry(this.logger);
+    this.syncService = new SyncService(this.logger, this.connectionRegistry);
     this.requestHandler = new RequestHandler(this.connectionRegistry, this.logger, this.config);
 
     this.httpServer = null;
@@ -407,6 +575,7 @@ class ProxyServerSystem extends EventEmitter {
 
   async start() {
     try {
+      await this.syncService.init();
       await this._startHttpServer();
       await this._startWebSocketServer();
 
@@ -454,6 +623,40 @@ class ProxyServerSystem extends EventEmitter {
       next();
     });
 
+    // 2. 同步 API 路由 (放置在通用处理逻辑之前)
+    app.get('/api/sync/metadata', async (req, res) => {
+      const metadata = await this.syncService.getMetadata();
+      res.json(metadata);
+    });
+
+    app.get('/api/sync/pull', async (req, res) => {
+      const { type, id } = req.query;
+      const data = await this.syncService.getItem(type, id);
+      res.json(data);
+    });
+
+    app.get('/api/sync/pull-all', async (req, res) => {
+      const [sessions, groups, settings, scenarios] = await Promise.all([
+        this.syncService.getAll('sessions'),
+        this.syncService.getItem('groups'),
+        this.syncService.getItem('settings'),
+        this.syncService.getItem('scenarios')
+      ]);
+      res.json({ sessions, groups, settings, scenarios });
+    });
+
+    app.post('/api/sync/push', express.json({ limit: '50mb' }), async (req, res) => {
+      const { type, data } = req.body;
+      const success = await this.syncService.saveItem(type, data);
+      res.json({ success });
+    });
+
+    app.delete('/api/sync/delete', async (req, res) => {
+      const { type, id } = req.query;
+      const success = await this.syncService.deleteItem(type, id);
+      res.json({ success });
+    });
+
     // 中间件配置
     // Body-parser middleware removed to enable raw body capture for Base64 encoding.
 
@@ -467,8 +670,8 @@ class ProxyServerSystem extends EventEmitter {
       // 或者是带有查询参数的请求(往往是 API)
       const isApiRequest = req.path.startsWith('/v1') ||
         req.path.startsWith('/upload') ||
-        req.method !== 'GET' ||
-        Object.keys(req.query).length > 0;
+        (req.method !== 'GET' && !req.path.startsWith('/api/sync')) ||
+        (Object.keys(req.query).length > 0 && !req.path.startsWith('/api/sync'));
 
       if (isApiRequest) {
         return this.requestHandler.processRequest(req, res);

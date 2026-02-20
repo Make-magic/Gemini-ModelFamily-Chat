@@ -8,11 +8,12 @@ import { useAppUI } from '../core/useAppUI';
 import { useAppEvents } from '../core/useAppEvents';
 import { usePictureInPicture } from '../core/usePictureInPicture';
 import { useDataManagement } from '../useDataManagement';
+import { useSyncManager } from '../core/useSyncManager';
 import { getTranslator, logService, applyThemeToDocument } from '../../utils/appUtils';
 import { networkInterceptor } from '../../services/networkInterceptor';
 
 export const useAppLogic = () => {
-  const { appSettings, setAppSettings, currentTheme, language } = useAppSettings();
+  const { appSettings, setAppSettings, currentTheme, language, isSettingsLoaded } = useAppSettings();
   const t = useMemo(() => getTranslator(language), [language]);
 
   // Initialize Network Interceptor
@@ -27,6 +28,27 @@ export const useAppLogic = () => {
   }, [appSettings.useCustomApiConfig, appSettings.useApiProxy, appSettings.apiProxyUrl]);
 
   const chatState = useChat(appSettings, setAppSettings, language);
+
+  // Initialize Sync Manager
+  const { 
+    pullStatus, 
+    pushStatus, 
+    lastPullTime, 
+    lastPushTime, 
+    pullFromServer, 
+    pushToServer 
+  } = useSyncManager({
+    appSettings,
+    setAppSettings,
+    savedSessions: chatState.savedSessions,
+    setSavedSessions: chatState.setSavedSessions,
+    savedGroups: chatState.savedGroups,
+    setSavedGroups: chatState.setSavedGroups,
+    savedScenarios: chatState.savedScenarios,
+    setSavedScenarios: chatState.setUserSavedScenarios,
+    isSettingsLoaded,
+    isHistoryLoaded: chatState.isHistoryLoaded
+  });
 
   const uiState = useAppUI();
   const { setIsHistorySidebarOpen } = uiState;
@@ -267,5 +289,11 @@ export const useAppLogic = () => {
     handleSetThinkingLevel,
     getCurrentModelDisplayName,
     activeSuggestionType,
+    pullStatus,
+    pushStatus,
+    lastPullTime,
+    lastPushTime,
+    pullFromServer,
+    pushToServer
   };
 };
