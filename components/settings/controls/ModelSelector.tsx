@@ -12,36 +12,74 @@ interface ModelSelectorProps {
   setAvailableModels: (models: ModelOption[]) => void;
 }
 
+
+
 export const ModelSelector: React.FC<ModelSelectorProps> = ({
+
   availableModels,
+
   selectedModelId,
+
   onSelectModel,
+
   setAvailableModels,
+
   t
+
 }) => {
+
   const [isEditingList, setIsEditingList] = useState(false);
 
+
+
   return (
+
     <div className="space-y-4">
+
       <ModelSelectorHeader
+
         isEditingList={isEditingList}
+
         setIsEditingList={setIsEditingList}
+
         t={t}
+
       />
 
+
+
       {isEditingList ? (
+
         <ModelListEditor
+
           availableModels={availableModels}
+
           onSave={setAvailableModels}
+
           setIsEditingList={setIsEditingList}
+
+          t={t}
+
         />
+
       ) : (
+
         <ModelListView
+
           availableModels={availableModels}
+
           selectedModelId={selectedModelId}
+
           onSelectModel={onSelectModel}
+
+          t={t}
+
         />
+
       )}
+
     </div>
+
   );
+
 };

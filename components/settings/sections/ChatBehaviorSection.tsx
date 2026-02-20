@@ -102,6 +102,7 @@ export const ChatBehaviorSection: React.FC<ChatBehaviorSectionProps> = (props) =
                         onChange={(e) => props.setAutoCanvasModelId(e.target.value)}
                         className="py-3"
                     >
+                        <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
                         <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
                         <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
                     </Select>
