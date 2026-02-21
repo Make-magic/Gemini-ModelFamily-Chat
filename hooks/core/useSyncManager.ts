@@ -36,7 +36,12 @@ export const useSyncManager = ({
     const [lastPullTime, setLastPullTime] = useState<number | null>(null);
     const [lastPushTime, setLastPushTime] = useState<number | null>(null);
     
-    const syncServerUrl = `http://${window.location.hostname}:8889`;
+    // Strict environment detection using Vite's built-in env vars
+    // In DEV mode (npm run dev), we ALWAYS use port 8889 for the backend sync server.
+    // In PROD mode (packaged EXE), we use the same port as the UI (window.location.port).
+    const isDev = import.meta.env.DEV;
+    const syncPort = isDev ? '8889' : (window.location.port || '3000');
+    const syncServerUrl = `${window.location.protocol}//${window.location.hostname}:${syncPort}`;
 
     // Helper to process session data after pull (convert Base64 back to Blobs)
     const rehydrateSyncedSession = useCallback((session: SavedChatSession): SavedChatSession => {
@@ -154,7 +159,7 @@ export const useSyncManager = ({
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ type, data: syncData })
         });
-        if (!response.ok) throw new Error(`Push failed for ${type}`);
+        if (!response.ok) throw new Error(`Push failed for ${type} (${response.status})`);
     }, [syncServerUrl]);
 
     const pullFromServer = useCallback(async () => {
@@ -219,36 +224,45 @@ export const useSyncManager = ({
             const metadata = await metaRes.json();
 
             let pushCount = 0;
+            let sessionFailCount = 0;
 
-            // Push Sessions
+            // 1. Push Sessions (Individual Items) - Atomic Try-Catch
             for (const session of savedSessions) {
-                const remoteUpdate = metadata.sessions[session.id] || 0;
-                const localUpdate = session.updatedAt || session.timestamp || 0;
-                if (localUpdate > remoteUpdate) {
-                    await pushItem('session', session);
-                    pushCount++;
+                try {
+                    const remoteUpdate = metadata.sessions[session.id] || 0;
+                    const localUpdate = session.updatedAt || session.timestamp || 0;
+                    if (localUpdate > remoteUpdate) {
+                        await pushItem('session', session);
+                        pushCount++;
+                    }
+                } catch (e) {
+                    sessionFailCount++;
+                    logService.error(`Failed to push session: ${session.title}`, e);
                 }
             }
-            // Push Groups
+
+            // 2. Push Global State (Critical Files) - Separate calls to ensure partial success
             const localGroupsMax = Math.max(...savedGroups.map(g => g.updatedAt || g.timestamp || 0), 0);
             if (localGroupsMax > metadata.groups.updatedAt || metadata.groups.updatedAt === 0) {
-                await pushItem('groups', savedGroups);
-                pushCount++;
-            }
-            // Push Settings
-            const localSettings = await dbService.getAppSettings();
-            if ((localSettings?.updatedAt || 0) > metadata.settings.updatedAt || metadata.settings.updatedAt === 0) {
-                await pushItem('settings', appSettings);
-                pushCount++;
-            }
-            // Push Scenarios
-            const localScenariosMax = Math.max(...savedScenarios.map(s => s.updatedAt || 0), 0);
-            if (localScenariosMax > metadata.scenarios.updatedAt || metadata.scenarios.updatedAt === 0) {
-                await pushItem('scenarios', savedScenarios);
-                pushCount++;
+                try { await pushItem('groups', savedGroups); pushCount++; } catch(e) { logService.error("Failed to push groups", e); }
             }
 
-            logService.info(`Pushed ${pushCount} items to server.`);
+            const localSettings = await dbService.getAppSettings();
+            if ((localSettings?.updatedAt || 0) > metadata.settings.updatedAt || metadata.settings.updatedAt === 0) {
+                try { await pushItem('settings', appSettings); pushCount++; } catch(e) { logService.error("Failed to push settings", e); }
+            }
+
+            const localScenariosMax = Math.max(...savedScenarios.map(s => s.updatedAt || 0), 0);
+            if (localScenariosMax > metadata.scenarios.updatedAt || metadata.scenarios.updatedAt === 0) {
+                try { await pushItem('scenarios', savedScenarios); pushCount++; } catch(e) { logService.error("Failed to push scenarios", e); }
+            }
+
+            if (sessionFailCount > 0) {
+                logService.warn(`Pushed ${pushCount} items, but ${sessionFailCount} sessions failed (likely too large).`);
+            } else {
+                logService.info(`Successfully pushed ${pushCount} items to server.`);
+            }
+
             setPushStatus('success');
             setLastPushTime(Date.now());
             setTimeout(() => setPushStatus('idle'), 3000);

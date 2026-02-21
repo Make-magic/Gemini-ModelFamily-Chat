@@ -1,5 +1,5 @@
 // local-server.js
-// version 2.3.0
+// version 2.3.1
 // 本地服务器，用于通过WebSocket代理HTTP请求到浏览器环境，并返回结果
 const express = require('express');
 const WebSocket = require('ws');
@@ -10,8 +10,14 @@ const { EventEmitter } = require('events');
 const fetch = require('node-fetch');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
+const isPkg = typeof process.pkg !== 'undefined';
+// 如果是 pkg 打包环境，baseDir 为可执行文件所在目录；否则为项目根目录 (backend 的上一级)
+const baseDir = isPkg ? path.dirname(process.execPath) : path.join(__dirname, '..');
+
 console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 console.log("!!! LOCAL SERVER (backend/local-server.cjs) is Running !!!");
+console.log(`!!! Environment: ${isPkg ? 'Pkg (Executable)' : 'Node.js (Development)'} !!!`);
+console.log(`!!! Base Directory: ${baseDir} !!!`);
 console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 
 // 日志记录器模块
@@ -47,7 +53,8 @@ class SyncService {
   constructor(logger, connectionRegistry) {
     this.logger = logger;
     this.connectionRegistry = connectionRegistry;
-    this.storagePath = path.join(__dirname, '../storage');
+    // 数据存储始终在物理磁盘（EXE同级或项目根目录）
+    this.storagePath = path.join(baseDir, 'storage');
     this.sessionsPath = path.join(this.storagePath, 'sessions');
   }
 
@@ -55,7 +62,7 @@ class SyncService {
     try {
       await fs.mkdir(this.storagePath, { recursive: true });
       await fs.mkdir(this.sessionsPath, { recursive: true });
-      this.logger.info('同步存储目录已就绪');
+      this.logger.info(`同步存储目录已就绪: ${this.storagePath}`);
     } catch (error) {
       this.logger.error(`初始化同步目录失败: ${error.message}`);
     }
@@ -71,14 +78,17 @@ class SyncService {
 
     try {
       // Sessions
-      const files = await fs.readdir(this.sessionsPath);
-      for (const file of files) {
-        if (file.endsWith('.json')) {
-          const content = await fs.readFile(path.join(this.sessionsPath, file), 'utf-8');
-          const session = JSON.parse(content);
-          // Fallback to timestamp if updatedAt is missing
-          metadata.sessions[session.id] = session.updatedAt || session.timestamp || 0;
+      try {
+        const files = await fs.readdir(this.sessionsPath);
+        for (const file of files) {
+          if (file.endsWith('.json')) {
+            const content = await fs.readFile(path.join(this.sessionsPath, file), 'utf-8');
+            const session = JSON.parse(content);
+            metadata.sessions[session.id] = session.updatedAt || session.timestamp || 0;
+          }
         }
+      } catch (e) {
+        // sessions dir might not exist yet
       }
 
       // Other files
@@ -97,7 +107,6 @@ class SyncService {
              internalMax = data.updatedAt || 0;
           }
           
-          // Use the greater of internal timestamp or file system mtime
           metadata[type].updatedAt = Math.max(internalMax, stats.mtimeMs);
         } catch (e) {
           // File might not exist yet
@@ -120,7 +129,6 @@ class SyncService {
 
       await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
       
-      // 广播更新
       this.connectionRegistry.broadcast({
         type: 'SYNC_EVENT',
         dataType: type,
@@ -172,13 +180,15 @@ class SyncService {
   async getAll(type) {
     if (type === 'sessions') {
       const sessions = [];
-      const files = await fs.readdir(this.sessionsPath);
-      for (const file of files) {
-        if (file.endsWith('.json')) {
-          const content = await fs.readFile(path.join(this.sessionsPath, file), 'utf-8');
-          sessions.push(JSON.parse(content));
+      try {
+        const files = await fs.readdir(this.sessionsPath);
+        for (const file of files) {
+          if (file.endsWith('.json')) {
+            const content = await fs.readFile(path.join(this.sessionsPath, file), 'utf-8');
+            sessions.push(JSON.parse(content));
+          }
         }
-      }
+      } catch (e) {}
       return sessions;
     } else {
       return this.getItem(type);
@@ -269,7 +279,6 @@ class ConnectionRegistry extends EventEmitter {
       this.logger.error(`WebSocket连接错误: ${error.message}`);
     });
 
-    // 默认作为 proxyClient，直到它声明自己是 syncClient
     this.proxyClients.add(websocket);
     this.emit('connectionAdded', websocket);
   }
@@ -279,8 +288,6 @@ class ConnectionRegistry extends EventEmitter {
     this.syncClients.delete(websocket);
     this.logger.info('客户端连接断开');
 
-    // 如果没有 proxy 客户端了，才考虑关闭队列（或者按 request_id 管理）
-    // 这里的逻辑可以优化，但目前保持简单
     if (this.proxyClients.size === 0) {
         this.messageQueues.forEach(queue => queue.close());
         this.messageQueues.clear();
@@ -293,7 +300,6 @@ class ConnectionRegistry extends EventEmitter {
     try {
       const parsedMessage = JSON.parse(messageData);
 
-      // 处理注册消息
       if (parsedMessage.type === 'REGISTER_SYNC_CLIENT') {
         this.logger.info('已注册同步客户端');
         this.proxyClients.delete(websocket);
@@ -357,7 +363,6 @@ class ConnectionRegistry extends EventEmitter {
 
   broadcast(message) {
     const messageString = JSON.stringify(message);
-    // 广播给所有同步客户端
     this.syncClients.forEach(ws => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(messageString);
@@ -376,7 +381,6 @@ class RequestHandler {
   }
 
   async processRequest(req, res) {
-    // 1. 优先处理 CORS OPTIONS 预检请求，直接返回 200
     if (req.method === 'OPTIONS') {
       res.status(200).end();
       return;
@@ -384,7 +388,6 @@ class RequestHandler {
 
     this.logger.info(`处理请求: ${req.method} ${req.url} (Original: ${req.originalUrl}) Type: ${req.get('content-type')}`);
 
-    // 3. 对于其他请求，继续使用现有的 WebSocket "回弹" 逻辑
     if (!this.connectionRegistry.hasActiveConnections()) {
       return this._sendErrorResponse(res, 503, '没有可用的浏览器连接');
     }
@@ -401,7 +404,7 @@ class RequestHandler {
 
       const requestData = {
         path: req.path,
-        url: req.originalUrl || req.url, // Pass original URL (path + query)
+        url: req.originalUrl || req.url,
         method: req.method,
         headers: req.headers,
         query_params: req.query,
@@ -426,73 +429,35 @@ class RequestHandler {
     return `${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
-  _buildProxyRequest(req, requestId) {
-    let requestBody = '';
-    let isBase64 = false;
-
-    if (req.body) {
-      if (typeof req.body === 'string') {
-        requestBody = req.body;
-      } else if (Buffer.isBuffer(req.body)) {
-        requestBody = req.body.toString('base64');
-        isBase64 = true;
-      } else {
-        requestBody = JSON.stringify(req.body);
-      }
-    }
-
-    return {
-      path: req.path,
-      url: req.originalUrl || req.url, // Pass original URL (path + query)
-      method: req.method,
-      headers: req.headers,
-      query_params: req.query,
-      body: requestBody,
-      isBase64: isBase64,
-      request_id: requestId
-    };
-  }
-
   async _forwardRequest(proxyRequest) {
     const connection = this.connectionRegistry.getFirstConnection();
     connection.send(JSON.stringify(proxyRequest));
   }
 
   async _handleResponse(messageQueue, res) {
-    // 等待响应头
     const headerMessage = await messageQueue.dequeue();
 
     if (headerMessage.event_type === 'error') {
       return this._sendErrorResponse(res, headerMessage.status || 500, headerMessage.message);
     }
 
-    // 设置响应头
     this._setResponseHeaders(res, headerMessage);
-
-    // 处理流式数据
     await this._streamResponseData(messageQueue, res);
   }
 
   _setResponseHeaders(res, headerMessage) {
     res.status(headerMessage.status || 200);
-
     const headers = headerMessage.headers || {};
-
-    // 需要过滤掉可能引起 CORS 冲突的头部
     const forbiddenHeaders = ['access-control-allow-origin', 'access-control-allow-methods', 'access-control-allow-headers'];
 
     Object.entries(headers).forEach(([name, value]) => {
       if (!forbiddenHeaders.includes(name.toLowerCase())) {
-        // 特殊处理 upload url，将其重定向回本地代理
         if (name.toLowerCase() === 'x-goog-upload-url') {
           try {
             const originalUrl = new URL(value);
-            // 构造本地代理 URL
-            // originalUrl.pathname contains /upload/v1beta/files...
             const newUrl = `http://${this.config.host}:${this.config.httpPort}${originalUrl.pathname}${originalUrl.search}`;
             res.set(name, newUrl);
           } catch (e) {
-            // 如果解析失败，保留原值
             res.set(name, value);
           }
         } else {
@@ -505,8 +470,7 @@ class RequestHandler {
   async _streamResponseData(messageQueue, res) {
     while (true) {
       try {
-        // 这里的超时 dequeue 应配合 Keep-alive
-        const dataMessage = await messageQueue.dequeue(30000); // 30秒无数据则检查心跳
+        const dataMessage = await messageQueue.dequeue(30000);
 
         if (dataMessage.type === 'STREAM_END') {
           break;
@@ -517,7 +481,6 @@ class RequestHandler {
         }
       } catch (error) {
         if (error.message === 'Queue timeout') {
-          // 如果是 SSE 保持连接，防止 Node.js 响应关闭
           const contentType = res.get('Content-Type') || '';
           if (contentType.includes('text/event-stream')) {
             res.write(': keepalive\n\n');
@@ -529,12 +492,10 @@ class RequestHandler {
         }
       }
     }
-
     res.end();
   }
 
   _handleRequestError(error, res) {
-    // 防止在响应已经发送的情况下报错
     if (res.headersSent) {
       res.end();
       return;
@@ -560,7 +521,7 @@ class ProxyServerSystem extends EventEmitter {
     this.config = {
       httpPort: 8889,
       wsPort: 9998,
-      host: '0.0.0.0', // 监听所有网络接口
+      host: '0.0.0.0',
       ...config
     };
 
@@ -603,27 +564,19 @@ class ProxyServerSystem extends EventEmitter {
   _createExpressApp() {
     const app = express();
 
-    // 1. 强制 CORS 中间件：使用反射式 CORS 策略以支持所有 headers
     app.use((req, res, next) => {
       res.header('Access-Control-Allow-Origin', '*');
       res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-
-      // 反射客户端请求的 Headers，解决 "Request header field ... is not allowed" 问题
       const requestHeaders = req.headers['access-control-request-headers'];
       if (requestHeaders) {
         res.header('Access-Control-Allow-Headers', requestHeaders);
       } else {
         res.header('Access-Control-Allow-Headers', '*');
       }
-
-      // 暴露所有常用 Headers，包括上传相关的
       res.header('Access-Control-Expose-Headers', '*');
-      res.header('Access-Control-Expose-Headers', 'x-goog-upload-url, x-goog-upload-status, x-goog-upload-chunk-granularity, x-goog-upload-control-url, x-goog-upload-command, x-goog-upload-content-type, x-goog-upload-protocol, x-goog-upload-file-name, x-goog-upload-offset, date, content-type, content-length');
-
       next();
     });
 
-    // 2. 同步 API 路由 (放置在通用处理逻辑之前)
     app.get('/api/sync/metadata', async (req, res) => {
       const metadata = await this.syncService.getMetadata();
       res.json(metadata);
@@ -645,7 +598,7 @@ class ProxyServerSystem extends EventEmitter {
       res.json({ sessions, groups, settings, scenarios });
     });
 
-    app.post('/api/sync/push', express.json({ limit: '50mb' }), async (req, res) => {
+    app.post('/api/sync/push', express.json({ limit: '200mb' }), async (req, res) => {
       const { type, data } = req.body;
       const success = await this.syncService.saveItem(type, data);
       res.json({ success });
@@ -657,17 +610,12 @@ class ProxyServerSystem extends EventEmitter {
       res.json({ success });
     });
 
-    // 中间件配置
-    // Body-parser middleware removed to enable raw body capture for Base64 encoding.
-
-    // 静态文件服务
-    const distPath = path.join(__dirname, '../dist');
+    // 静态文件服务：打包后 distPath 将指向 pkg 内部 snapshot
+    // 在 pkg 环境下，__dirname 指向 backend 目录在虚拟挂载点中的位置
+    const distPath = path.join(__dirname, '..', 'dist');
     app.use(express.static(distPath));
 
-    // 所有其他路由处理
     app.all(/(.*)/, (req, res) => {
-      // 1. 如果是 API 请求 (通常以 /v1, /upload 开头，或者是 POST/PUT 等非 GET 请求)，交给代理处理
-      // 或者是带有查询参数的请求(往往是 API)
       const isApiRequest = req.path.startsWith('/v1') ||
         req.path.startsWith('/upload') ||
         (req.method !== 'GET' && !req.path.startsWith('/api/sync')) ||
@@ -677,26 +625,21 @@ class ProxyServerSystem extends EventEmitter {
         return this.requestHandler.processRequest(req, res);
       }
 
-      // 2. 对于非 API 的 GET 请求
-      // 如果环境变量中有 VITE_DEV_SERVER_URL，说明是开发模式，将请求转发给 Vite
       if (process.env.VITE_DEV_SERVER_URL) {
         if (req.method === 'GET' || req.method === 'HEAD') {
-          this.logger.debug(`Proxying to Vite: ${req.url}`);
           return createProxyMiddleware({
             target: process.env.VITE_DEV_SERVER_URL,
             changeOrigin: true,
             ws: true,
-            logLevel: 'silent' // Avoid double logging
-          })(req, res, next);
+            logLevel: 'silent'
+          })(req, res);
         }
       }
 
-      // 3. 如果是生产模式（没有 VITE_DEV_SERVER_URL），且 accept html，则返回 index.html (SPA Fallback)
       if (req.accepts('html')) {
         return res.sendFile(path.join(distPath, 'index.html'));
       }
 
-      // 3. 其他情况交给代理处理 (万一有漏网的 API)
       return this.requestHandler.processRequest(req, res);
     });
 
@@ -719,10 +662,8 @@ class ProxyServerSystem extends EventEmitter {
   }
 }
 
-// 启动函数
 async function initializeServer() {
   const serverSystem = new ProxyServerSystem();
-
   try {
     await serverSystem.start();
   } catch (error) {
@@ -731,7 +672,6 @@ async function initializeServer() {
   }
 }
 
-// 模块导出和启动
 if (require.main === module) {
   initializeServer();
 }

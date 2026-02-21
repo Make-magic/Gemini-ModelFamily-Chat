@@ -1,4 +1,4 @@
-// version 2.3.0
+// version 2.3.1
 const { ProxyServerSystem } = require('./local-server.cjs');
 const { exec } = require('child_process');
 const path = require('path');
@@ -6,30 +6,34 @@ const path = require('path');
 // 生产环境配置
 const PORT = 3000;
 const HOST = '0.0.0.0';
-const URL = `http://${HOST}:${PORT}`;
+const LOCAL_URL = `http://localhost:${PORT}`;
 
 async function startProductionServer() {
-    console.log('正在启动应用...');
+    console.log('--------------------------------------------------');
+    console.log('--- All Model Chat - 正在启动本地应用引擎 ---');
+    console.log('--------------------------------------------------');
 
-    // 1. 启动服务器
     const server = new ProxyServerSystem({
         httpPort: PORT,
-        wsPort: 9998, // 保持 WS 端口不变，或者也可以改为动态
+        wsPort: 9998,
         host: HOST
     });
 
     try {
         server.on('started', () => {
-            console.log(`\n服务已启动!`);
-            console.log(`访问地址: ${URL}`);
-            console.log(`\n正在自动打开浏览器...`);
+            console.log(`\n[SUCCESS] 服务已在端口 ${PORT} 启动!`);
+            console.log(`[ACCESS] 访问地址: ${LOCAL_URL}`);
+            console.log(`\n[AUTO] 正在为您打开默认浏览器...`);
 
-            openBrowser(URL);
+            openBrowser(LOCAL_URL);
         });
 
         await server.start();
     } catch (err) {
-        console.error('启动失败:', err);
+        console.error('[ERROR] 启动失败:', err.message);
+        if (err.code === 'EADDRINUSE') {
+            console.error(`[FATAL] 端口 ${PORT} 已被占用，请先关闭其他实例。`);
+        }
         process.exit(1);
     }
 }

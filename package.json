@@ -7,7 +7,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
-    "package": "npm run build && pkg . --out-path release"
+    "package": "npm run build && npx pkg . --out-path release --compress GZip"
   },
   "bin": "backend/server-entry.cjs",
   "pkg": {
@@ -16,7 +16,9 @@
       "backend/**/*.js"
     ],
     "assets": [
-      "dist/**/*"
+      "dist/**/*",
+      "manifest.json",
+      "public/**/*"
     ],
     "targets": [
       "node18-win-x64"
