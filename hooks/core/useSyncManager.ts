@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { dbService } from '../../utils/db';
-import { AppSettings, SavedChatSession, ChatGroup, SavedScenario } from '../../types';
+import { AppSettings, SavedChatSession, ChatGroup, SavedScenario, UploadedFile } from '../../types';
 import { logService } from '../../utils/appUtils';
+import { fileToBase64, base64ToBlob } from '../../utils/fileHelpers';
 
 interface SyncManagerProps {
     appSettings: AppSettings;
@@ -37,6 +38,46 @@ export const useSyncManager = ({
     
     const syncServerUrl = `http://${window.location.hostname}:8889`;
 
+    // Helper to process session data after pull (convert Base64 back to Blobs)
+    const rehydrateSyncedSession = useCallback((session: SavedChatSession): SavedChatSession => {
+        const newMessages = session.messages.map(msg => {
+            if (!msg.files?.length) return msg;
+            const newFiles = msg.files.map(file => {
+                // If file has syncData (Base64), convert back to Blob for local IndexedDB
+                if ((file as any).syncData && typeof (file as any).syncData === 'string') {
+                    const blob = base64ToBlob((file as any).syncData, file.type);
+                    const { syncData, ...rest } = file as any;
+                    return { ...rest, rawFile: blob } as UploadedFile;
+                }
+                return file;
+            });
+            return { ...msg, files: newFiles };
+        });
+        return { ...session, messages: newMessages };
+    }, []);
+
+    // Helper to process session data before push (convert Blobs to Base64)
+    const prepareSessionForSync = async (session: SavedChatSession): Promise<SavedChatSession> => {
+        const newMessages = await Promise.all(session.messages.map(async (msg) => {
+            if (!msg.files?.length) return msg;
+            const newFiles = await Promise.all(msg.files.map(async (file) => {
+                // If it has a rawFile Blob, we must convert it to Base64 string to survive JSON sync
+                if (file.rawFile instanceof Blob) {
+                    try {
+                        const base64 = await fileToBase64(file.rawFile as File);
+                        return { ...file, syncData: base64, rawFile: {} } as any;
+                    } catch (e) {
+                        logService.error(`Failed to serialize file ${file.name} for sync`, e);
+                        return file;
+                    }
+                }
+                return file;
+            }));
+            return { ...msg, files: newFiles };
+        }));
+        return { ...session, messages: newMessages };
+    };
+
     const pullItem = useCallback(async (type: string, id?: string, remoteTimestamp?: number) => {
         const url = id ? `${syncServerUrl}/api/sync/pull?type=${type}&id=${id}` : `${syncServerUrl}/api/sync/pull?type=${type}`;
         const response = await fetch(url);
@@ -45,14 +86,15 @@ export const useSyncManager = ({
         if (!data) return;
 
         if (type === 'session') {
-            const session = data as SavedChatSession;
+            let session = data as SavedChatSession;
+            session = rehydrateSyncedSession(session);
+
             if (typeof setSavedSessions !== 'function') {
                 logService.error("setSavedSessions is not a function in pullItem");
                 return;
             }
             setSavedSessions(prev => {
                 const existing = prev.find(s => s.id === session.id);
-                // Use provided remoteTimestamp, internal updatedAt, or timestamp for comparison
                 const remoteUpdate = remoteTimestamp || session.updatedAt || session.timestamp || 0;
                 const localUpdate = existing ? (existing.updatedAt || existing.timestamp || 0) : -1;
 
@@ -99,13 +141,18 @@ export const useSyncManager = ({
             dbService.setAllScenarios(userScenariosOnly);
             setSavedScenarios(userScenariosOnly);
         }
-    }, [syncServerUrl, setSavedSessions, setSavedGroups, setAppSettings, setSavedScenarios]);
+    }, [syncServerUrl, setSavedSessions, setSavedGroups, setAppSettings, setSavedScenarios, rehydrateSyncedSession]);
 
     const pushItem = useCallback(async (type: string, data: any) => {
+        let syncData = data;
+        if (type === 'session') {
+            syncData = await prepareSessionForSync(data as SavedChatSession);
+        }
+
         const response = await fetch(`${syncServerUrl}/api/sync/push`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, data })
+            body: JSON.stringify({ type, data: syncData })
         });
         if (!response.ok) throw new Error(`Push failed for ${type}`);
     }, [syncServerUrl]);
@@ -145,7 +192,6 @@ export const useSyncManager = ({
                 await pullItem('settings');
             }
             // 4. Pull Scenarios
-            // savedScenarios prop contains system scenarios (0 timestamp)
             const localScenariosMax = Math.max(...savedScenarios.map(s => s.updatedAt || 0), 0);
             if (metadata.scenarios.updatedAt > localScenariosMax || (metadata.scenarios.updatedAt > 0 && localScenariosMax === 0)) {
                 await pullItem('scenarios');
@@ -198,8 +244,6 @@ export const useSyncManager = ({
             // Push Scenarios
             const localScenariosMax = Math.max(...savedScenarios.map(s => s.updatedAt || 0), 0);
             if (localScenariosMax > metadata.scenarios.updatedAt || metadata.scenarios.updatedAt === 0) {
-                // When pushing scenarios, we push the computed savedScenarios list which contains both system and user ones.
-                // This is fine because pullItem filters them out.
                 await pushItem('scenarios', savedScenarios);
                 pushCount++;
             }
