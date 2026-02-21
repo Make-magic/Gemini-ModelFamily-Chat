@@ -47,23 +47,12 @@ class SyncService {
   constructor(logger, connectionRegistry) {
     this.logger = logger;
     this.connectionRegistry = connectionRegistry;
-    
-    // PKG 打包环境适配
-    // process.pkg 存在表示在打包环境，此时 __dirname 是虚拟路径
-    const isPackaged = !!process.pkg;
-    const baseDir = isPackaged 
-        ? path.dirname(process.execPath) // 获取 .exe 所在的物理目录
-        : path.join(__dirname, '..');    // 开发环境下项目根目录
-
-    this.storagePath = path.join(baseDir, 'storage');
+    this.storagePath = path.join(__dirname, '../storage');
     this.sessionsPath = path.join(this.storagePath, 'sessions');
-    
-    this.logger.info(`同步存储路径已配置: ${this.storagePath} (${isPackaged ? '打包模式' : '开发模式'})`);
   }
 
   async init() {
     try {
-      // 确保物理磁盘上的存储目录存在
       await fs.mkdir(this.storagePath, { recursive: true });
       await fs.mkdir(this.sessionsPath, { recursive: true });
       this.logger.info('同步存储目录已就绪');
@@ -672,12 +661,7 @@ class ProxyServerSystem extends EventEmitter {
     // Body-parser middleware removed to enable raw body capture for Base64 encoding.
 
     // 静态文件服务
-    // 在 pkg 打包环境下，dist 是打包进虚拟系统的 assets，应使用 __dirname 相对路径访问
-    const isPackaged = !!process.pkg;
-    const distPath = isPackaged
-        ? path.join(__dirname, '..', 'dist')
-        : path.join(__dirname, '../dist');
-    
+    const distPath = path.join(__dirname, '../dist');
     app.use(express.static(distPath));
 
     // 所有其他路由处理

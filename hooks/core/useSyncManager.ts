@@ -36,20 +36,7 @@ export const useSyncManager = ({
     const [lastPullTime, setLastPullTime] = useState<number | null>(null);
     const [lastPushTime, setLastPushTime] = useState<number | null>(null);
     
-    // Determine the sync server URL dynamically.
-    // If the current page is served from port 3000 (standard for our packaged server),
-    // or if we're in a situation where the API is co-located with the UI, use current origin.
-    // Otherwise, default to the development port 8889.
-    const syncServerUrl = (() => {
-        const { protocol, hostname, port } = window.location;
-        // If the UI is served by our Node server (port 3000 or 8889), use the same origin.
-        // In Vite dev mode, port is usually 5173, so it will correctly fallback to hostname:8889.
-        if (port === '3000' || port === '8889' || port === '8890') {
-            return `${protocol}//${hostname}:${port}`;
-        }
-        // Fallback for development (Vite @ 5173 talking to Backend @ 8889)
-        return `${protocol}//${hostname}:8889`;
-    })();
+    const syncServerUrl = `http://${window.location.hostname}:8889`;
 
     // Helper to process session data after pull (convert Base64 back to Blobs)
     const rehydrateSyncedSession = useCallback((session: SavedChatSession): SavedChatSession => {
