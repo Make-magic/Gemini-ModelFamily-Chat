@@ -1,0 +1,284 @@
+import { useState, useCallback } from 'react';
+import { dbService } from '../../utils/db';
+import { AppSettings, SavedChatSession, ChatGroup, SavedScenario, UploadedFile } from '../../types';
+import { logService } from '../../utils/appUtils';
+import { fileToBase64, base64ToBlob } from '../../utils/fileHelpers';
+
+interface SyncManagerProps {
+    appSettings: AppSettings;
+    setAppSettings: (settings: AppSettings) => void;
+    savedSessions: SavedChatSession[];
+    setSavedSessions: (updater: (prev: SavedChatSession[]) => SavedChatSession[]) => void;
+    savedGroups: ChatGroup[];
+    setSavedGroups: (updater: (prev: ChatGroup[]) => ChatGroup[]) => void;
+    savedScenarios: SavedScenario[];
+    setSavedScenarios: (updater: (prev: SavedScenario[]) => SavedScenario[]) => void;
+    isSettingsLoaded: boolean;
+    isHistoryLoaded: boolean;
+}
+
+export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
+
+export const useSyncManager = ({
+    appSettings,
+    setAppSettings,
+    savedSessions,
+    setSavedSessions,
+    savedGroups,
+    setSavedGroups,
+    savedScenarios,
+    setSavedScenarios,
+    isSettingsLoaded,
+    isHistoryLoaded
+}: SyncManagerProps) => {
+    const [pullStatus, setPullStatus] = useState<SyncStatus>('idle');
+    const [pushStatus, setPushStatus] = useState<SyncStatus>('idle');
+    const [lastPullTime, setLastPullTime] = useState<number | null>(null);
+    const [lastPushTime, setLastPushTime] = useState<number | null>(null);
+    
+    // Strict environment detection using Vite's built-in env vars
+    // In DEV mode (npm run dev), we ALWAYS use port 8889 for the backend sync server.
+    // In PROD mode (packaged EXE), we use the same port as the UI (window.location.port).
+    const isDev = import.meta.env.DEV;
+    const syncPort = isDev ? '8889' : (window.location.port || '3000');
+    const syncServerUrl = `${window.location.protocol}//${window.location.hostname}:${syncPort}`;
+
+    // Helper to process session data after pull (convert Base64 back to Blobs)
+    const rehydrateSyncedSession = useCallback((session: SavedChatSession): SavedChatSession => {
+        const newMessages = session.messages.map(msg => {
+            if (!msg.files?.length) return msg;
+            const newFiles = msg.files.map(file => {
+                // If file has syncData (Base64), convert back to Blob for local IndexedDB
+                if ((file as any).syncData && typeof (file as any).syncData === 'string') {
+                    const blob = base64ToBlob((file as any).syncData, file.type);
+                    const { syncData, ...rest } = file as any;
+                    return { ...rest, rawFile: blob } as UploadedFile;
+                }
+                return file;
+            });
+            return { ...msg, files: newFiles };
+        });
+        return { ...session, messages: newMessages };
+    }, []);
+
+    // Helper to process session data before push (convert Blobs to Base64)
+    const prepareSessionForSync = async (session: SavedChatSession): Promise<SavedChatSession> => {
+        const newMessages = await Promise.all(session.messages.map(async (msg) => {
+            if (!msg.files?.length) return msg;
+            const newFiles = await Promise.all(msg.files.map(async (file) => {
+                // If it has a rawFile Blob, we must convert it to Base64 string to survive JSON sync
+                if (file.rawFile instanceof Blob) {
+                    try {
+                        const base64 = await fileToBase64(file.rawFile as File);
+                        return { ...file, syncData: base64, rawFile: {} } as any;
+                    } catch (e) {
+                        logService.error(`Failed to serialize file ${file.name} for sync`, e);
+                        return file;
+                    }
+                }
+                return file;
+            }));
+            return { ...msg, files: newFiles };
+        }));
+        return { ...session, messages: newMessages };
+    };
+
+    const pullItem = useCallback(async (type: string, id?: string, remoteTimestamp?: number) => {
+        const url = id ? `${syncServerUrl}/api/sync/pull?type=${type}&id=${id}` : `${syncServerUrl}/api/sync/pull?type=${type}`;
+        const response = await fetch(url);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!data) return;
+
+        if (type === 'session') {
+            let session = data as SavedChatSession;
+            session = rehydrateSyncedSession(session);
+
+            if (typeof setSavedSessions !== 'function') {
+                logService.error("setSavedSessions is not a function in pullItem");
+                return;
+            }
+            setSavedSessions(prev => {
+                const existing = prev.find(s => s.id === session.id);
+                const remoteUpdate = remoteTimestamp || session.updatedAt || session.timestamp || 0;
+                const localUpdate = existing ? (existing.updatedAt || existing.timestamp || 0) : -1;
+
+                if (!existing || remoteUpdate > localUpdate) {
+                    logService.info(`Syncing session: ${session.title}`);
+                    dbService.saveSession(session);
+                    return prev.some(s => s.id === session.id) 
+                        ? prev.map(s => s.id === session.id ? session : s)
+                        : [session, ...prev];
+                }
+                return prev;
+            });
+        } else if (type === 'groups') {
+            const groups = data as ChatGroup[];
+            if (!Array.isArray(groups)) return;
+            if (typeof setSavedGroups !== 'function') return;
+            
+            logService.info(`Syncing ${groups.length} groups from server.`);
+            dbService.setAllGroups(groups);
+            setSavedGroups(groups);
+        } else if (type === 'settings') {
+            const settings = data as AppSettings;
+            logService.info(`Syncing settings from server.`);
+            setAppSettings(settings);
+        } else if (type === 'scenarios') {
+            const scenarios = data as SavedScenario[];
+            if (!Array.isArray(scenarios)) return;
+            if (typeof setSavedScenarios !== 'function') return;
+
+            const SYSTEM_SCENARIO_IDS = [
+                'succinct-scenario-default', 
+                'socratic-scenario-default', 
+                'default-scenario-default', 
+                'Gemini3-scenario-default', 
+                'reasoner-scenario-default', 
+                'voxel-designer-scenario-default', 
+                'standard-prompt-scenario-default', 
+                'absolute-truth-scenario-default',
+                'demo-scenario-showcase'
+            ];
+            const userScenariosOnly = scenarios.filter(s => !SYSTEM_SCENARIO_IDS.includes(s.id));
+            
+            logService.info(`Syncing ${userScenariosOnly.length} user scenarios from server.`);
+            dbService.setAllScenarios(userScenariosOnly);
+            setSavedScenarios(userScenariosOnly);
+        }
+    }, [syncServerUrl, setSavedSessions, setSavedGroups, setAppSettings, setSavedScenarios, rehydrateSyncedSession]);
+
+    const pushItem = useCallback(async (type: string, data: any) => {
+        let syncData = data;
+        if (type === 'session') {
+            syncData = await prepareSessionForSync(data as SavedChatSession);
+        }
+
+        const response = await fetch(`${syncServerUrl}/api/sync/push`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, data: syncData })
+        });
+        if (!response.ok) throw new Error(`Push failed for ${type} (${response.status})`);
+    }, [syncServerUrl]);
+
+    const pullFromServer = useCallback(async () => {
+        if (!isSettingsLoaded || !isHistoryLoaded) {
+            logService.warn("Pull ignored: Settings or History not yet loaded.");
+            return;
+        }
+        setPullStatus('syncing');
+        try {
+            const metaRes = await fetch(`${syncServerUrl}/api/sync/metadata`);
+            if (!metaRes.ok) throw new Error("Server offline");
+            const metadata = await metaRes.json();
+
+            logService.info("Metadata from server:", metadata);
+
+            // 1. Pull Sessions
+            const sessionPullPromises = [];
+            for (const [id, remoteUpdatedAt] of Object.entries(metadata.sessions)) {
+                const localSession = savedSessions.find(s => s.id === id);
+                const localUpdate = localSession ? (localSession.updatedAt || localSession.timestamp || 0) : -1;
+                if (!localSession || (remoteUpdatedAt as number) > localUpdate) {
+                    sessionPullPromises.push(pullItem('session', id, remoteUpdatedAt as number));
+                }
+            }
+            await Promise.all(sessionPullPromises);
+
+            // 2. Pull Groups
+            const localGroupsMax = Math.max(...savedGroups.map(g => g.updatedAt || g.timestamp || 0), 0);
+            if (metadata.groups.updatedAt > localGroupsMax || (metadata.groups.updatedAt > 0 && savedGroups.length === 0)) {
+                await pullItem('groups');
+            }
+            // 3. Pull Settings
+            const localSettings = await dbService.getAppSettings();
+            if (metadata.settings.updatedAt > (localSettings?.updatedAt || 0)) {
+                await pullItem('settings');
+            }
+            // 4. Pull Scenarios
+            const localScenariosMax = Math.max(...savedScenarios.map(s => s.updatedAt || 0), 0);
+            if (metadata.scenarios.updatedAt > localScenariosMax || (metadata.scenarios.updatedAt > 0 && localScenariosMax === 0)) {
+                await pullItem('scenarios');
+            }
+
+            setPullStatus('success');
+            setLastPullTime(Date.now());
+            setTimeout(() => setPullStatus('idle'), 3000);
+        } catch (error) {
+            logService.error("Pull from server failed", { error });
+            setPullStatus('error');
+            setTimeout(() => setPullStatus('idle'), 5000);
+        }
+    }, [isSettingsLoaded, isHistoryLoaded, syncServerUrl, savedSessions, savedGroups, savedScenarios, pullItem]);
+
+    const pushToServer = useCallback(async () => {
+        if (!isSettingsLoaded || !isHistoryLoaded) {
+            logService.warn("Push ignored: Settings or History not yet loaded.");
+            return;
+        }
+        setPushStatus('syncing');
+        try {
+            const metaRes = await fetch(`${syncServerUrl}/api/sync/metadata`);
+            if (!metaRes.ok) throw new Error("Server offline");
+            const metadata = await metaRes.json();
+
+            let pushCount = 0;
+            let sessionFailCount = 0;
+
+            // 1. Push Sessions (Individual Items) - Atomic Try-Catch
+            for (const session of savedSessions) {
+                try {
+                    const remoteUpdate = metadata.sessions[session.id] || 0;
+                    const localUpdate = session.updatedAt || session.timestamp || 0;
+                    if (localUpdate > remoteUpdate) {
+                        await pushItem('session', session);
+                        pushCount++;
+                    }
+                } catch (e) {
+                    sessionFailCount++;
+                    logService.error(`Failed to push session: ${session.title}`, e);
+                }
+            }
+
+            // 2. Push Global State (Critical Files) - Separate calls to ensure partial success
+            const localGroupsMax = Math.max(...savedGroups.map(g => g.updatedAt || g.timestamp || 0), 0);
+            if (localGroupsMax > metadata.groups.updatedAt || metadata.groups.updatedAt === 0) {
+                try { await pushItem('groups', savedGroups); pushCount++; } catch(e) { logService.error("Failed to push groups", e); }
+            }
+
+            const localSettings = await dbService.getAppSettings();
+            if ((localSettings?.updatedAt || 0) > metadata.settings.updatedAt || metadata.settings.updatedAt === 0) {
+                try { await pushItem('settings', appSettings); pushCount++; } catch(e) { logService.error("Failed to push settings", e); }
+            }
+
+            const localScenariosMax = Math.max(...savedScenarios.map(s => s.updatedAt || 0), 0);
+            if (localScenariosMax > metadata.scenarios.updatedAt || metadata.scenarios.updatedAt === 0) {
+                try { await pushItem('scenarios', savedScenarios); pushCount++; } catch(e) { logService.error("Failed to push scenarios", e); }
+            }
+
+            if (sessionFailCount > 0) {
+                logService.warn(`Pushed ${pushCount} items, but ${sessionFailCount} sessions failed (likely too large).`);
+            } else {
+                logService.info(`Successfully pushed ${pushCount} items to server.`);
+            }
+
+            setPushStatus('success');
+            setLastPushTime(Date.now());
+            setTimeout(() => setPushStatus('idle'), 3000);
+        } catch (error) {
+            logService.error("Push to server failed", { error });
+            setPushStatus('error');
+            setTimeout(() => setPushStatus('idle'), 5000);
+        }
+    }, [isSettingsLoaded, isHistoryLoaded, syncServerUrl, savedSessions, savedGroups, savedScenarios, appSettings, pushItem]);
+
+    return {
+        pullStatus,
+        pushStatus,
+        lastPullTime,
+        lastPushTime,
+        pullFromServer,
+        pushToServer
+    };
+};

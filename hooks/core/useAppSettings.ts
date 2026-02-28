@@ -60,7 +60,8 @@ export const useAppSettings = () => {
     useEffect(() => {
         // Only save settings after they've been loaded to prevent overwriting stored settings with defaults.
         if (isSettingsLoaded) {
-            dbService.setAppSettings(appSettings).catch(e => logService.error("Failed to save settings", { error: e }));
+            const settingsWithTimestamp = { ...appSettings, updatedAt: Date.now() };
+            dbService.setAppSettings(settingsWithTimestamp).catch(e => logService.error("Failed to save settings", { error: e }));
         }
 
         applyThemeToDocument(document, currentTheme, appSettings);
@@ -79,5 +80,5 @@ export const useAppSettings = () => {
 
     }, [appSettings, currentTheme, isSettingsLoaded]);
 
-    return { appSettings, setAppSettings, currentTheme, language };
+    return { appSettings, setAppSettings, currentTheme, language, isSettingsLoaded };
 };

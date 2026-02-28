@@ -100,7 +100,12 @@ export const usePreloadedScenarios = ({
 
     const handleSaveAllScenarios = (updatedScenarios: SavedScenario[]) => {
         // Filter out the default scenarios so they are not saved to the user's database
-        const scenariosToSave = updatedScenarios.filter(s => !SYSTEM_SCENARIO_IDS.includes(s.id));
+        const now = Date.now();
+        const scenariosWithTimestamp = updatedScenarios.map(s => {
+            const prev = userSavedScenarios.find(ps => ps.id === s.id);
+            return prev !== s ? { ...s, updatedAt: now } : s;
+        });
+        const scenariosToSave = scenariosWithTimestamp.filter(s => !SYSTEM_SCENARIO_IDS.includes(s.id));
         setUserSavedScenarios(scenariosToSave);
         dbService.setAllScenarios(scenariosToSave).catch(error => {
             logService.error("Failed to save scenarios to DB", { error });
@@ -164,6 +169,7 @@ export const usePreloadedScenarios = ({
 
     return {
         savedScenarios,
+        setUserSavedScenarios,
         handleSaveAllScenarios,
         handleLoadPreloadedScenario,
     };

@@ -116,7 +116,7 @@ export const ThinkingControl: React.FC<ThinkingControlProps> = ({
                 </label>
                 {mode !== 'off' && (
                     <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--theme-bg-accent)]/10 text-[var(--theme-text-link)] border border-[var(--theme-bg-accent)]/20">
-                        {isGemini3 ? 'Gemini 3.0 Capabilities' : 'Reasoning Enabled'}
+                        {isGemini3 ? t('thinking_gemini3_capabilities') || 'Gemini 3.0 Capabilities' : t('settingsThinkingReasoningEnabled')}
                     </span>
                 )}
             </div>
@@ -140,6 +140,7 @@ export const ThinkingControl: React.FC<ThinkingControlProps> = ({
                             thinkingLevel={thinkingLevel}
                             setThinkingLevel={setThinkingLevel}
                             isFlash3={isFlash3}
+                            t={t}
                         />
                     )}
 
@@ -150,6 +151,7 @@ export const ThinkingControl: React.FC<ThinkingControlProps> = ({
                             maxBudget={maxBudget}
                             value={customBudgetValue}
                             onChange={handleCustomBudgetChange}
+                            t={t}
                         />
                     )}
 

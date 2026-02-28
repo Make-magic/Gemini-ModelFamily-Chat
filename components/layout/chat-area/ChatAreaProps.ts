@@ -136,5 +136,13 @@ export interface ChatAreaProps {
   // Side Panel
   onOpenSidePanel: (content: SideViewContent) => void;
 
+  // Sync Props
+  pullStatus: 'idle' | 'syncing' | 'success' | 'error';
+  pushStatus: 'idle' | 'syncing' | 'success' | 'error';
+  lastPullTime: number | null;
+  lastPushTime: number | null;
+  onPullFromServer: () => void;
+  onPushToServer: () => void;
+
   t: (key: keyof typeof translations, fallback?: string) => string;
 }

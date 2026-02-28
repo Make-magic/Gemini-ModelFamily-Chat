@@ -87,6 +87,7 @@ export interface ChatGroup {
   timestamp: number;
   isPinned?: boolean;
   isExpanded?: boolean;
+  updatedAt?: number;
 }
 
 export interface SavedChatSession {
@@ -97,6 +98,7 @@ export interface SavedChatSession {
   settings: ChatSettings;
   isPinned?: boolean;
   groupId?: string | null;
+  updatedAt?: number;
 }
 
 export interface PreloadedMessage {
@@ -110,6 +112,7 @@ export interface SavedScenario {
   title: string;
   messages: PreloadedMessage[];
   systemInstruction?: string;
+  updatedAt?: number;
 }
 
 export interface CommandInfo {

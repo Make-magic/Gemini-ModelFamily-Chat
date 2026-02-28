@@ -1,15 +1,17 @@
 
 import { ModelOption } from '../types';
 
-export const DEFAULT_MODEL_ID = 'gemini-3-flash-preview';
+export const DEFAULT_MODEL_ID = 'gemini-3.1-pro-preview';
 
 export const TAB_CYCLE_MODELS: string[] = [
+    'gemini-3.1-pro-preview',
     'gemini-3-flash-preview',
     'gemini-3-pro-preview',
     'gemini-2.5-pro',
 ];
 
 export const INITIAL_PINNED_MODELS: string[] = [
+    'gemini-3.1-pro-preview',
     'gemini-3-flash-preview',
     'gemini-3-pro-preview',
     'gemini-2.5-pro',
@@ -19,6 +21,8 @@ export const INITIAL_PINNED_MODELS: string[] = [
 ];
 
 export const GEMINI_3_RO_MODELS: string[] = [
+    'gemini-3.1-pro-preview',
+    'models/gemini-3.1-pro-preview',
     'gemini-3-pro-preview',
     'models/gemini-3-pro-preview',
     'gemini-3-flash-preview',
@@ -26,6 +30,8 @@ export const GEMINI_3_RO_MODELS: string[] = [
 ];
 
 export const MODELS_MANDATORY_THINKING = [
+    'gemini-3.1-pro-preview',
+    'models/gemini-3.1-pro-preview',
     'gemini-3-pro-preview',
     'models/gemini-3-pro-preview',
     'gemini-3-flash-preview',
@@ -45,6 +51,8 @@ export const DEFAULT_THINKING_LEVEL = 'HIGH';
 export const THINKING_BUDGET_RANGES: { [key: string]: { min: number; max: number } } = {
     'gemini-2.5-flash-preview-09-2025': { min: 0, max: 24576 },
     'gemini-2.5-pro': { min: 128, max: 32768 },
+    'gemini-3.1-pro-preview': { min: 32768, max: 32768 },
+    'models/gemini-3.1-pro-preview': { min: 32768, max: 32768 },
     'gemini-3-pro-preview': { min: 32768, max: 32768 },
     'models/gemini-3-pro-preview': { min: 32768, max: 32768 },
     'gemini-3-flash-preview': { min: 32768, max: 32768 },
@@ -76,6 +84,7 @@ export const STATIC_IMAGEN_MODELS: ModelOption[] = [
 ];
 
 export const AVAILABLE_TRANSCRIPTION_MODELS: { id: string; name: string }[] = [
+    { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro (Latest)' },
     { id: 'gemini-3-flash-preview', name: 'Gemini 3.0 Flash (Fastest)' },
     { id: 'gemini-3-pro-preview', name: 'Gemini 3.0 Pro' },
     { id: 'gemini-2.5-flash-preview-09-2025', name: 'Gemini 2.5 Flash' },

@@ -91,4 +91,5 @@ export interface AppSettings extends ChatSettings {
   autoCanvasModelId: string;
   isPasteRichTextAsMarkdownEnabled?: boolean;
   isPasteAsTextFileEnabled?: boolean;
+  updatedAt?: number;
 }

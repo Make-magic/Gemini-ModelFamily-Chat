@@ -24,6 +24,11 @@ export const sortModels = (models: ModelOption[]): ModelOption[] => {
             const weightB = getCategoryWeight(b.id);
             if (weightA !== weightB) return weightA - weightB;
 
+            const isA31 = a.id.includes('gemini-3.1');
+            const isB31 = b.id.includes('gemini-3.1');
+            if (isA31 && !isB31) return -1;
+            if (!isA31 && isB31) return 1;
+
             const isA3 = a.id.includes('gemini-3');
             const isB3 = b.id.includes('gemini-3');
             if (isA3 && !isB3) return -1;
@@ -59,7 +64,7 @@ export const getDefaultModelOptions = (): ModelOption[] => {
 export const isGemini3Model = (modelId: string): boolean => {
     if (!modelId) return false;
     const lowerId = modelId.toLowerCase();
-    return GEMINI_3_RO_MODELS.some(m => lowerId.includes(m)) || lowerId.includes('gemini-3-pro');
+    return GEMINI_3_RO_MODELS.some(m => lowerId.includes(m)) || lowerId.includes('gemini-3-pro') || lowerId.includes('gemini-3.1-pro');
 };
 
 // --- Model Settings Cache ---

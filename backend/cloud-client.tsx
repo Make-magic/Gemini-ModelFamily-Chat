@@ -356,7 +356,12 @@ class StreamHandler {
       if ((lowerKey === 'location' || lowerKey === 'x-goog-upload-url') && value.includes('googleapis.com')) {
           try {
               const urlObj = new URL(value);
-              const host = proxyHost || '127.0.0.1:8889'; // 您的默认端口
+              // Strict environment detection for proxy redirect
+              // @ts-ignore - import.meta.env is defined in Vite
+              const isDev = import.meta.env.DEV;
+              const currentPort = isDev ? '8889' : (window.location.port || '3000');
+              
+              const host = proxyHost || `${window.location.hostname}:${currentPort}`;
               const separator = urlObj.search ? '&' : '?';
               const newSearch = `${urlObj.search}${separator}__proxy_host__=${urlObj.host}`;
               const newUrl = `http://${host}${urlObj.pathname}${newSearch}`;

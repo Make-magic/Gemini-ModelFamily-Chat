@@ -212,6 +212,9 @@ export const dbService = {
   
   getActiveSessionId: () => getKeyValue<string | null>('activeSessionId'),
   setActiveSessionId: (id: string | null) => setKeyValue<string | null>('activeSessionId', id),
+
+  getLastSyncTime: () => getKeyValue<number>('lastSyncTime'),
+  setLastSyncTime: (time: number) => setKeyValue<number>('lastSyncTime', time),
   
   // Log specific
   addLogs,
