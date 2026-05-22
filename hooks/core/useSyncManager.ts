@@ -37,10 +37,10 @@ export const useSyncManager = ({
     const [lastPushTime, setLastPushTime] = useState<number | null>(null);
     
     // Strict environment detection using Vite's built-in env vars
-    // In DEV mode (npm run dev), we ALWAYS use port 8889 for the backend sync server.
+    // In DEV mode (npm run dev), we ALWAYS use port 8450 for the backend sync server.
     // In PROD mode (packaged EXE), we use the same port as the UI (window.location.port).
     const isDev = import.meta.env.DEV;
-    const syncPort = isDev ? '8889' : (window.location.port || '3000');
+    const syncPort = isDev ? '8450' : (window.location.port || '3000');
     const syncServerUrl = `${window.location.protocol}//${window.location.hostname}:${syncPort}`;
 
     // Helper to process session data after pull (convert Base64 back to Blobs)

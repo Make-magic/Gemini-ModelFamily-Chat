@@ -54,7 +54,7 @@ class ConnectionManager extends EventTarget {
   maxReconnectAttempts: number;
   reconnectAttempts: number;
 
-  constructor(endpoint = 'ws://127.0.0.1:9998') {
+  constructor(endpoint = 'ws://127.0.0.1:8430') {
     super();
     this.endpoint = endpoint;
     this.socket = null;
@@ -359,7 +359,7 @@ class StreamHandler {
               // Strict environment detection for proxy redirect
               // @ts-ignore - import.meta.env is defined in Vite
               const isDev = import.meta.env.DEV;
-              const currentPort = isDev ? '8889' : (window.location.port || '3000');
+              const currentPort = isDev ? '8450' : (window.location.port || '3000');
               
               const host = proxyHost || `${window.location.hostname}:${currentPort}`;
               const separator = urlObj.search ? '&' : '?';

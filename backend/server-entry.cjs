@@ -15,7 +15,7 @@ async function startProductionServer() {
 
     const server = new ProxyServerSystem({
         httpPort: PORT,
-        wsPort: 9998,
+        wsPort: 8430,
         host: HOST
     });
 

@@ -519,8 +519,8 @@ class ProxyServerSystem extends EventEmitter {
   constructor(config = {}) {
     super();
     this.config = {
-      httpPort: 8889,
-      wsPort: 9998,
+      httpPort: 8450,
+      wsPort: 8430,
       host: '0.0.0.0',
       ...config
     };
