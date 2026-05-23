@@ -1,10 +1,11 @@
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* Enhanced fadeInUp with 'settle' effect */
+
+/* 画卷展开 (Scroll Unrolling) - Dignified, unhurried entrance */
 @keyframes fadeInUp { 
-  0% { opacity: 0; transform: translateY(20px) scale(0.98); filter: blur(4px); } 
-  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } 
+  0% { opacity: 0; transform: translateY(4px); } 
+  100% { opacity: 1; transform: translateY(0); } 
 }
 
 /* Side Panel Slide In */
@@ -111,7 +112,8 @@
 .title-update-animate { animation: newTitlePulse 1.5s ease-out; }
 
 /* Message animation uses premium cubic-bezier */
-.message-container-animate { animation: fadeInUp 0.6s var(--ease-spring) both; }
+/* 水墨晕染节奏 - Ink diffusion rhythm for message entrance */
+.message-container-animate { animation: fadeInUp 0.7s var(--ease-ink-diffusion) both; }
 .welcome-message-animate { animation: fadeInUp 0.8s 0.1s var(--ease-out-expo) both; }
 .slide-in-right-animate { animation: slideInRight 0.4s var(--ease-out-expo) both; }
 

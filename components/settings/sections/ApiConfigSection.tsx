@@ -80,9 +80,9 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
           // Use the base API helper to get a client with sanitation logic
           const ai = getClient(firstKey, effectiveUrl);
           
-          // Using gemini-2.5-flash for a quick, cheap test
+          // Using gemini-3.5-flash for a quick, cheap test
           await ai.models.generateContent({
-              model: 'gemini-2.5-flash',
+              model: 'gemini-3.5-flash',
               contents: 'Hello',
           });
 

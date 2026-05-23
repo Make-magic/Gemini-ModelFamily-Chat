@@ -9,12 +9,12 @@ export const translateTextApi = async (apiKey: string, text: string, targetLangu
     try {
         const ai = await getConfiguredApiClient(apiKey);
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-lite',
+            model: 'gemini-3.1-flash-lite',
             contents: prompt,
             config: {
                 temperature: 0.1,
                 topP: 0.95,
-                thinkingConfig: { thinkingBudget: -1 },
+                thinkingConfig: { thinkingLevel: 'LOW' },
             }
         });
 
@@ -52,10 +52,10 @@ ASSISTANT: "${modelContent}"`;
     try {
         const ai = await getConfiguredApiClient(apiKey);
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-lite',
+            model: 'gemini-3.1-flash-lite',
             contents: prompt,
             config: {
-                thinkingConfig: { thinkingBudget: -1 }, // auto
+                thinkingConfig: { thinkingLevel: 'LOW' }, // auto
                 temperature: 0.8,
                 topP: 0.95,
                 responseMimeType: "application/json",
@@ -89,10 +89,10 @@ ASSISTANT: "${modelContent}"`;
             const ai = await getConfiguredApiClient(apiKey); // Re-get client
             const fallbackPrompt = `${prompt}\n\nReturn the three suggestions as a numbered list, one per line. Do not include any other text or formatting.`;
              const fallbackResponse = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-lite',
+                model: 'gemini-3.1-flash-lite',
                 contents: fallbackPrompt,
                 config: {
-                    thinkingConfig: { thinkingBudget: -1 },
+                    thinkingConfig: { thinkingLevel: 'LOW' },
                     temperature: 0.8,
                     topP: 0.95,
                 }
@@ -116,10 +116,10 @@ export const generateTitleApi = async (apiKey: string, userContent: string, mode
     try {
         const ai = await getConfiguredApiClient(apiKey);
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-lite',
+            model: 'gemini-3.1-flash-lite',
             contents: prompt,
             config: {
-                thinkingConfig: { thinkingBudget: -1 },
+                thinkingConfig: { thinkingLevel: 'LOW' },
                 temperature: 0.3,
                 topP: 0.9,
             }

@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { ModelOption } from '../../types';
 import { sortModels, getDefaultModelOptions } from '../../utils/appUtils';
 
-const CUSTOM_MODELS_KEY = 'custom_model_list_v1';
+const CUSTOM_MODELS_KEY = 'custom_model_list_v2';
 
 export const useModels = () => {
     // Initialize with persisted models or defaults
