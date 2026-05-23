@@ -2,25 +2,24 @@
 
 鉴于当前项目是一个纯前端的 Vite + React Web 应用，且明确要求**不是本地桌面应用（如 C#/C++）或 Electron 应用**，要将其打包为单一的 `.exe` 文件，最佳方案是使用 **Node.js 配合 `pkg`**。
 
-该方案的原理是：编写一个轻量级的 Node.js Web 服务器（如 Express）来托管 Vite 打包后的 `dist` 静态资源，然后使用 `pkg` 将这个 Node.js 服务器以及前端静态文件一并打包成一个独立的 `.exe` 可执行文件。用户双击运行该 `.exe` 时，会在本地启动服务器并自动在默认浏览器中打开网页。
+该方案的原理是：编写一个轻量级的 Node.js Web 服务器（如 Express）来托管 Vite 打包后的 `dist` 静态资源，然后使用 `pkg` 将这个 Node.js 服务器以及前端静态文件一并打包成一个独立的 `.exe` 可执行文件。用户双击运行该 `.exe` 时，会在本地启动服务器供访问。
 
 ## 1. 准备工作
 
-首先，安装所需的依赖：用于提供 Web 服务的 `express`、用于自动打开浏览器的 `open`，以及用于打包为 exe 的 `pkg`。
+首先，安装所需的依赖：用于提供 Web 服务的 `express`，以及用于打包为 exe 的 `pkg`。
 
 ```bash
-npm install express open
+npm install express
 npm install -D pkg
 ```
 
 ## 2. 创建服务器脚本
 
-在项目根目录下创建一个 `server.js` 文件，用于启动服务并托管 `dist` 目录：
+在项目根目录下创建一个 `server.cjs` 文件（注意后缀是 `.cjs`，这能避免与项目中 `package.json` 里的 `"type": "module"` 发生冲突），用于启动服务并托管 `dist` 目录：
 
 ```javascript
 const express = require('express');
 const path = require('path');
-const open = require('open');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,15 +28,12 @@ const PORT = process.env.PORT || 3000;
 app.use(express.static(path.join(__dirname, 'dist')));
 
 // 适配 SPA（单页面应用）前端路由
-app.get('*', (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-app.listen(PORT, async () => {
+app.listen(PORT, () => {
   console.log(`本地服务已启动: http://localhost:${PORT}`);
-  console.log('正在浏览器中打开...');
-  // 自动在系统默认浏览器中打开该地址
-  await open(`http://localhost:${PORT}`);
 });
 ```
 
@@ -49,7 +45,7 @@ app.listen(PORT, async () => {
 
 ```json
 {
-  "bin": "server.js",
+  "bin": "server.cjs",
   "pkg": {
     "assets": [
       "dist/**/*"
@@ -67,7 +63,7 @@ app.listen(PORT, async () => {
 npm run build
 
 # 2. 将 Node.js 服务与静态资源打包成单一的 Windows 可执行文件 (exe)
-npx pkg . --targets node18-win-x64 --output builds/app.exe
+npx pkg . --targets node18-win-x64 --output release/AMC.exe
 ```
 
 执行完毕后，您将在 `builds/` 目录下得到一个 `app.exe` 文件。双击该文件即可在非 Electron 且无需额外本地环境配置的情况下运行您的 Web 应用。
@@ -81,7 +77,7 @@ npx pkg . --targets node18-win-x64 --output builds/app.exe
 
 ```bash
 # 采用 Brotli 算法压缩构建
-npx pkg . --targets node18-win-x64 --compress Brotli --output builds/app.exe
+npx pkg . --targets node18-win-x64 --compress Brotli --output release/AMC.exe
 ```
 
 ### 方式二：使用 UPX 对生成的 exe 进行二进制压缩
