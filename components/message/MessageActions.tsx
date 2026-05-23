@@ -25,7 +25,7 @@ const UserIcon: React.FC = () => {
 
 const BotIcon: React.FC = () => {
     const size = useResponsiveValue(24, 29);
-    return <Bot size={size} className="text-[var(--theme-icon-model)] flex-shrink-0" strokeWidth={2} />;
+    return <img src="/icon/gemini_sparkle_aurora.svg" width={size} height={size} alt="Gemini" className="flex-shrink-0 object-contain" />;
 };
 
 const ErrorMsgIcon: React.FC = () => {
