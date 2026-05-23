@@ -102,7 +102,7 @@
 
 4.  **代理路由与请求重定向 (Proxy Routing)**:
     *   `geminiService` 调用底层 `baseApi`。
-    *   如果开启了“API Proxy”，`getConfiguredApiClient` 会将 SDK 的 `baseUrl` 重定向到本地运行的 `local-server.cjs`（通常是 `http://127.0.0.1:8889`）。
+    *   如果开启了“API Proxy”，`getConfiguredApiClient` 会将 SDK 的 `baseUrl` 重定向到本地运行的 `local-server.cjs`（通常是 `http://127.0.0.1:8450`）。
     *   **核心亮点**: 此时会进入“回弹模式”——本地 Node.js 服务接收请求，通过 WebSocket 传回给浏览器执行真实的 `fetch`，从而绕过跨域限制并确保 API 密钥的安全管理。
 
 5.  **原子化流式解析 (Streaming Execution)**:

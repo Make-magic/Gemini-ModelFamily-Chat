@@ -12,7 +12,7 @@ feat: Release 1.9.2-beta3
 ### 2. 环境自适应与端口感知 (Smart Port Sensing)
 - **严谨环境判定**: 引入 `import.meta.env.DEV` 代替模糊的端口猜测逻辑。
 - **双模式运行**: 
-  - **开发模式**: 强制后端同步 API 指向 `8889` 端口，彻底修复了 `npm run dev` 时因误连 3000 端口触发的 `SyntaxError: Unexpected token '<'`。
+  - **开发模式**: 强制后端同步 API 指向 `8450` 端口，彻底修复了 `npm run dev` 时因误连 3000 端口触发的 `SyntaxError: Unexpected token '<'`。
   - **生产模式**: 自动跟随当前 UI 端口，确保在不同局域网 IP 访问时同步功能依然可用。
 
 ### 3. 高吞吐量同步与原子化容错 (High-Capacity Sync)
