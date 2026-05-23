@@ -58,6 +58,24 @@ html, body, #root {
   --shadow-ink-deep: 0 12px 48px rgba(0, 0, 0, 0.5);
 }
 
+.theme-wenxin {
+  --shadow-ink: 0 4px 24px rgba(37, 35, 36, 0.05);
+  --shadow-ink-elevated: 0 8px 32px rgba(143, 75, 74, 0.06);
+  --shadow-ink-deep: 0 12px 48px rgba(37, 35, 36, 0.08);
+}
+
+.theme-gewu {
+  --shadow-ink: 0 4px 24px rgba(28, 35, 39, 0.04);
+  --shadow-ink-elevated: 0 8px 32px rgba(42, 92, 170, 0.06);
+  --shadow-ink-deep: 0 12px 48px rgba(28, 35, 39, 0.08);
+}
+
+.theme-jingshi {
+  --shadow-ink: 0 4px 24px rgba(54, 40, 43, 0.05);
+  --shadow-ink-elevated: 0 8px 32px rgba(67, 114, 114, 0.08);
+  --shadow-ink-deep: 0 12px 48px rgba(54, 40, 43, 0.08);
+}
+
 /* ============================================================
    宣纸噪点纹理 (Xuan Paper Noise Texture)
    仅浅色模式下可见，极低透明度 (<2%)
@@ -68,6 +86,18 @@ html, body, #root {
 
 .theme-onyx {
   --texture-xuan-paper: none;
+}
+
+.theme-wenxin {
+  --texture-xuan-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
+}
+
+.theme-gewu {
+  --texture-xuan-paper: none;
+}
+
+.theme-jingshi {
+  --texture-xuan-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
 }
 
 /* ============================================================
@@ -92,6 +122,36 @@ html, body, #root {
 .theme-onyx ::-moz-selection {
   background-color: rgba(36, 116, 111, 0.4);
   color: #D6ECF0;
+}
+
+/* 沉浸阅读：檀唇淡化 (Sandalwood Lip - diluted) */
+.theme-wenxin ::selection {
+  background-color: rgba(143, 75, 74, 0.25);
+  color: #252324;
+}
+.theme-wenxin ::-moz-selection {
+  background-color: rgba(143, 75, 74, 0.25);
+  color: #252324;
+}
+
+/* 极客理学：靛蓝淡化 (Indigo - diluted) */
+.theme-gewu ::selection {
+  background-color: rgba(42, 92, 170, 0.2);
+  color: #1C2327;
+}
+.theme-gewu ::-moz-selection {
+  background-color: rgba(42, 92, 170, 0.2);
+  color: #1C2327;
+}
+
+/* 经世致用：沧浪淡化 (Canglang - diluted) */
+.theme-jingshi ::selection {
+  background-color: rgba(67, 114, 114, 0.25);
+  color: #36282B;
+}
+.theme-jingshi ::-moz-selection {
+  background-color: rgba(67, 114, 114, 0.25);
+  color: #36282B;
 }
 
 /* ============================================================

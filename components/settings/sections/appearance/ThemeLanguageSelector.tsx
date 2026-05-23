@@ -6,8 +6,8 @@ import { IconThemeSystem, IconThemeDark, IconThemeLight } from '../../../icons/C
 import { useClickOutside } from '../../../../hooks/useClickOutside';
 
 interface ThemeLanguageSelectorProps {
-  themeId: 'system' | 'onyx' | 'pearl';
-  setThemeId: (value: 'system' | 'onyx' | 'pearl') => void;
+  themeId: 'system' | 'onyx' | 'pearl' | 'wenxin' | 'gewu' | 'jingshi';
+  setThemeId: (value: 'system' | 'onyx' | 'pearl' | 'wenxin' | 'gewu' | 'jingshi') => void;
   language: 'en' | 'zh' | 'system';
   setLanguage: (value: 'en' | 'zh' | 'system') => void;
   t: (key: keyof typeof translations) => string;
@@ -25,10 +25,13 @@ export const ThemeLanguageSelector: React.FC<ThemeLanguageSelectorProps> = ({
 
   useClickOutside(languageDropdownRef, () => setIsLanguageDropdownOpen(false), isLanguageDropdownOpen);
 
-  const themeOptions: { id: 'system' | 'onyx' | 'pearl'; labelKey: keyof typeof translations; icon: React.ReactNode }[] = [
+  const themeOptions: { id: 'system' | 'onyx' | 'pearl' | 'wenxin' | 'gewu' | 'jingshi'; labelKey: keyof typeof translations; icon: React.ReactNode }[] = [
     { id: 'system', labelKey: 'settingsThemeSystem', icon: <IconThemeSystem size={16} strokeWidth={1.5} /> },
     { id: 'onyx', labelKey: 'settingsThemeDark', icon: <IconThemeDark size={16} strokeWidth={1.5} /> },
     { id: 'pearl', labelKey: 'settingsThemeLight', icon: <IconThemeLight size={16} strokeWidth={1.5} /> },
+    { id: 'wenxin', labelKey: 'settingsThemeWenxin', icon: <IconThemeLight size={16} strokeWidth={1.5} /> },
+    { id: 'gewu', labelKey: 'settingsThemeGewu', icon: <IconThemeLight size={16} strokeWidth={1.5} /> },
+    { id: 'jingshi', labelKey: 'settingsThemeJingshi', icon: <IconThemeLight size={16} strokeWidth={1.5} /> },
   ];
 
   const languageOptions: { id: 'system' | 'en' | 'zh'; label: string; }[] = [
