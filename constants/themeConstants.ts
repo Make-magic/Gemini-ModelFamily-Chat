@@ -70,7 +70,7 @@ export const PEARL_THEME_COLORS: ThemeColors = {
   bgInput: '#F5F4EE',       // 素色 - Input area
   bgCodeBlock: '#EDEADF',   // 淡绢色 - Code block
   bgCodeBlockHeader: '#E4E0D2', // 略深绢色 - Code header
-  bgUserMessage: '#57C3C2', // 石绿 (Mineral Green) - User bubble
+  bgUserMessage: '#5D828A', // 石绿 (Mineral Green) - User bubble
   bgModelMessage: '#FFFFFF', // 纯白 - AI bubble
   bgErrorMessage: 'rgba(195, 39, 43, 0.08)',
   bgSuccess: 'rgba(69, 183, 135, 0.1)',
