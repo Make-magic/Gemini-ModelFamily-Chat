@@ -5,7 +5,9 @@ const path = require('path');
 const fs = require('fs').promises;
 const { EventEmitter } = require('events');
 
-const baseDir = path.join(__dirname, '..');
+const isPkg = typeof process.pkg !== 'undefined';
+// 如果是 pkg 打包环境，baseDir 为可执行文件所在目录；否则为项目根目录 (backend 的上一级)
+const baseDir = isPkg ? path.dirname(process.execPath) : path.join(__dirname, '..');
 
 class LoggingService {
   constructor(serviceName = 'SyncServer') {

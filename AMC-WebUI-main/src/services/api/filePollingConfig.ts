@@ -1,2 +1,0 @@
-export const POLLING_INTERVAL_MS = 2000;
-export const MAX_POLLING_DURATION_MS = 10 * 60 * 1000;
