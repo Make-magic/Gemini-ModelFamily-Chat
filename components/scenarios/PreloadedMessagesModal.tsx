@@ -61,10 +61,6 @@ export const PreloadedMessagesModal: React.FC<PreloadedMessagesModalProps> = ({
   };
 
   const handleLoadAndClose = (scenario: SavedScenario) => {
-    if (scenario.messages.length === 0 && (!scenario.systemInstruction || !scenario.systemInstruction.trim())) {
-      showFeedback('error', t('scenarios_feedback_empty'));
-      return;
-    }
     onLoadScenario(scenario);
     showFeedback('success', t('scenarios_feedback_loaded'));
     setTimeout(handleClose, 300);
