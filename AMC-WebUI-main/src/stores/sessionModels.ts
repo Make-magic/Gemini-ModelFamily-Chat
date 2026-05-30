@@ -1,0 +1,33 @@
+import { DEFAULT_MODEL_ID } from '@/constants/modelConfiguration';
+import type { SavedChatSession } from '@/types';
+import { resolveSupportedModelId } from '@/utils/modelSorting';
+
+export function sortSessionsInPlace<T extends Pick<SavedChatSession, 'isPinned' | 'timestamp'>>(sessions: T[]): T[] {
+  sessions.sort((leftSession, rightSession) => {
+    if (leftSession.isPinned && !rightSession.isPinned) return -1;
+    if (!leftSession.isPinned && rightSession.isPinned) return 1;
+    return rightSession.timestamp - leftSession.timestamp;
+  });
+  return sessions;
+}
+
+export function shouldRetainRuntimeMessages(
+  sessionId: string,
+  activeSessionId: string | null,
+  loadingSessionIds: Set<string>,
+) {
+  return sessionId === activeSessionId || loadingSessionIds.has(sessionId);
+}
+
+export function sanitizeSessionModel(
+  session: SavedChatSession,
+  fallbackModelId: string = DEFAULT_MODEL_ID,
+): SavedChatSession {
+  return {
+    ...session,
+    settings: {
+      ...session.settings,
+      modelId: resolveSupportedModelId(session.settings?.modelId, fallbackModelId),
+    },
+  };
+}

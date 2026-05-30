@@ -1,0 +1,181 @@
+import React, { useState } from 'react';
+import { Modal } from '@/components/shared/Modal';
+import { type UploadedFile, type VideoMetadata, type MediaResolution } from '@/types';
+import { FileConfigHeader } from './file-config/FileConfigHeader';
+import { ResolutionConfig } from './file-config/ResolutionConfig';
+import { VideoConfig } from './file-config/VideoConfig';
+import { FileConfigFooter } from './file-config/FileConfigFooter';
+import { getFileKindFlags } from '@/utils/fileTypeClassification';
+
+interface FileConfigurationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  file: UploadedFile | null;
+  onSave: (fileId: string, updates: { videoMetadata?: VideoMetadata; mediaResolution?: MediaResolution }) => void;
+  isGemini3: boolean;
+}
+
+interface FileConfigurationDraft {
+  startOffset: string;
+  endOffset: string;
+  fps: string;
+  mediaResolution: MediaResolution | '';
+}
+
+const buildDraft = (file: UploadedFile): FileConfigurationDraft => ({
+  startOffset: file.videoMetadata?.startOffset || '',
+  endOffset: file.videoMetadata?.endOffset || '',
+  fps: file.videoMetadata?.fps ? String(file.videoMetadata.fps) : '',
+  mediaResolution: file.mediaResolution || '',
+});
+
+const SECONDS_DURATION_PATTERN = /^\d+(?:\.\d{1,9})?s$/;
+const SECONDS_INPUT_PATTERN = /^\d+(?:\.\d{1,9})?$/;
+const TIMESTAMP_SECONDS_PATTERN = /^(\d+)(\.\d{1,9})?$/;
+
+const normalizeTimestampOffset = (value: string): string | undefined => {
+  const segments = value.split(':');
+  if (segments.length !== 2 && segments.length !== 3) {
+    return undefined;
+  }
+
+  const secondsMatch = segments[segments.length - 1].match(TIMESTAMP_SECONDS_PATTERN);
+  if (!secondsMatch) {
+    return undefined;
+  }
+
+  const leadingSegments = segments.slice(0, -1);
+  if (!leadingSegments.every((segment) => /^\d+$/.test(segment))) {
+    return undefined;
+  }
+
+  const boundedSegments = segments.length === 3 ? leadingSegments.slice(1) : [];
+  if (boundedSegments.some((segment) => Number(segment) >= 60)) {
+    return undefined;
+  }
+
+  const secondsWhole = Number(secondsMatch[1]);
+  if (secondsWhole >= 60) {
+    return undefined;
+  }
+
+  const hours = segments.length === 3 ? Number(segments[0]) : 0;
+  const minutes = Number(segments[segments.length - 2]);
+  const wholeSeconds = hours * 3600 + minutes * 60 + secondsWhole;
+
+  return `${wholeSeconds}${secondsMatch[2] || ''}s`;
+};
+
+const normalizeDurationOffset = (value: string): string | undefined => {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return undefined;
+  if (SECONDS_DURATION_PATTERN.test(trimmedValue)) return trimmedValue;
+  if (SECONDS_INPUT_PATTERN.test(trimmedValue)) return `${trimmedValue}s`;
+  return normalizeTimestampOffset(trimmedValue);
+};
+
+const normalizeVideoFps = (value: string): number | undefined => {
+  const fps = Number(value.trim());
+  return Number.isFinite(fps) && fps > 0 && fps <= 24 ? fps : undefined;
+};
+
+type FileConfigurationModalContentProps = Omit<FileConfigurationModalProps, 'file'> & {
+  file: UploadedFile;
+};
+
+const FileConfigurationModalContent: React.FC<FileConfigurationModalContentProps> = ({
+  isOpen,
+  onClose,
+  file,
+  onSave,
+  isGemini3,
+}) => {
+  const [draft, setDraft] = useState<FileConfigurationDraft>(() => buildDraft(file));
+  const { isVideo, isYoutube, isImage, isPdf } = getFileKindFlags(file);
+  const supportsVideoConfiguration = isVideo || isYoutube;
+
+  const handleSave = () => {
+    const updates: { videoMetadata?: VideoMetadata; mediaResolution?: MediaResolution } = {};
+
+    if (supportsVideoConfiguration) {
+      const metadata: VideoMetadata = {};
+      const normalizedStartOffset = normalizeDurationOffset(draft.startOffset);
+      const normalizedEndOffset = normalizeDurationOffset(draft.endOffset);
+
+      if (normalizedStartOffset) {
+        metadata.startOffset = normalizedStartOffset;
+      }
+
+      if (normalizedEndOffset) {
+        metadata.endOffset = normalizedEndOffset;
+      }
+
+      const normalizedFps = normalizeVideoFps(draft.fps);
+      if (normalizedFps) {
+        metadata.fps = normalizedFps;
+      }
+
+      if (Object.keys(metadata).length > 0) {
+        updates.videoMetadata = metadata;
+      } else if (file.videoMetadata) {
+        updates.videoMetadata = undefined;
+      }
+    }
+
+    if (isGemini3 && draft.mediaResolution) {
+      updates.mediaResolution = draft.mediaResolution as MediaResolution;
+    } else if (isGemini3 && file.mediaResolution && !draft.mediaResolution) {
+      updates.mediaResolution = undefined;
+    }
+
+    onSave(file.id, updates);
+    onClose();
+  };
+
+  const showResolutionSettings = isGemini3 && (isImage || supportsVideoConfiguration || isPdf);
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      contentClassName="bg-[var(--theme-bg-primary)] rounded-xl shadow-2xl max-w-md w-full border border-[var(--theme-border-primary)]"
+    >
+      <FileConfigHeader
+        onClose={onClose}
+        showResolutionSettings={showResolutionSettings}
+        isVideo={supportsVideoConfiguration}
+      />
+
+      <div className="p-6 space-y-6">
+        {showResolutionSettings && (
+          <ResolutionConfig
+            mediaResolution={draft.mediaResolution}
+            setMediaResolution={(value) => setDraft((prev) => ({ ...prev, mediaResolution: value }))}
+            allowUltraHigh={isImage}
+          />
+        )}
+
+        {supportsVideoConfiguration && (
+          <VideoConfig
+            startOffset={draft.startOffset}
+            setStartOffset={(value) => setDraft((prev) => ({ ...prev, startOffset: value }))}
+            endOffset={draft.endOffset}
+            setEndOffset={(value) => setDraft((prev) => ({ ...prev, endOffset: value }))}
+            fps={draft.fps}
+            setFps={(value) => setDraft((prev) => ({ ...prev, fps: value }))}
+          />
+        )}
+
+        <FileConfigFooter onClose={onClose} onSave={handleSave} />
+      </div>
+    </Modal>
+  );
+};
+
+export const FileConfigurationModal: React.FC<FileConfigurationModalProps> = (props) => {
+  const { file, isOpen } = props;
+
+  if (!file) return null;
+
+  return <FileConfigurationModalContent key={`${file.id}:${isOpen ? 'open' : 'closed'}`} {...props} file={file} />;
+};

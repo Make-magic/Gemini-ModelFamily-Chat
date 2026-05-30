@@ -1,0 +1,171 @@
+import { useEffect, useRef, type Dispatch, type SetStateAction } from 'react';
+import { type AppSettings, type ChatSettings as IndividualChatSettings, type UploadedFile } from '@/types';
+import { formatApiKeyErrorMessage, getGeminiKeyForRequest } from '@/utils/apiKeySelection';
+import { logService } from '@/services/logService';
+import { POLLING_INTERVAL_MS, MAX_POLLING_DURATION_MS } from '@/services/api/filePollingConfig';
+import { getFileMetadataApi } from '@/services/api/fileApi';
+import { useI18n } from '@/contexts/I18nContext';
+
+const MAX_POLLING_BACKOFF_MULTIPLIER = 8;
+
+const getFilePollingDelayMs = (failureCount: number): number => {
+  const multiplier = Math.min(MAX_POLLING_BACKOFF_MULTIPLIER, Math.pow(2, Math.max(0, failureCount)));
+  return POLLING_INTERVAL_MS * multiplier;
+};
+
+interface UseFilePollingProps {
+  appSettings: AppSettings;
+  selectedFiles: UploadedFile[];
+  setSelectedFiles: Dispatch<SetStateAction<UploadedFile[]>>;
+  currentChatSettings: IndividualChatSettings;
+}
+
+export const useFilePolling = ({
+  appSettings,
+  selectedFiles,
+  setSelectedFiles,
+  currentChatSettings,
+}: UseFilePollingProps) => {
+  const { t } = useI18n();
+  const pollingIntervals = useRef<Map<string, number>>(new Map());
+  const pollingInFlight = useRef<Set<string>>(new Set());
+  const pollingFailures = useRef<Map<string, number>>(new Map());
+  const lastPollingAttempt = useRef<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    const intervals = pollingIntervals.current;
+    const inFlight = pollingInFlight.current;
+    const failures = pollingFailures.current;
+    const lastAttempts = lastPollingAttempt.current;
+    const filesCurrentlyPolling = new Set(pollingIntervals.current.keys());
+    const filesThatShouldPoll = new Set(
+      selectedFiles
+        .filter((selectedFile) => selectedFile.uploadState === 'processing_api' && !selectedFile.error)
+        .map((selectedFile) => selectedFile.id),
+    );
+
+    // Stop polling for files that are no longer in the 'processing_api' state
+    for (const fileId of filesCurrentlyPolling) {
+      if (!filesThatShouldPoll.has(fileId)) {
+        window.clearInterval(pollingIntervals.current.get(fileId));
+        intervals.delete(fileId);
+        inFlight.delete(fileId);
+        failures.delete(fileId);
+        lastAttempts.delete(fileId);
+        logService.info(`Stopped polling for file ${fileId} as it is no longer in a processing state.`);
+      }
+    }
+
+    for (const fileId of filesThatShouldPoll) {
+      if (!filesCurrentlyPolling.has(fileId)) {
+        const fileToPoll = selectedFiles.find((selectedFile) => selectedFile.id === fileId);
+        if (!fileToPoll || !fileToPoll.fileApiName) continue;
+
+        logService.info(`Starting polling for file ${fileId} (${fileToPoll.fileApiName})`);
+
+        const startTime = Date.now();
+        const fileApiName = fileToPoll.fileApiName;
+
+        const poll = async () => {
+          if (pollingInFlight.current.has(fileId)) {
+            return;
+          }
+
+          const failureCount = pollingFailures.current.get(fileId) ?? 0;
+          const lastAttempt = lastPollingAttempt.current.get(fileId) ?? 0;
+          const now = Date.now();
+          if (lastAttempt > 0 && now - lastAttempt < getFilePollingDelayMs(failureCount)) {
+            return;
+          }
+
+          if (Date.now() - startTime > MAX_POLLING_DURATION_MS) {
+            logService.error(`Polling timed out for file ${fileApiName}`);
+            setSelectedFiles((prev) =>
+              prev.map((selectedFile) =>
+                selectedFile.id === fileId
+                  ? {
+                      ...selectedFile,
+                      error: t('fileProcessing_timed_out'),
+                      uploadState: 'failed',
+                      isProcessing: false,
+                    }
+                  : selectedFile,
+              ),
+            );
+            return;
+          }
+
+          pollingInFlight.current.add(fileId);
+          lastPollingAttempt.current.set(fileId, now);
+
+          // Optimize polling by not rotating keys unnecessarily.
+          // We reuse the current index/key to avoid burning through rotation turns on poll ticks.
+          const keyResult = getGeminiKeyForRequest(appSettings, currentChatSettings, { skipIncrement: true });
+          if ('error' in keyResult) {
+            logService.error(`Polling for ${fileApiName} stopped: ${keyResult.error}`);
+            const errorMessage = formatApiKeyErrorMessage(keyResult.error, t);
+            setSelectedFiles((prev) =>
+              prev.map((selectedFile) =>
+                selectedFile.id === fileId
+                  ? { ...selectedFile, error: errorMessage, uploadState: 'failed', isProcessing: false }
+                  : selectedFile,
+              ),
+            );
+            pollingInFlight.current.delete(fileId);
+            return;
+          }
+
+          try {
+            const metadata = await getFileMetadataApi(keyResult.key, fileApiName);
+            if (metadata?.state === 'ACTIVE') {
+              logService.info(`File ${fileApiName} is now ACTIVE.`);
+              pollingFailures.current.delete(fileId);
+              setSelectedFiles((prev) =>
+                prev.map((selectedFile) =>
+                  selectedFile.id === fileId
+                    ? { ...selectedFile, uploadState: 'active', isProcessing: false }
+                    : selectedFile,
+                ),
+              );
+            } else if (metadata?.state === 'FAILED') {
+              logService.error(`File ${fileApiName} processing FAILED on backend.`);
+              pollingFailures.current.delete(fileId);
+              setSelectedFiles((prev) =>
+                prev.map((selectedFile) =>
+                  selectedFile.id === fileId
+                    ? {
+                        ...selectedFile,
+                        error: t('fileProcessing_backend_failed'),
+                        uploadState: 'failed',
+                        isProcessing: false,
+                      }
+                    : selectedFile,
+                ),
+              );
+            } else {
+              pollingFailures.current.delete(fileId);
+            }
+          } catch (error) {
+            const nextFailureCount = (pollingFailures.current.get(fileId) ?? 0) + 1;
+            pollingFailures.current.set(fileId, nextFailureCount);
+            logService.warn(`Polling for ${fileApiName} failed with a key, will retry.`, { error });
+          } finally {
+            pollingInFlight.current.delete(fileId);
+          }
+        };
+
+        const intervalId = window.setInterval(poll, POLLING_INTERVAL_MS);
+        intervals.set(fileId, intervalId);
+        poll(); // Run immediately once
+      }
+    }
+
+    return () => {
+      intervals.forEach((intervalId) => window.clearInterval(intervalId));
+      intervals.clear();
+      inFlight.clear();
+      failures.clear();
+      lastAttempts.clear();
+    };
+  }, [selectedFiles, appSettings, currentChatSettings, setSelectedFiles, t]);
+};

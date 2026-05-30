@@ -1,0 +1,259 @@
+import { logService } from '@/services/logService';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { Loader2, Repeat } from 'lucide-react';
+import { type SideViewContent, type UploadedFile } from '@/types';
+import { MESSAGE_BLOCK_BUTTON_CLASS } from '@/constants/buttonClasses';
+import { DiagramWrapper } from './parts/DiagramWrapper';
+import { useI18n } from '@/contexts/I18nContext';
+
+const graphvizCache = new Map<string, string>();
+type VizInstance = {
+  renderSVGElement: (code: string) => SVGSVGElement | Promise<SVGSVGElement>;
+};
+
+let vizInstancePromise: Promise<VizInstance> | null = null;
+
+const loadVizInstance = async () => {
+  if (!vizInstancePromise) {
+    vizInstancePromise = import('@viz-js/viz')
+      .then(({ instance }) => instance())
+      .catch((error) => {
+        vizInstancePromise = null;
+        throw error;
+      });
+  }
+  return vizInstancePromise;
+};
+
+interface GraphvizBlockProps {
+  code: string;
+  onImageClick: (file: UploadedFile) => void;
+  isLoading: boolean;
+  themeId: string;
+  onOpenSidePanel: (content: SideViewContent) => void;
+  renderDelayMs?: number;
+}
+
+export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({
+  code,
+  onImageClick,
+  isLoading: isMessageLoading,
+  themeId,
+  onOpenSidePanel,
+  renderDelayMs = 500,
+}) => {
+  const { t } = useI18n();
+  const [manualLayout, setManualLayout] = useState<'LR' | 'TB' | null>(null);
+
+  const effectiveLayout = useMemo(() => {
+    if (manualLayout) return manualLayout;
+    const match = code.match(/rankdir\s*=\s*(["']?)(LR|TB|RL|BT)\1/i);
+    if (match) {
+      const dir = match[2].toUpperCase();
+      if (dir === 'TB' || dir === 'BT') return 'TB';
+      if (dir === 'LR' || dir === 'RL') return 'LR';
+    }
+    return 'LR';
+  }, [code, manualLayout]);
+
+  const cacheKey = useMemo(() => `${themeId}::${effectiveLayout}::${code}`, [themeId, effectiveLayout, code]);
+
+  const [svgContent, setSvgContent] = useState(() => graphvizCache.get(cacheKey) || '');
+  const [error, setError] = useState('');
+  const [isRendering, setIsRendering] = useState(() => !graphvizCache.has(cacheKey));
+
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [diagramFile, setDiagramFile] = useState<UploadedFile | null>(null);
+  const [showSource, setShowSource] = useState(false);
+
+  const diagramContainerRef = useRef<HTMLDivElement>(null);
+  const vizInstanceRef = useRef<VizInstance | null>(null);
+
+  useEffect(() => {
+    let isActive = true;
+
+    loadVizInstance()
+      .then((instance) => {
+        if (isActive) {
+          vizInstanceRef.current = instance;
+        }
+      })
+      .catch((error) => {
+        logService.error('Failed to initialize Viz', error);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const renderGraph = useCallback(async () => {
+    if (graphvizCache.has(cacheKey)) {
+      const cachedSvg = graphvizCache.get(cacheKey)!;
+      setSvgContent(cachedSvg);
+      setIsRendering(false);
+      setError('');
+
+      const id = `graphviz-svg-${Math.random().toString(36).substring(2, 9)}`;
+      const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(cachedSvg)))}`;
+      setDiagramFile({
+        id,
+        name: 'graphviz-diagram.svg',
+        type: 'image/svg+xml',
+        size: cachedSvg.length,
+        dataUrl: svgDataUrl,
+        uploadState: 'active',
+      });
+      return;
+    }
+
+    setIsRendering(true);
+
+    try {
+      if (!code) {
+        setSvgContent('');
+        setError('');
+        setIsRendering(false);
+        return;
+      }
+
+      if (!vizInstanceRef.current) {
+        vizInstanceRef.current = await loadVizInstance();
+      }
+
+      let processedCode = code;
+
+      const rankdirRegex = /(rankdir\s*=\s*)(["']?)(LR|TB|RL|BT)\2/gi;
+
+      if (rankdirRegex.test(processedCode)) {
+        processedCode = processedCode.replace(rankdirRegex, `$1"${effectiveLayout}"`);
+      } else {
+        const digraphMatch = processedCode.match(/(\s*(?:di)?graph\s+[\w\d_"]*\s*\{)/i);
+        if (digraphMatch) {
+          processedCode = processedCode.replace(digraphMatch[0], `${digraphMatch[0]}\n  rankdir="${effectiveLayout}";`);
+        }
+      }
+
+      const isDark = themeId === 'onyx';
+      const color = isDark ? '#e4e4e7' : '#374151';
+      const themeDefaults = `
+        graph [bgcolor="transparent" fontcolor="${color}" margin="0"];
+        node [color="${color}" fontcolor="${color}"];
+        edge [color="${color}" fontcolor="${color}"];
+      `;
+
+      const openBraceIndex = processedCode.indexOf('{');
+      if (openBraceIndex !== -1) {
+        processedCode =
+          processedCode.slice(0, openBraceIndex + 1) + themeDefaults + processedCode.slice(openBraceIndex + 1);
+      }
+
+      const vizInstance = vizInstanceRef.current;
+      if (!vizInstance) {
+        throw new Error('Graphviz renderer not initialized.');
+      }
+
+      const svgElement = await vizInstance.renderSVGElement(processedCode);
+
+      // Preserve intrinsic SVG dimensions so flex layouts do not collapse the diagram.
+      svgElement.style.maxWidth = '100%';
+      svgElement.style.height = 'auto';
+      svgElement.style.display = 'block';
+
+      const svgString = svgElement.outerHTML;
+      graphvizCache.set(cacheKey, svgString);
+      setSvgContent(svgString);
+
+      const id = `graphviz-svg-${Math.random().toString(36).substring(2, 9)}`;
+      const svgDataUrl = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
+
+      setDiagramFile({
+        id,
+        name: 'graphviz-diagram.svg',
+        type: 'image/svg+xml',
+        size: svgString.length,
+        dataUrl: svgDataUrl,
+        uploadState: 'active',
+      });
+
+      setError('');
+      setIsRendering(false);
+    } catch (error) {
+      if (isMessageLoading) {
+        setIsRendering(true);
+      } else {
+        const errorMessage = error instanceof Error ? error.message : t('diagram_render_graphviz_failed');
+        setError(errorMessage.replace(/.*error:\s*/, ''));
+        setSvgContent('');
+        setIsRendering(false);
+      }
+    }
+  }, [code, effectiveLayout, themeId, isMessageLoading, cacheKey, t]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const timeoutId = setTimeout(() => {
+      if (!isMounted) return;
+      renderGraph().catch((error) => {
+        logService.error('Failed to render Graphviz diagram', error);
+      });
+    }, renderDelayMs);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
+  }, [renderGraph, renderDelayMs]);
+
+  const handleToggleLayout = () => {
+    setManualLayout(effectiveLayout === 'LR' ? 'TB' : 'LR');
+  };
+
+  const handleDownloadJpg = async () => {
+    if (!svgContent || isDownloading) return;
+    setIsDownloading(true);
+    try {
+      const { exportSvgAsImage } = await import('@/utils/export/image');
+      await exportSvgAsImage(svgContent, `graphviz-diagram-${Date.now()}.jpg`, 5, 'image/jpeg');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : t('diagram_export_failed'));
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const layoutToggleBtn = (
+    <button
+      onClick={handleToggleLayout}
+      disabled={isRendering}
+      className={MESSAGE_BLOCK_BUTTON_CLASS}
+      title={t('diagram_toggle_layout').replace('{layout}', effectiveLayout)}
+    >
+      {isRendering ? <Loader2 size={14} className="animate-spin" /> : <Repeat size={14} />}
+    </button>
+  );
+
+  return (
+    <DiagramWrapper
+      title="Graphviz"
+      code={code}
+      error={error}
+      isRendering={isRendering}
+      isDownloading={isDownloading}
+      diagramFile={diagramFile}
+      showSource={showSource}
+      setShowSource={setShowSource}
+      onImageClick={onImageClick}
+      onDownloadJpg={handleDownloadJpg}
+      onOpenSidePanel={() => onOpenSidePanel({ type: 'graphviz', content: code, title: t('diagram_graphviz_title') })}
+      themeId={themeId}
+      containerRef={diagramContainerRef}
+      extraActions={layoutToggleBtn}
+    >
+      <div
+        className="w-full flex justify-center overflow-x-auto custom-scrollbar"
+        dangerouslySetInnerHTML={{ __html: svgContent }}
+      />
+    </DiagramWrapper>
+  );
+};

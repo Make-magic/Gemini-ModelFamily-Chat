@@ -1,0 +1,206 @@
+import { useCallback, type Dispatch, type SetStateAction } from 'react';
+import {
+  type AppSettings,
+  type ChatSettings as IndividualChatSettings,
+  type UploadedFile,
+  MediaResolution,
+} from '@/types';
+import { SUPPORTED_UPLOAD_MIME_TYPES } from '@/constants/fileTypeSupport';
+import { logService } from '@/services/logService';
+import { formatApiKeyErrorMessage, getGeminiKeyForRequest } from '@/utils/apiKeySelection';
+import { generateUniqueId } from '@/utils/chat/ids';
+import { getFileMetadataApi } from '@/services/api/fileApi';
+import {
+  createProcessingPlaceholderFile,
+  getUploadLifecycleForGeminiState,
+} from '@/utils/file-upload/fileUploadPolicy';
+import { useI18n } from '@/contexts/I18nContext';
+import { isVideoMimeType } from '@/utils/fileTypeClassification';
+import { isOpenAICompatibleApiActive } from '@/utils/openaiCompatibleMode';
+
+interface UseFileIdAdderProps {
+  appSettings: AppSettings;
+  setSelectedFiles: Dispatch<SetStateAction<UploadedFile[]>>;
+  setAppFileError: Dispatch<SetStateAction<string | null>>;
+  currentChatSettings: IndividualChatSettings;
+  setCurrentChatSettings: (updater: (prevSettings: IndividualChatSettings) => IndividualChatSettings) => void;
+  selectedFiles: UploadedFile[];
+}
+
+export const useFileIdAdder = ({
+  appSettings,
+  setSelectedFiles,
+  setAppFileError,
+  currentChatSettings,
+  setCurrentChatSettings,
+  selectedFiles,
+}: UseFileIdAdderProps) => {
+  const { t } = useI18n();
+
+  const translateApiKeyError = useCallback((error: string) => formatApiKeyErrorMessage(error, t), [t]);
+
+  const addFileById = useCallback(
+    async (fileApiId: string) => {
+      logService.info(`Attempting to add file by ID: ${fileApiId}`);
+      setAppFileError(null);
+      if (!fileApiId || !fileApiId.startsWith('files/')) {
+        logService.error('Invalid File ID format.', { fileApiId });
+        setAppFileError(t('fileIdAdder_invalidFileId'));
+        return;
+      }
+      if (selectedFiles.some((selectedFile) => selectedFile.fileApiName === fileApiId)) {
+        logService.warn(`File with ID ${fileApiId} is already added.`);
+        setAppFileError(t('fileIdAdder_duplicateFile').replace('{id}', fileApiId));
+        return;
+      }
+
+      // Adding file by ID is an explicit user action, we rotate key to be safe/fair
+      const keyResult = getGeminiKeyForRequest(appSettings, currentChatSettings);
+      if ('error' in keyResult) {
+        logService.error('Cannot add file by ID: API key not configured.');
+        setAppFileError(translateApiKeyError(keyResult.error));
+        return;
+      }
+      const { key: keyToUse, isNewKey } = keyResult;
+
+      if (isNewKey && !isOpenAICompatibleApiActive(appSettings)) {
+        logService.info('New API key selected for this session due to adding file by ID.');
+        setCurrentChatSettings((prev) => ({ ...prev, lockedApiKey: keyToUse }));
+      }
+
+      const tempId = generateUniqueId();
+      const defaultResolution =
+        currentChatSettings.mediaResolution !== MediaResolution.MEDIA_RESOLUTION_UNSPECIFIED
+          ? currentChatSettings.mediaResolution
+          : undefined;
+
+      setSelectedFiles((prev) => [
+        ...prev,
+        createProcessingPlaceholderFile({
+          id: tempId,
+          name: t('fileIdAdder_loadingFile').replace('{id}', fileApiId),
+          type: 'application/octet-stream',
+          size: 0,
+          progress: 50,
+          uploadState: 'processing_api',
+          fileApiName: fileApiId,
+          transferStrategy: 'remote-file-id',
+          mediaResolution: defaultResolution,
+        }),
+      ]);
+
+      try {
+        const fileMetadata = await getFileMetadataApi(keyToUse, fileApiId);
+        if (fileMetadata) {
+          logService.info(`Successfully fetched metadata for file ID ${fileApiId}`, { metadata: fileMetadata });
+          const mimeType = fileMetadata.mimeType ?? 'application/octet-stream';
+
+          // Allow known video types or generic octet-stream (often used for arbitrary files)
+          // But strictly validate if it is a supported type if it's not generic
+          const isValidType = SUPPORTED_UPLOAD_MIME_TYPES.includes(mimeType) || isVideoMimeType(mimeType);
+
+          if (!isValidType) {
+            logService.warn(`Unsupported file type for file ID ${fileApiId}`, { type: mimeType });
+            setSelectedFiles((prev) =>
+              prev.map((selectedFile) =>
+                selectedFile.id === tempId
+                  ? {
+                      ...selectedFile,
+                      name: fileMetadata.displayName || fileApiId,
+                      type: mimeType,
+                      size: Number(fileMetadata.sizeBytes) || 0,
+                      isProcessing: false,
+                      error: t('fileIdAdder_unsupportedType').replace('{type}', mimeType),
+                      uploadState: 'failed',
+                    }
+                  : selectedFile,
+              ),
+            );
+            return;
+          }
+          const { uploadState, isProcessing } = getUploadLifecycleForGeminiState(fileMetadata.state);
+          const newFile: UploadedFile = {
+            id: tempId,
+            name: fileMetadata.displayName || fileApiId,
+            type: mimeType,
+            size: Number(fileMetadata.sizeBytes) || 0,
+            fileUri: fileMetadata.uri,
+            fileApiName: fileMetadata.name || fileApiId,
+            transferStrategy: 'remote-file-id',
+            isProcessing,
+            progress: 100,
+            uploadState,
+            error: uploadState === 'failed' ? t('fileIdAdder_processingFailed') : undefined,
+            mediaResolution: defaultResolution,
+          };
+          setSelectedFiles((prev) => prev.map((selectedFile) => (selectedFile.id === tempId ? newFile : selectedFile)));
+        } else {
+          logService.error(`File with ID ${fileApiId} not found or inaccessible.`);
+          setAppFileError(t('fileIdAdder_notFound').replace('{id}', fileApiId));
+          setSelectedFiles((prev) =>
+            prev.map((selectedFile) =>
+              selectedFile.id === tempId
+                ? {
+                    ...selectedFile,
+                    name: t('fileIdAdder_notFoundLabel').replace('{id}', fileApiId),
+                    isProcessing: false,
+                    error: t('fileIdAdder_notFoundShort'),
+                    uploadState: 'failed',
+                  }
+                : selectedFile,
+            ),
+          );
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === 'SilentError') {
+          logService.error('Cannot add file by ID: API key not configured.');
+          const translatedApiError = t('apiRuntime_keyNotConfigured');
+          setAppFileError(translatedApiError);
+          setSelectedFiles((prev) =>
+            prev.map((selectedFile) =>
+              selectedFile.id === tempId
+                ? {
+                    ...selectedFile,
+                    name: t('fileIdAdder_configErrorLabel').replace('{id}', fileApiId),
+                    isProcessing: false,
+                    error: translatedApiError,
+                    uploadState: 'failed',
+                  }
+                : selectedFile,
+            ),
+          );
+          return;
+        }
+        logService.error(`Error fetching file metadata for ID ${fileApiId}`, { error });
+        setAppFileError(
+          t('fileIdAdder_fetchError').replace('{message}', error instanceof Error ? error.message : String(error)),
+        );
+        setSelectedFiles((prev) =>
+          prev.map((selectedFile) =>
+            selectedFile.id === tempId
+              ? {
+                  ...selectedFile,
+                  name: t('fileIdAdder_fetchErrorLabel').replace('{id}', fileApiId),
+                  isProcessing: false,
+                  error: t('fileIdAdder_fetchErrorShort'),
+                  uploadState: 'failed',
+                }
+              : selectedFile,
+          ),
+        );
+      }
+    },
+    [
+      appSettings,
+      currentChatSettings,
+      selectedFiles,
+      setAppFileError,
+      setCurrentChatSettings,
+      setSelectedFiles,
+      t,
+      translateApiKeyError,
+    ],
+  );
+
+  return { addFileById };
+};

@@ -76,6 +76,12 @@ html, body, #root {
   --shadow-ink-deep: 0 12px 48px rgba(54, 40, 43, 0.08);
 }
 
+.theme-classic-light {
+  --shadow-ink: 0 4px 24px rgba(0, 0, 0, 0.04);
+  --shadow-ink-elevated: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --shadow-ink-deep: 0 12px 48px rgba(0, 0, 0, 0.08);
+}
+
 /* ============================================================
    宣纸噪点纹理 (Xuan Paper Noise Texture)
    仅浅色模式下可见，极低透明度 (<2%)
@@ -98,6 +104,10 @@ html, body, #root {
 
 .theme-jingshi {
   --texture-xuan-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
+}
+
+.theme-classic-light {
+  --texture-xuan-paper: none;
 }
 
 /* ============================================================
@@ -152,6 +162,16 @@ html, body, #root {
 .theme-jingshi ::-moz-selection {
   background-color: rgba(67, 114, 114, 0.25);
   color: #36282B;
+}
+
+/* 经典浅色 (Classic Light) */
+.theme-classic-light ::selection {
+  background-color: rgba(37, 99, 235, 0.25); /* Blue 600 diluted */
+  color: #000000;
+}
+.theme-classic-light ::-moz-selection {
+  background-color: rgba(37, 99, 235, 0.25);
+  color: #000000;
 }
 
 /* ============================================================

@@ -7,6 +7,7 @@ export const appearanceSettings = {
     settingsThemeLight: { en: 'Light', zh: '水墨绢本' },
     settingsThemeWenxin: { en: 'Reading', zh: '文心雕龙' },
     settingsThemeGewu: { en: 'STEM', zh: '格物致知' },
+    settingsThemeClassicLight: { en: 'Classic Light', zh: '默认浅色' },
     settingsThemeJingshi: { en: 'Practical', zh: '经世致用' },
     settingsFontSize: { en: 'Base Font Size', zh: '基础字号' },
     settingsLanguage: { en: 'Language', zh: '语言' },

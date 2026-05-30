@@ -1,0 +1,13 @@
+FROM node:26-alpine AS runtime
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY server/dist /app/server/dist
+
+EXPOSE 3001
+
+CMD ["node", "server/dist/server/src/index.js"]

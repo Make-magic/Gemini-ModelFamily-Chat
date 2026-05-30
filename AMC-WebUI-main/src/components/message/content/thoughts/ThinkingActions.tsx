@@ -1,0 +1,58 @@
+import React from 'react';
+import { useI18n } from '@/contexts/I18nContext';
+import { Languages, Loader2, ClipboardCopy, Check } from 'lucide-react';
+
+interface ThinkingActionsProps {
+  isExpanded: boolean;
+  isShowingTranslation: boolean;
+  isTranslatingThoughts: boolean;
+  isCopied: boolean;
+  onTranslate: (e: React.MouseEvent) => void;
+  onCopy: (e: React.MouseEvent) => void;
+}
+
+export const ThinkingActions: React.FC<ThinkingActionsProps> = ({
+  isExpanded,
+  isShowingTranslation,
+  isTranslatingThoughts,
+  isCopied,
+  onTranslate,
+  onCopy,
+}) => {
+  const { t } = useI18n();
+  if (!isExpanded) return null;
+
+  return (
+    <div className="flex items-center gap-1 mr-1">
+      <button
+        onClick={onTranslate}
+        className={`
+                    p-1.5 rounded-lg
+                    text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]
+                    transition-all duration-200
+                    ${isShowingTranslation ? 'text-[var(--theme-text-link)]' : ''}
+                `}
+        title={isShowingTranslation ? t('thinking_show_original') : t('thinking_translate_to_chinese')}
+      >
+        {isTranslatingThoughts ? (
+          <Loader2 size={15} className="animate-spin" />
+        ) : (
+          <Languages size={15} strokeWidth={isShowingTranslation ? 2.5 : 2} />
+        )}
+      </button>
+
+      <button
+        onClick={onCopy}
+        className={`
+                    p-1.5 rounded-lg
+                    text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]
+                    transition-all duration-200
+                    ${isCopied ? 'text-[var(--theme-text-success)]' : ''}
+                `}
+        title={isCopied ? t('copied_button_title') : t('copy_button_title')}
+      >
+        {isCopied ? <Check size={15} strokeWidth={2.5} /> : <ClipboardCopy size={15} strokeWidth={2} />}
+      </button>
+    </div>
+  );
+};

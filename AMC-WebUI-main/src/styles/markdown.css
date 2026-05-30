@@ -1,0 +1,441 @@
+/* Markdown Body Overrides to prevent theme conflicts */
+.markdown-body {
+  background-color: transparent !important;
+  color: inherit !important;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  line-height: 1.8 !important; /* Increased line spacing */
+}
+
+.message-content-container .markdown-body {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.markdown-body h1 {
+  font-size: 1.8em !important;
+  font-weight: 800 !important;
+}
+.markdown-body h2 {
+  font-size: 1.55em !important;
+  font-weight: 750 !important;
+}
+.markdown-body h3 {
+  font-size: 1.3em !important;
+  font-weight: 700 !important;
+}
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  font-weight: 650 !important;
+}
+
+.markdown-body pre {
+  padding: 1rem !important;
+  border-radius: 0.75rem !important;
+  overflow-x: auto !important;
+  border: 1px solid var(--theme-border-secondary) !important;
+}
+
+.markdown-body strong {
+  color: var(--theme-text-primary) !important;
+  font-weight: 700 !important;
+}
+
+.markdown-body em {
+  font-style: italic;
+}
+
+.markdown-body .hljs {
+  display: block;
+  overflow-x: auto;
+  color: inherit;
+}
+
+.theme-onyx .hljs {
+  color: #e8eef6;
+}
+
+.theme-onyx .hljs-comment,
+.theme-onyx .hljs-quote {
+  color: #8b9bb4;
+}
+
+.theme-onyx .hljs-keyword,
+.theme-onyx .hljs-selector-tag,
+.theme-onyx .hljs-subst {
+  color: #ffb86c;
+}
+
+.theme-onyx .hljs-string,
+.theme-onyx .hljs-doctag,
+.theme-onyx .hljs-title,
+.theme-onyx .hljs-section,
+.theme-onyx .hljs-selector-id {
+  color: #7ee787;
+}
+
+.theme-onyx .hljs-number,
+.theme-onyx .hljs-literal,
+.theme-onyx .hljs-variable,
+.theme-onyx .hljs-template-variable,
+.theme-onyx .hljs-tag .hljs-attr {
+  color: #79c0ff;
+}
+
+.theme-onyx .hljs-built_in,
+.theme-onyx .hljs-type,
+.theme-onyx .hljs-symbol,
+.theme-onyx .hljs-bullet,
+.theme-onyx .hljs-link {
+  color: #d2a8ff;
+}
+
+.theme-pearl .hljs {
+  color: #243244;
+}
+
+.theme-pearl .hljs-comment,
+.theme-pearl .hljs-quote {
+  color: #6b7280;
+}
+
+.theme-pearl .hljs-keyword,
+.theme-pearl .hljs-selector-tag,
+.theme-pearl .hljs-subst {
+  color: #b45309;
+}
+
+.theme-pearl .hljs-string,
+.theme-pearl .hljs-doctag,
+.theme-pearl .hljs-title,
+.theme-pearl .hljs-section,
+.theme-pearl .hljs-selector-id {
+  color: #047857;
+}
+
+.theme-pearl .hljs-number,
+.theme-pearl .hljs-literal,
+.theme-pearl .hljs-variable,
+.theme-pearl .hljs-template-variable,
+.theme-pearl .hljs-tag .hljs-attr {
+  color: #1d4ed8;
+}
+
+.theme-pearl .hljs-built_in,
+.theme-pearl .hljs-type,
+.theme-pearl .hljs-symbol,
+.theme-pearl .hljs-bullet,
+.theme-pearl .hljs-link {
+  color: #7c3aed;
+}
+
+/* Tighter line height for headers */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  line-height: 1.3 !important;
+  margin-top: 1.5em !important;
+  margin-bottom: 0.5em !important;
+}
+
+/* Ensure first element doesn't push down the content, aligning text with avatar */
+.markdown-body > *:first-child,
+.is-loading > *:first-child {
+  margin-top: 0 !important;
+}
+
+/* Ensure last element doesn't push bottom content, aligning text with bubble bottom */
+.markdown-body > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Apply optimized fade-in-move animation to block elements */
+.markdown-body > * {
+  /* Animation removed to prevent re-triggering during virtualization scroll */
+  transform-origin: left bottom;
+}
+
+.markdown-body p {
+  color: inherit !important;
+  margin-bottom: 1em !important; /* Ensure paragraph spacing matches line height rhythm */
+}
+
+.markdown-body a {
+  color: var(--theme-text-link) !important;
+}
+
+.markdown-body pre {
+  background-color: var(--theme-bg-code-block) !important;
+  line-height: 1.5 !important; /* Keep code blocks tighter */
+}
+
+/* Blockquote Overrides */
+.markdown-body blockquote {
+  color: inherit !important; /* Inherit color to ensure high contrast in chat bubbles */
+  border-left: 3px solid currentColor !important; /* Use current text color for border */
+  background-color: transparent !important;
+  padding: 0.25rem 0 0.25rem 1rem !important;
+  margin: 0.5rem 0 !important;
+  opacity: 0.85; /* Slight dimming for differentiation, but keeping high readability */
+}
+
+.markdown-body details {
+  margin: 0.85rem 0;
+  border: 1px solid var(--theme-border-secondary);
+  border-radius: 0.85rem;
+  background-color: color-mix(in srgb, var(--theme-bg-tertiary) 24%, transparent);
+  overflow: hidden;
+}
+
+.markdown-body details > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0.7rem 0.9rem;
+  color: var(--theme-text-secondary);
+  font-weight: 600;
+  user-select: none;
+}
+
+.markdown-body details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.markdown-body details > summary::after {
+  content: '▾';
+  float: right;
+  color: var(--theme-text-tertiary);
+  transition: transform 0.2s ease;
+}
+
+.markdown-body details[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.markdown-body details > div {
+  padding: 0.8rem 0.9rem;
+  border-top: 1px solid var(--theme-border-secondary);
+  color: var(--theme-text-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.875em;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+/* Horizontal Rule (Thin Line) - Darker/More Visible */
+.markdown-body hr {
+  height: 1px !important;
+  background-color: var(--theme-text-tertiary) !important;
+  border: none !important;
+  margin: 1.5rem 0 !important;
+  opacity: 0.5 !important;
+}
+
+/* Ensure lists are visible */
+.markdown-body ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5em !important;
+  margin-bottom: 1em !important;
+}
+
+.markdown-body ul {
+  list-style-type: disc !important;
+  padding-left: 1.5em !important;
+  margin-bottom: 1em !important;
+}
+
+.markdown-body li {
+  display: list-item !important;
+  margin-bottom: 0.25em !important;
+}
+
+/* Images in Markdown */
+.markdown-body img {
+  max-width: 100%;
+  max-height: 320px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0.5rem 0;
+  background-color: var(--theme-bg-tertiary);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Highlight.js Overrides for seamless integration */
+.markdown-body pre code.hljs,
+code.hljs {
+  background-color: transparent !important;
+}
+
+/* Inline Code Styling - Emphasis */
+.markdown-body code:not(pre code) {
+  color: var(--theme-text-link) !important;
+  background-color: var(--theme-bg-info) !important;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  padding: 0.2em 0.4em;
+  border: 1px solid var(--theme-bg-info);
+  font-size: 0.9em;
+  line-height: 1.4; /* Slightly tighter for inline code tags */
+}
+
+/* Table Styles - Clean Minimalist Style (No Grid Borders) */
+.markdown-body table:not(.rich-html-table) {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 100%;
+  margin: 0; /* Handled by TableBlock wrapper */
+  background-color: transparent !important;
+  border: none !important;
+  table-layout: fixed;
+}
+
+.markdown-body table:not(.rich-html-table) caption {
+  caption-side: top;
+  color: inherit !important;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.875rem 1rem 0.25rem;
+}
+
+.markdown-body table:not(.rich-html-table) thead {
+  background-color: transparent !important;
+  border-bottom: 1px solid var(--theme-border-secondary) !important;
+}
+
+.markdown-body table:not(.rich-html-table) thead tr {
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.markdown-body table:not(.rich-html-table) thead th {
+  background-color: transparent !important;
+  color: inherit !important;
+  font-weight: 700;
+  padding: 0.875rem 1rem;
+  text-align: left;
+  border: none !important;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  vertical-align: top;
+  font-size: 0.95em;
+  opacity: 0.9;
+}
+
+.markdown-body table:not(.rich-html-table) tbody {
+  background-color: transparent !important;
+}
+
+/* Horizontal lines between rows */
+.markdown-body table:not(.rich-html-table) tbody tr {
+  background-color: transparent !important;
+  border-bottom: 1px solid var(--theme-border-secondary) !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+}
+
+/* Remove border from last row to avoid double border with container bottom if present, or just clean look */
+.markdown-body table:not(.rich-html-table) tbody tr:last-child {
+  border-bottom: none !important;
+}
+
+.markdown-body table:not(.rich-html-table) tbody tr:hover {
+  background-color: transparent !important; /* No hover effect for cleaner look, or maybe subtle */
+}
+
+.markdown-body table:not(.rich-html-table) tbody td {
+  padding: 1rem;
+  border: none !important;
+  color: inherit !important;
+  vertical-align: top;
+  background-color: transparent !important;
+  line-height: 1.6;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.markdown-body table.rich-html-table {
+  max-width: 100%;
+}
+
+/* Citation Styles */
+.citation-ref {
+  display: inline-block;
+  font-size: 0.75em;
+  font-weight: bold;
+  color: var(--theme-text-link) !important;
+  text-decoration: none !important;
+  vertical-align: super;
+  line-height: 1;
+  margin: 0 1px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.citation-ref:hover {
+  color: var(--theme-text-accent) !important;
+  text-decoration: underline !important;
+}
+
+/* Gemini Code Execution Result Styles */
+.tool-result {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  font-size: 0.85rem;
+  background-color: var(--theme-bg-code-block);
+  border-left: 3px solid var(--theme-border-secondary);
+  overflow-x: auto;
+  color: var(--theme-text-primary); /* Ensure default text is readable */
+}
+
+.tool-result.outcome-ok {
+  border-left-color: var(--theme-text-success);
+  background-color: rgba(22, 163, 74, 0.05);
+}
+
+.tool-result.outcome-failed,
+.tool-result.outcome-dead {
+  border-left-color: var(--theme-icon-error);
+  background-color: rgba(220, 38, 38, 0.05);
+}
+
+.tool-result strong {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--theme-text-secondary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+}
+
+/* Ensure pre/code blocks inside tool results are readable and handle overflow */
+.tool-result pre {
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--theme-text-primary) !important; /* Force primary text color */
+  font-family: inherit;
+  line-height: 1.5 !important;
+}
+
+/* Target the specific structure from CodeBlock if it's used inside tool-result */
+.tool-result .group.relative.rounded-lg {
+  border: 1px solid var(--theme-border-secondary);
+  background-color: var(--theme-bg-primary); /* Slightly elevate the code block */
+}

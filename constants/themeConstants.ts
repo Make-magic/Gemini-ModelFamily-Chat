@@ -286,12 +286,70 @@ export const JINGSHI_THEME_COLORS: ThemeColors = {
   iconHistory: '#665558',
 };
 
+export const CLASSIC_LIGHT_THEME_COLORS: ThemeColors = {
+  // Backgrounds
+  bgPrimary: '#FFFFFF',
+  bgSecondary: '#f9f9f9',
+  bgTertiary: '#ECECF1',
+  bgAccent: '#40414F',
+  bgAccentHover: '#202123',
+  bgDanger: '#DF3434',
+  bgDangerHover: '#B32929',
+  bgInput: '#FFFFFF',
+  bgCodeBlock: '#F7F7F8',
+  bgCodeBlockHeader: 'rgba(236, 236, 241, 0.9)',
+  bgUserMessage: '#f3f4f6', // Light Gray
+  bgModelMessage: '#FFFFFF', // White
+  bgErrorMessage: '#FEE',
+  bgSuccess: 'rgba(22, 163, 74, 0.1)',
+  textSuccess: '#16a34a',
+  bgInfo: 'rgba(64, 65, 79, 0.05)',
+  textInfo: '#40414F',
+  bgWarning: 'rgba(212, 167, 44, 0.1)',
+  textWarning: '#825F0A',
+
+  // Text
+  textPrimary: '#000000',
+  textSecondary: '#000000',
+  textTertiary: '#666666',
+  textAccent: '#FFFFFF',
+  textDanger: '#DF3434',
+  textLink: '#2563eb',
+  textCode: '#000000',
+  bgUserMessageText: '#000000',
+  bgModelMessageText: '#000000',
+  bgErrorMessageText: '#DF3434',
+
+  // Borders
+  borderPrimary: '#E5E5E5',
+  borderSecondary: '#D9D9E3',
+  borderFocus: '#40414F',
+
+  // Scrollbar
+  scrollbarThumb: '#D9D9E3',
+  scrollbarTrack: '#F7F7F8',
+
+  // Icons
+  iconUser: '#202123',
+  iconModel: '#10a37f',
+  iconError: '#DF3434',
+  iconThought: '#323232',
+  iconSettings: '#000000',
+  iconClearChat: '#FFFFFF',
+  iconSend: '#FFFFFF',
+  iconAttach: '#323232',
+  iconStop: '#FFFFFF',
+  iconEdit: '#323232',
+  iconHistory: '#000000',
+};
+
 export const AVAILABLE_THEMES: Theme[] = [
   { id: 'onyx', name: '千里江山 (Dark)', colors: ONYX_THEME_COLORS },
   { id: 'pearl', name: '水墨绢本 (Light)', colors: PEARL_THEME_COLORS },
   { id: 'wenxin', name: '文心雕龙 (Reading)', colors: WENXIN_THEME_COLORS },
   { id: 'gewu', name: '格物致知 (STEM)', colors: GEWU_THEME_COLORS },
   { id: 'jingshi', name: '经世致用 (Practical)', colors: JINGSHI_THEME_COLORS },
+  { id: 'classic-light', name: '默认浅色 (Classic Light)', colors: CLASSIC_LIGHT_THEME_COLORS },
 ];
 
-export const DEFAULT_THEME_ID = 'pearl';
+export const DEFAULT_THEME_ID = 'classic-light';

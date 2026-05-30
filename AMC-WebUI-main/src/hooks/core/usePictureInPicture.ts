@@ -1,0 +1,94 @@
+import { useState, useCallback, useRef } from 'react';
+import { logService } from '@/services/logService';
+
+export const usePictureInPicture = (
+  isHistorySidebarOpen: boolean,
+  setIsHistorySidebarOpenTransient: (value: boolean | ((prev: boolean) => boolean)) => void,
+) => {
+  const [isPipSupported] = useState(() => 'documentPictureInPicture' in window);
+  const [pipWindow, setPipWindow] = useState<Window | null>(null);
+  const [pipContainer, setPipContainer] = useState<HTMLElement | null>(null);
+  const sidebarStateBeforePipRef = useRef<boolean>(isHistorySidebarOpen);
+
+  const closePip = useCallback(() => {
+    if (pipWindow) {
+      // The 'pagehide' event listener handles the state cleanup and sidebar expansion
+      pipWindow.close();
+    }
+  }, [pipWindow]);
+
+  const openPip = useCallback(async () => {
+    if (!isPipSupported || pipWindow) return;
+
+    // Collapse sidebar when entering PiP mode
+    sidebarStateBeforePipRef.current = isHistorySidebarOpen;
+    setIsHistorySidebarOpenTransient(false);
+
+    try {
+      const pipWin = await window.documentPictureInPicture!.requestWindow({
+        width: 500, // A reasonable default width
+        height: 700, // A reasonable default height
+      });
+
+      // Copy head resources without executable scripts. React renders into this window via a portal.
+      Array.from(document.head.childNodes).forEach((node) => {
+        if (node.nodeName === 'SCRIPT') {
+          return;
+        }
+        pipWin.document.head.appendChild(node.cloneNode(true));
+      });
+
+      pipWin.document.title = 'AMC WebUI - PiP';
+      pipWin.document.body.className = document.body.className;
+      pipWin.document.body.style.margin = '0';
+      pipWin.document.body.style.overflow = 'hidden';
+
+      pipWin.document.documentElement.style.height = '100%';
+      pipWin.document.body.style.height = '100%';
+      pipWin.document.body.style.width = '100%';
+
+      const container = pipWin.document.createElement('div');
+      container.id = 'pip-root';
+      container.style.height = '100%';
+      container.style.width = '100%';
+      pipWin.document.body.appendChild(container);
+
+      // Listen for when the user closes the PiP window
+      pipWin.addEventListener(
+        'pagehide',
+        () => {
+          setPipWindow(null);
+          setPipContainer(null);
+          setIsHistorySidebarOpenTransient(sidebarStateBeforePipRef.current);
+          logService.info('PiP window closed.');
+        },
+        { once: true },
+      );
+
+      setPipWindow(pipWin);
+      setPipContainer(container);
+      logService.info('PiP window opened.');
+    } catch (error) {
+      logService.error('Error opening Picture-in-Picture window:', error);
+      setPipWindow(null);
+      setPipContainer(null);
+      setIsHistorySidebarOpenTransient(sidebarStateBeforePipRef.current);
+    }
+  }, [isHistorySidebarOpen, isPipSupported, pipWindow, setIsHistorySidebarOpenTransient]);
+
+  const togglePip = useCallback(() => {
+    if (pipWindow) {
+      closePip();
+    } else {
+      openPip();
+    }
+  }, [pipWindow, openPip, closePip]);
+
+  return {
+    isPipSupported,
+    isPipActive: !!pipWindow,
+    togglePip,
+    pipContainer,
+    pipWindow,
+  };
+};

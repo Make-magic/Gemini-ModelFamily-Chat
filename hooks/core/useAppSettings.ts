@@ -35,23 +35,23 @@ export const useAppSettings = () => {
     
     const [language, setLanguage] = useState<'en' | 'zh'>('en');
 
-    const [resolvedThemeId, setResolvedThemeId] = useState<'onyx' | 'pearl'>(() => {
+    const [resolvedThemeId, setResolvedThemeId] = useState<string>(() => {
         if (appSettings.themeId === 'system') {
-            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'onyx' : 'pearl';
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'onyx' : DEFAULT_THEME_ID;
         }
-        return appSettings.themeId as 'onyx' | 'pearl';
+        return appSettings.themeId;
     });
 
     useEffect(() => {
         if (appSettings.themeId === 'system') {
             const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            const updateTheme = () => setResolvedThemeId(mediaQuery.matches ? 'onyx' : 'pearl');
+            const updateTheme = () => setResolvedThemeId(mediaQuery.matches ? 'onyx' : DEFAULT_THEME_ID);
             
             updateTheme();
             mediaQuery.addEventListener('change', updateTheme);
             return () => mediaQuery.removeEventListener('change', updateTheme);
         } else {
-            setResolvedThemeId(appSettings.themeId as 'onyx' | 'pearl');
+            setResolvedThemeId(appSettings.themeId);
         }
     }, [appSettings.themeId]);
 
