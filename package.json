@@ -1,7 +1,7 @@
 {
   "name": "all-model-chat",
   "private": true,
-  "version": "1.9.3",
+  "version": "1.9.4",
   "type": "module",
   "bin": "server.cjs",
   "pkg": {
