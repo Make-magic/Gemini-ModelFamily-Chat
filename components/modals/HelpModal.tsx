@@ -34,7 +34,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, commands,
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose}>
+        <Modal isOpen={isOpen} onClose={onClose} ariaLabelledBy="help-modal-title">
             <div
                 className="bg-[var(--theme-bg-primary)] rounded-xl shadow-premium w-full max-w-md sm:max-w-2xl flex flex-col max-h-[85vh] sm:max-h-[650px] overflow-hidden border border-[var(--theme-border-primary)]"
                 role="document"

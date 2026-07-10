@@ -65,7 +65,7 @@ export const ScenarioMessageList: React.FC<ScenarioMessageListProps> = ({
                                     ? 'bg-[var(--theme-bg-accent)] text-[var(--theme-text-accent)] border-transparent' 
                                     : 'bg-[var(--theme-bg-secondary)] text-[var(--theme-text-primary)] border-[var(--theme-border-secondary)]'}
                             `}>
-                                {isUser ? <User size={14} strokeWidth={2.5} /> : <Bot size={14} strokeWidth={2.5} />}
+                                {isUser ? <User size={14} strokeWidth={2.5} /> : <img src="/icon/gemini_sparkle_aurora.svg" width={14} height={14} alt="Gemini" className="flex-shrink-0 object-contain" />}
                             </div>
 
                             {/* Bubble */}

@@ -28,7 +28,7 @@ export const Select: React.FC<SelectProps> = ({ id, label, children, labelConten
                 };
             }
             return null;
-        }).filter((opt): opt is { value: string, label: React.ReactNode, disabled?: boolean } => opt !== null);
+        }).filter((opt): opt is NonNullable<typeof opt> => opt !== null);
     }, [children]);
 
     const selectedOption = options.find(opt => String(opt.value) === String(value));

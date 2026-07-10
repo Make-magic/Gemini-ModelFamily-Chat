@@ -17,4 +17,9 @@ export const commonTranslations = {
     canvasHelperToggle: { en: 'Toggle Canvas', zh: '切换 Canvas' },
     pipEnter: { en: 'Enter Picture-in-Picture', zh: '进入画中画' },
     pipExit: { en: 'Exit Picture-in-Picture', zh: '退出画中画' },
+    a11y_generation_started: { en: 'Response generation started.', zh: '已开始生成回复。' },
+    a11y_generation_completed: { en: 'Response generation completed.', zh: '回复生成完成。' },
+    a11y_sync_pull_completed: { en: 'Sync pull completed.', zh: '同步拉取完成。' },
+    a11y_sync_push_completed: { en: 'Sync push completed.', zh: '同步推送完成。' },
+    a11y_sync_failed: { en: 'Sync failed.', zh: '同步失败。' },
 };

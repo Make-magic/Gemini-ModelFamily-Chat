@@ -1,39 +1,43 @@
 
 import { ModelOption } from '../types';
+import type { ThinkingLevel } from '../types/settings';
 
 export const DEFAULT_MODEL_ID = 'gemini-3.1-pro-preview';
 
 export const TAB_CYCLE_MODELS: string[] = [
+    'gemini-3.5-flash',
     'gemini-3.1-pro-preview',
     'gemini-3-flash-preview',
-    'gemini-3-pro-preview',
     'gemini-2.5-pro',
 ];
 
 export const INITIAL_PINNED_MODELS: string[] = [
+    'gemini-3.5-flash',
     'gemini-3.1-pro-preview',
     'gemini-3-flash-preview',
-    'gemini-3-pro-preview',
+    'gemini-3.1-flash-lite',
     'gemini-2.5-pro',
-    'gemini-2.5-flash-preview-09-2025',
-    'gemini-2.5-flash-lite-preview-09-2025',
     'gemini-2.5-flash-native-audio-preview-12-2025',
 ];
 
 export const GEMINI_3_RO_MODELS: string[] = [
+    'gemini-3.5-flash',
+    'models/gemini-3.5-flash',
     'gemini-3.1-pro-preview',
     'models/gemini-3.1-pro-preview',
-    'gemini-3-pro-preview',
-    'models/gemini-3-pro-preview',
+    'gemini-3.1-flash-lite',
+    'models/gemini-3.1-flash-lite',
     'gemini-3-flash-preview',
     'models/gemini-3-flash-preview',
 ];
 
 export const MODELS_MANDATORY_THINKING = [
+    'gemini-3.5-flash',
+    'models/gemini-3.5-flash',
     'gemini-3.1-pro-preview',
     'models/gemini-3.1-pro-preview',
-    'gemini-3-pro-preview',
-    'models/gemini-3-pro-preview',
+    'gemini-3.1-flash-lite',
+    'models/gemini-3.1-flash-lite',
     'gemini-3-flash-preview',
     'models/gemini-3-flash-preview',
     'gemini-2.5-pro',
@@ -46,18 +50,18 @@ export const THINKING_LEVELS = [
     { id: 'HIGH', name: 'High' },
 ];
 
-export const DEFAULT_THINKING_LEVEL = 'HIGH';
+export const DEFAULT_THINKING_LEVEL: ThinkingLevel = 'HIGH';
 
 export const THINKING_BUDGET_RANGES: { [key: string]: { min: number; max: number } } = {
-    'gemini-2.5-flash-preview-09-2025': { min: 0, max: 24576 },
     'gemini-2.5-pro': { min: 128, max: 32768 },
+    'gemini-3.5-flash': { min: 32768, max: 32768 },
+    'models/gemini-3.5-flash': { min: 32768, max: 32768 },
     'gemini-3.1-pro-preview': { min: 32768, max: 32768 },
     'models/gemini-3.1-pro-preview': { min: 32768, max: 32768 },
-    'gemini-3-pro-preview': { min: 32768, max: 32768 },
-    'models/gemini-3-pro-preview': { min: 32768, max: 32768 },
+    'gemini-3.1-flash-lite': { min: 32768, max: 32768 },
+    'models/gemini-3.1-flash-lite': { min: 32768, max: 32768 },
     'gemini-3-flash-preview': { min: 32768, max: 32768 },
     'models/gemini-3-flash-preview': { min: 32768, max: 32768 },
-    'gemini-2.5-flash-lite-preview-09-2025': { min: 512, max: 24576 },
     'gemini-2.5-flash-native-audio-preview-12-2025': { min: 0, max: 24576 },
 };
 
@@ -67,10 +71,11 @@ export const DEFAULT_SHOW_THOUGHTS = true;
 export const DEFAULT_THINKING_BUDGET = -1; // -1 for auto/unlimited budget
 export const DEFAULT_TTS_VOICE = 'Zephyr';
 
-export const DEFAULT_TRANSCRIPTION_MODEL_ID = 'gemini-2.5-flash-preview-09-2025';
-export const DEFAULT_TTS_MODEL_ID = 'gemini-2.5-flash-preview-tts';
+export const DEFAULT_TRANSCRIPTION_MODEL_ID = 'gemini-3-flash-preview';
+export const DEFAULT_TTS_MODEL_ID = 'gemini-3.1-flash-tts-preview';
 
 export const STATIC_TTS_MODELS: ModelOption[] = [
+    { id: 'gemini-3.1-flash-tts-preview', name: 'Gemini 3.1 Flash TTS', isPinned: true },
     { id: 'gemini-2.5-pro-preview-tts', name: 'Gemini 2.5 Pro TTS', isPinned: true },
     { id: 'gemini-2.5-flash-preview-tts', name: 'Gemini 2.5 Flash TTS', isPinned: true },
 ];
@@ -84,12 +89,11 @@ export const STATIC_IMAGEN_MODELS: ModelOption[] = [
 ];
 
 export const AVAILABLE_TRANSCRIPTION_MODELS: { id: string; name: string }[] = [
+    { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash (Fastest)' },
     { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro (Latest)' },
-    { id: 'gemini-3-flash-preview', name: 'Gemini 3.0 Flash (Fastest)' },
-    { id: 'gemini-3-pro-preview', name: 'Gemini 3.0 Pro' },
-    { id: 'gemini-2.5-flash-preview-09-2025', name: 'Gemini 2.5 Flash' },
+    { id: 'gemini-3-flash-preview', name: 'Gemini 3.0 Flash' },
+    { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite' },
     { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Higher Quality)' },
-    { id: 'gemini-2.5-flash-lite-preview-09-2025', name: 'Gemini 2.5 Flash Lite' },
     { id: 'gemini-2.5-flash-native-audio-preview-12-2025', name: 'Gemini 2.5 Flash Native Audio' },
 ];
 

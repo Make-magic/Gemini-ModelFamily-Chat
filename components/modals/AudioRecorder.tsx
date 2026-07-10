@@ -52,13 +52,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onRecord, onCancel
         <Modal 
             isOpen={true} 
             onClose={onCancel}
+            ariaLabelledBy="audio-recorder-title"
             backdropClassName="bg-black/80 backdrop-blur-sm"
             contentClassName="w-full max-w-md bg-[var(--theme-bg-secondary)] rounded-2xl shadow-2xl overflow-hidden border border-[var(--theme-border-primary)]"
             noPadding
         >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)]">
-                <h2 className="text-base font-semibold text-[var(--theme-text-primary)]">
+                <h2 id="audio-recorder-title" className="text-base font-semibold text-[var(--theme-text-primary)]">
                     {viewState === 'review' ? 'Preview Recording' : 'Voice Recorder'}
                 </h2>
                 <button onClick={onCancel} className="text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] transition-colors">

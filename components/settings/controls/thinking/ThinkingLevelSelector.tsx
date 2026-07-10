@@ -1,10 +1,11 @@
 
 import { Gauge, Feather, Zap, Sparkles, Cpu } from 'lucide-react';
 import { LevelButton } from './LevelButton';
+import type { ThinkingLevel } from '../../../../types/settings';
 
 interface ThinkingLevelSelectorProps {
-    thinkingLevel: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH' | undefined;
-    setThinkingLevel: (level: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH') => void;
+    thinkingLevel: ThinkingLevel | undefined;
+    setThinkingLevel: (level: ThinkingLevel) => void;
     isFlash3: boolean;
     t: (key: string) => string;
 }

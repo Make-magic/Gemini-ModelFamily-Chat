@@ -1,4 +1,5 @@
 import { getConfiguredApiClient } from '../baseApi';
+import { toGeminiThinkingLevel } from '../geminiAdapter';
 import { logService } from "../../logService";
 import { Part } from "@google/genai";
 import { fileToBase64 } from "../../../utils/appUtils";
@@ -87,7 +88,7 @@ export const transcribeAudioApi = async (apiKey: string, audioFile: File, modelI
         if (modelId.includes('gemini-3')) {
             config.thinkingConfig = {
                 includeThoughts: false,
-                thinkingLevel: "LOW"
+                thinkingLevel: toGeminiThinkingLevel('LOW')
             };
         } else if (modelId === 'gemini-2.5-pro') {
             config.thinkingConfig = {

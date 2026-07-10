@@ -65,10 +65,12 @@ export const useChatInputModals = ({
     };
 
     try {
-        // @ts-ignore
-        if (typeof ImageCapture !== 'undefined') {
-             // @ts-ignore
-            const imageCapture = new ImageCapture(track);
+        const ImageCaptureConstructor = (globalThis as unknown as {
+            ImageCapture?: new (videoTrack: MediaStreamTrack) => { grabFrame: () => Promise<ImageBitmap> };
+        }).ImageCapture;
+
+        if (ImageCaptureConstructor) {
+            const imageCapture = new ImageCaptureConstructor(track);
             const bitmap = await imageCapture.grabFrame();
             const canvas = document.createElement('canvas');
             canvas.width = bitmap.width;

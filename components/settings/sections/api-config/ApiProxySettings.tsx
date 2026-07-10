@@ -2,13 +2,17 @@
 import React from 'react';
 import { AlertCircle, ArrowRight, Sparkles, RotateCcw } from 'lucide-react';
 import { Toggle } from '../../../shared/Toggle';
+import { Select } from '../../../shared/Select';
 import { SETTINGS_INPUT_CLASS } from '../../../../constants/appConstants';
+import { AVAILABLE_TRANSCRIPTION_MODELS } from '../../../../constants/modelConstants';
 
 interface ApiProxySettingsProps {
     useApiProxy: boolean;
     setUseApiProxy: (value: boolean) => void;
     apiProxyUrl: string | null;
     setApiProxyUrl: (value: string | null) => void;
+    testModel: string;
+    setTestModel: (value: string) => void;
     t: (key: string) => string;
 }
 
@@ -17,6 +21,8 @@ export const ApiProxySettings: React.FC<ApiProxySettingsProps> = ({
     setUseApiProxy,
     apiProxyUrl,
     setApiProxyUrl,
+    testModel,
+    setTestModel,
     t
 }) => {
     const inputBaseClasses = "w-full p-3 rounded-lg border transition-all duration-200 focus:ring-2 focus:ring-offset-0 text-sm custom-scrollbar font-mono";
@@ -48,7 +54,7 @@ export const ApiProxySettings: React.FC<ApiProxySettingsProps> = ({
 
     const currentBaseUrl = apiProxyUrl?.trim() || defaultBaseUrl;
     const cleanBaseUrl = currentBaseUrl.replace(/\/+$/, '');
-    const previewUrl = `${cleanBaseUrl}/models/gemini-2.5-flash:generateContent`;
+    const previewUrl = `${cleanBaseUrl}/models/${testModel}:generateContent`;
 
     return (
         <div className="space-y-3 pt-2">
@@ -98,6 +104,21 @@ export const ApiProxySettings: React.FC<ApiProxySettingsProps> = ({
                     placeholder={getProxyPlaceholder()}
                     aria-label="API Proxy URL"
                 />
+
+                <div className="mt-3">
+                    <Select
+                        id="test-model-select"
+                        label="Test Connection Model"
+                        value={testModel}
+                        onChange={(e) => setTestModel(e.target.value)}
+                    >
+                        {AVAILABLE_TRANSCRIPTION_MODELS.map(model => (
+                            <option key={model.id} value={model.id}>
+                                {model.name}
+                            </option>
+                        ))}
+                    </Select>
+                </div>
 
                 <div className="mt-3 p-3 rounded-lg bg-[var(--theme-bg-tertiary)]/30 border border-[var(--theme-border-secondary)]">
                     <div className="flex gap-2 text-xs text-[var(--theme-text-tertiary)] mb-1.5">

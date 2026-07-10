@@ -2,8 +2,9 @@ import { GoogleGenAI, Modality } from "@google/genai";
 import { logService } from "../logService";
 import { dbService } from '../../utils/db';
 import { DEEP_SEARCH_SYSTEM_PROMPT } from "../../constants/promptConstants";
-import { SafetySetting, MediaResolution } from "../../types/settings";
+import { SafetySetting, MediaResolution, ThinkingLevel } from "../../types/settings";
 import { isGemini3Model } from "../../utils/appUtils";
+import { toGeminiThinkingLevel } from './geminiAdapter';
 
 
 const POLLING_INTERVAL_MS = 2000; // 2 seconds
@@ -99,7 +100,7 @@ export const buildGenerationConfig = (
     isGoogleSearchEnabled?: boolean,
     isCodeExecutionEnabled?: boolean,
     isUrlContextEnabled?: boolean,
-    thinkingLevel?: 'LOW' | 'HIGH',
+    thinkingLevel?: ThinkingLevel,
     aspectRatio?: string,
     isDeepSearchEnabled?: boolean,
     imageSize?: string,
@@ -183,7 +184,7 @@ export const buildGenerationConfig = (
         if (thinkingBudget > 0) {
             generationConfig.thinkingConfig.thinkingBudget = thinkingBudget;
         } else {
-            generationConfig.thinkingConfig.thinkingLevel = thinkingLevel || 'HIGH';
+            generationConfig.thinkingConfig.thinkingLevel = toGeminiThinkingLevel(thinkingLevel);
         }
     } else {
         const modelSupportsThinking = [

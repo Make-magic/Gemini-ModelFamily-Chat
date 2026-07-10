@@ -48,7 +48,7 @@ export interface MessageListProps {
   currentModelId: string;
   onOpenSidePanel: (content: SideViewContent) => void;
   onQuote: (text: string) => void;
-  onEditMessageContent: (message: ChatMessage) => void;
+  onEditMessageContent: (messageId: string, newContent: string) => void;
   exportStatus?: 'idle' | 'exporting';
 }
 
@@ -94,7 +94,6 @@ export const MessageList: React.FC<MessageListProps> = ({
         onScroll={onScrollContainerScroll}
         className={`relative flex-grow overflow-y-auto px-1.5 sm:px-2 md:px-3 py-3 sm:py-4 md:py-6 custom-scrollbar ${themeId === 'pearl' ? 'bg-[var(--theme-bg-primary)]' : 'bg-[var(--theme-bg-secondary)]'}`}
         style={{ paddingBottom: chatInputHeight ? `${chatInputHeight + 16}px` : '160px' }}
-        aria-live="polite"
       >
         <TextSelectionToolbar onQuote={onQuote} containerRef={scrollContainerRef} />
 

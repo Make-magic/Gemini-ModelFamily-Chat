@@ -3,6 +3,7 @@ import { ChatSettings, MediaResolution } from './settings';
 import { ThemeColors } from './theme';
 import { AppSettings, ModelOption } from './settings';
 import { translations } from '../utils/appUtils';
+import type { Part } from '@google/genai';
 
 export interface VideoMetadata {
   startOffset?: string;
@@ -30,6 +31,9 @@ export interface UploadedFile {
   uploadSpeed?: string; // Added for upload speed display
   videoMetadata?: VideoMetadata; // Added for video clipping
   mediaResolution?: MediaResolution; // Added for Gemini 3 per-part resolution
+  syncData?: string;
+  syncBlobId?: string;
+  syncBlobSize?: number;
 }
 
 export interface InputCommand {
@@ -65,21 +69,8 @@ export interface ChatMessage {
   excludeFromContext?: boolean; // Added to exclude message from API history context
 }
 
-// Defines the structure for a part of a content message
-export interface ContentPart {
-  text?: string;
-  inlineData?: {
-    mimeType: string;
-    data: string;
-  };
-  fileData?: { // Added for referencing uploaded files like PDFs
-    mimeType?: string; // Optional for YouTube URLs
-    fileUri: string;
-  };
-  videoMetadata?: VideoMetadata;
-  thoughtSignature?: string; // Added to pass back to API
-  mediaResolution?: { level: string }; // Added for Gemini 3 per-part resolution
-}
+// Keep request parts aligned with the installed SDK while exposing a project name.
+export type ContentPart = Part;
 
 export interface ChatGroup {
   id: string;

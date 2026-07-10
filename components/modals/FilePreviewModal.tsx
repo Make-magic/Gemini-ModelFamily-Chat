@@ -8,6 +8,7 @@ import { SUPPORTED_IMAGE_MIME_TYPES } from '../../constants/fileConstants';
 import { FilePreviewHeader } from '../shared/file-preview/FilePreviewHeader';
 import { ImageViewer } from '../shared/file-preview/ImageViewer';
 import { TextFileViewer } from '../shared/file-preview/TextFileViewer';
+import { FOCUS_VISIBLE_RING_CLASS } from '../../constants/appConstants';
 
 interface FilePreviewModalProps {
   file: UploadedFile | null;
@@ -86,7 +87,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
   const isAudio = file.type.startsWith('audio/');
   const isText = !isImage && (file.type.startsWith('text/') || file.type === 'application/json' || file.type.includes('javascript') || file.type.includes('xml'));
 
-  const navButtonClass = "absolute top-1/2 -translate-y-1/2 p-2 bg-black/20 hover:bg-black/60 text-white/70 hover:text-white rounded-full backdrop-blur-md transition-all active:scale-95 z-50 focus:outline-none";
+  const navButtonClass = `absolute top-1/2 -translate-y-1/2 p-2 bg-black/20 hover:bg-black/60 text-white/70 hover:text-white rounded-full backdrop-blur-md transition-all active:scale-95 z-50 ${FOCUS_VISIBLE_RING_CLASS}`;
 
   const getYoutubeEmbedUrl = (url: string) => {
       if (!url) return null;
@@ -99,6 +100,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
     <Modal
       isOpen={!!file}
       onClose={onClose}
+      ariaLabelledBy="file-preview-modal-title"
       noPadding
       backdropClassName="bg-black/95 backdrop-blur-sm"
       contentClassName="w-full h-full"

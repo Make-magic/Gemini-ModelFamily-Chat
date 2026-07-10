@@ -3,7 +3,7 @@ import React from 'react';
 import { ModelOption, SafetySetting } from '../../../types';
 import { ModelVoiceSettings } from '../ModelVoiceSettings';
 import { SafetySection } from './SafetySection';
-import { MediaResolution } from '../../../types/settings';
+import { MediaResolution, ThinkingLevel } from '../../../types/settings';
 import { ToggleItem } from '../../shared/ToggleItem';
 import { Select } from '../../shared/Select';
 import { Wand2 } from 'lucide-react';
@@ -26,8 +26,8 @@ interface ChatBehaviorSectionProps {
     setTopP: (value: number) => void;
     thinkingBudget: number;
     setThinkingBudget: (value: number) => void;
-    thinkingLevel?: 'LOW' | 'HIGH';
-    setThinkingLevel?: (value: 'LOW' | 'HIGH') => void;
+    thinkingLevel?: ThinkingLevel;
+    setThinkingLevel?: (value: ThinkingLevel) => void;
     showThoughts: boolean;
     setShowThoughts: (value: boolean) => void;
     safetySettings?: SafetySetting[];
@@ -102,9 +102,9 @@ export const ChatBehaviorSection: React.FC<ChatBehaviorSectionProps> = (props) =
                         onChange={(e) => props.setAutoCanvasModelId(e.target.value)}
                         className="py-3"
                     >
+                        <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
                         <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro</option>
                         <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
-                        <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
                     </Select>
                 </div>
             </div>

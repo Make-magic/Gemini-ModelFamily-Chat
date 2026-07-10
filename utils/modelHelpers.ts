@@ -1,7 +1,7 @@
 
 import { ModelOption } from '../types';
 import { GEMINI_3_RO_MODELS, STATIC_TTS_MODELS, STATIC_IMAGEN_MODELS, TAB_CYCLE_MODELS, INITIAL_PINNED_MODELS } from '../constants/appConstants';
-import { MediaResolution } from '../types/settings';
+import { MediaResolution, ThinkingLevel } from '../types/settings';
 
 // --- Model Sorting & Defaults ---
 
@@ -24,6 +24,11 @@ export const sortModels = (models: ModelOption[]): ModelOption[] => {
             const weightB = getCategoryWeight(b.id);
             if (weightA !== weightB) return weightA - weightB;
 
+            const isA35 = a.id.includes('gemini-3.5');
+            const isB35 = b.id.includes('gemini-3.5');
+            if (isA35 && !isB35) return -1;
+            if (!isA35 && isB35) return 1;
+
             const isA31 = a.id.includes('gemini-3.1');
             const isB31 = b.id.includes('gemini-3.1');
             if (isA31 && !isB31) return -1;
@@ -42,11 +47,7 @@ export const sortModels = (models: ModelOption[]): ModelOption[] => {
 export const getDefaultModelOptions = (): ModelOption[] => {
     const pinnedInternalModels: ModelOption[] = INITIAL_PINNED_MODELS.map(id => {
         let name;
-        if (id === 'gemini-2.5-flash-preview-09-2025') {
-            name = 'Gemini 2.5 Flash';
-        } else if (id === 'gemini-2.5-flash-lite-preview-09-2025') {
-            name = 'Gemini 2.5 Flash Lite';
-        } else if (id === 'gemini-2.5-flash-native-audio-preview-12-2025') {
+        if (id === 'gemini-2.5-flash-native-audio-preview-12-2025') {
             name = 'Gemini 2.5 Flash Native Audio';
         } else if (id.toLowerCase().includes('gemma')) {
              name = id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -73,7 +74,7 @@ const MODEL_SETTINGS_CACHE_KEY = 'model_settings_cache';
 export interface CachedModelSettings {
     mediaResolution?: MediaResolution;
     thinkingBudget?: number;
-    thinkingLevel?: 'LOW' | 'HIGH';
+    thinkingLevel?: ThinkingLevel;
 }
 
 export const getCachedModelSettings = (modelId: string): CachedModelSettings | undefined => {

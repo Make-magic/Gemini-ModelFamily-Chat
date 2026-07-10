@@ -1,8 +1,13 @@
 
-import { GenerateContentResponse, Part, UsageMetadata, ChatHistoryItem } from "@google/genai";
-import { ThoughtSupportingPart } from '../../types';
+import { GenerateContentResponse, Part } from "@google/genai";
+import { ChatHistoryItem, GeminiUsageMetadata, ThoughtSupportingPart } from '../../types';
 import { logService } from "../logService";
 import { getConfiguredApiClient } from "./baseApi";
+import {
+    getUrlContextMetadata,
+    mergeToolCitations,
+    normalizeUsageMetadata,
+} from './geminiAdapter';
 
 /**
  * Shared helper to parse GenAI responses.
@@ -28,32 +33,14 @@ const processResponse = (response: GenerateContentResponse) => {
     }
     
     const candidate = response.candidates?.[0];
-    const groundingMetadata = candidate?.groundingMetadata;
-    const finalMetadata: any = groundingMetadata ? { ...groundingMetadata } : {};
-    
-    // @ts-ignore - Handle potential snake_case from raw API responses
-    const urlContextMetadata = candidate?.urlContextMetadata || candidate?.url_context_metadata;
-
-    const toolCalls = candidate?.toolCalls;
-    if (toolCalls) {
-        for (const toolCall of toolCalls) {
-            if (toolCall.functionCall?.args?.urlContextMetadata) {
-                if (!finalMetadata.citations) finalMetadata.citations = [];
-                const newCitations = toolCall.functionCall.args.urlContextMetadata.citations || [];
-                for (const newCitation of newCitations) {
-                    if (!finalMetadata.citations.some((c: any) => c.uri === newCitation.uri)) {
-                        finalMetadata.citations.push(newCitation);
-                    }
-                }
-            }
-        }
-    }
+    const finalMetadata = mergeToolCitations(candidate?.groundingMetadata, response, candidate);
+    const urlContextMetadata = getUrlContextMetadata(candidate);
 
     return {
         parts: responseParts,
         thoughts: thoughtsText || undefined,
-        usage: response.usageMetadata,
-        grounding: Object.keys(finalMetadata).length > 0 ? finalMetadata : undefined,
+        usage: normalizeUsageMetadata(response.usageMetadata),
+        grounding: finalMetadata,
         urlContext: urlContextMetadata
     };
 };
@@ -68,10 +55,10 @@ export const sendStatelessMessageStreamApi = async (
     onPart: (part: Part) => void,
     onThoughtChunk: (chunk: string) => void,
     onError: (error: Error) => void,
-    onComplete: (usageMetadata?: UsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
+    onComplete: (usageMetadata?: GeminiUsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
 ): Promise<void> => {
     logService.info(`Sending message via stateless generateContentStream for ${modelId}`);
-    let finalUsageMetadata: UsageMetadata | undefined = undefined;
+    let finalUsageMetadata: GeminiUsageMetadata | undefined = undefined;
     let finalGroundingMetadata: any = null;
     let finalUrlContextMetadata: any = null;
 
@@ -95,7 +82,7 @@ export const sendStatelessMessageStreamApi = async (
                 break;
             }
             if (chunkResponse.usageMetadata) {
-                finalUsageMetadata = chunkResponse.usageMetadata;
+                finalUsageMetadata = normalizeUsageMetadata(chunkResponse.usageMetadata);
             }
             const candidate = chunkResponse.candidates?.[0];
             
@@ -105,27 +92,12 @@ export const sendStatelessMessageStreamApi = async (
                     finalGroundingMetadata = metadataFromChunk;
                 }
                 
-                // @ts-ignore
-                const urlMetadata = candidate.urlContextMetadata || candidate.url_context_metadata;
+                const urlMetadata = getUrlContextMetadata(candidate);
                 if (urlMetadata) {
                     finalUrlContextMetadata = urlMetadata;
                 }
 
-                const toolCalls = candidate.toolCalls;
-                if (toolCalls) {
-                    for (const toolCall of toolCalls) {
-                        if (toolCall.functionCall?.args?.urlContextMetadata) {
-                            if (!finalGroundingMetadata) finalGroundingMetadata = {};
-                            if (!finalGroundingMetadata.citations) finalGroundingMetadata.citations = [];
-                            const newCitations = toolCall.functionCall.args.urlContextMetadata.citations || [];
-                            for (const newCitation of newCitations) {
-                                if (!finalGroundingMetadata.citations.some((c: any) => c.uri === newCitation.uri)) {
-                                    finalGroundingMetadata.citations.push(newCitation);
-                                }
-                            }
-                        }
-                    }
-                }
+                finalGroundingMetadata = mergeToolCitations(finalGroundingMetadata, chunkResponse, candidate);
                 
                 if (candidate.content?.parts?.length) {
                     for (const part of candidate.content.parts) {
@@ -157,7 +129,7 @@ export const sendStatelessMessageNonStreamApi = async (
     config: any,
     abortSignal: AbortSignal,
     onError: (error: Error) => void,
-    onComplete: (parts: Part[], thoughtsText?: string, usageMetadata?: UsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
+    onComplete: (parts: Part[], thoughtsText?: string, usageMetadata?: GeminiUsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
 ): Promise<void> => {
     logService.info(`Sending message via stateless generateContent (non-stream) for model ${modelId}`);
     

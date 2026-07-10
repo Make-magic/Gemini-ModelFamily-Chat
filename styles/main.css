@@ -3,12 +3,34 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :where(a[href], button, input, select, textarea, summary, [role="button"], [tabindex]):focus-visible {
+    outline: 2px solid var(--theme-border-focus, #2563eb) !important;
+    outline-offset: 2px !important;
+  }
+}
+
+/* ============================================================
+   中华传统美学设计系统 — Oriental Cyber Design System
+   ============================================================ */
+
 /* Base Variables & Reset */
 :root {
   /* Apple-style spring easing for premium feel */
   --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-out-circ: cubic-bezier(0.075, 0.82, 0.165, 1);
+
+  /* 水墨晕染缓动 (Ink Diffusion Easing) */
+  --ease-ink-diffusion: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+  /* 东方排版系统 (Oriental Typography) */
+  --font-display: 'LXGW WenKai', 'Noto Serif SC', 'PingFang SC', 'Microsoft YaHei', serif;
+  --font-body: 'Noto Sans SC', 'PingFang SC', -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+
+  /* 不对称圆角 — 传统印章切角 (Asymmetric Radius - Seal Cut) */
+  --radius-bubble-ai: 12px 12px 12px 2px;
+  --radius-bubble-user: 12px 12px 2px 12px;
 }
 
 /* Global Layout Reset for Full Height */
@@ -18,6 +40,9 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden; /* Prevent body scroll, let React app handle scrolling */
+  font-family: var(--font-body);
+  letter-spacing: 0.02em;
+  line-height: 1.7;
 }
 
 #root {
@@ -25,18 +50,140 @@ html, body, #root {
   flex-direction: column;
 }
 
-/* Custom Selection Color (Yellow Note Style) */
-::selection {
-  background-color: #fde047; /* Yellow-300 */
-  color: #1f2937; /* Gray-800 for readability */
+/* ============================================================
+   晕染阴影系统 (Ink-wash Shadow System)
+   ============================================================ */
+.theme-pearl {
+  --shadow-ink: 0 4px 24px rgba(34, 37, 42, 0.04);
+  --shadow-ink-elevated: 0 8px 32px rgba(22, 97, 171, 0.05);
+  --shadow-ink-deep: 0 12px 48px rgba(34, 37, 42, 0.08);
 }
 
-::-moz-selection {
-  background-color: #fde047;
-  color: #1f2937;
+.theme-onyx {
+  --shadow-ink: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --shadow-ink-elevated: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-ink-deep: 0 12px 48px rgba(0, 0, 0, 0.5);
 }
 
-/* Custom Scrollbar */
+.theme-wenxin {
+  --shadow-ink: 0 4px 24px rgba(37, 35, 36, 0.05);
+  --shadow-ink-elevated: 0 8px 32px rgba(143, 75, 74, 0.06);
+  --shadow-ink-deep: 0 12px 48px rgba(37, 35, 36, 0.08);
+}
+
+.theme-gewu {
+  --shadow-ink: 0 4px 24px rgba(28, 35, 39, 0.04);
+  --shadow-ink-elevated: 0 8px 32px rgba(42, 92, 170, 0.06);
+  --shadow-ink-deep: 0 12px 48px rgba(28, 35, 39, 0.08);
+}
+
+.theme-jingshi {
+  --shadow-ink: 0 4px 24px rgba(54, 40, 43, 0.05);
+  --shadow-ink-elevated: 0 8px 32px rgba(67, 114, 114, 0.08);
+  --shadow-ink-deep: 0 12px 48px rgba(54, 40, 43, 0.08);
+}
+
+.theme-classic-light {
+  --shadow-ink: 0 4px 24px rgba(0, 0, 0, 0.04);
+  --shadow-ink-elevated: 0 8px 32px rgba(0, 0, 0, 0.06);
+  --shadow-ink-deep: 0 12px 48px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================================
+   宣纸噪点纹理 (Xuan Paper Noise Texture)
+   仅浅色模式下可见，极低透明度 (<2%)
+   ============================================================ */
+.theme-pearl {
+  --texture-xuan-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.018'/%3E%3C/svg%3E");
+}
+
+.theme-onyx {
+  --texture-xuan-paper: none;
+}
+
+.theme-wenxin {
+  --texture-xuan-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
+}
+
+.theme-gewu {
+  --texture-xuan-paper: none;
+}
+
+.theme-jingshi {
+  --texture-xuan-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
+}
+
+.theme-classic-light {
+  --texture-xuan-paper: none;
+}
+
+/* ============================================================
+   选区高亮色 — 主题感知 (Theme-aware Selection)
+   ============================================================ */
+
+/* 浅色模式：石绿淡化 (Mineral Green - diluted) */
+.theme-pearl ::selection {
+  background-color: rgba(87, 195, 194, 0.3);
+  color: #22252A;
+}
+.theme-pearl ::-moz-selection {
+  background-color: rgba(87, 195, 194, 0.3);
+  color: #22252A;
+}
+
+/* 深色模式：深石绿淡化 (Dark Mineral Green - diluted) */
+.theme-onyx ::selection {
+  background-color: rgba(36, 116, 111, 0.4);
+  color: #D6ECF0;
+}
+.theme-onyx ::-moz-selection {
+  background-color: rgba(36, 116, 111, 0.4);
+  color: #D6ECF0;
+}
+
+/* 沉浸阅读：檀唇淡化 (Sandalwood Lip - diluted) */
+.theme-wenxin ::selection {
+  background-color: rgba(143, 75, 74, 0.25);
+  color: #252324;
+}
+.theme-wenxin ::-moz-selection {
+  background-color: rgba(143, 75, 74, 0.25);
+  color: #252324;
+}
+
+/* 极客理学：靛蓝淡化 (Indigo - diluted) */
+.theme-gewu ::selection {
+  background-color: rgba(42, 92, 170, 0.2);
+  color: #1C2327;
+}
+.theme-gewu ::-moz-selection {
+  background-color: rgba(42, 92, 170, 0.2);
+  color: #1C2327;
+}
+
+/* 经世致用：沧浪淡化 (Canglang - diluted) */
+.theme-jingshi ::selection {
+  background-color: rgba(67, 114, 114, 0.25);
+  color: #36282B;
+}
+.theme-jingshi ::-moz-selection {
+  background-color: rgba(67, 114, 114, 0.25);
+  color: #36282B;
+}
+
+/* 经典浅色 (Classic Light) */
+.theme-classic-light ::selection {
+  background-color: rgba(37, 99, 235, 0.25); /* Blue 600 diluted */
+  color: #000000;
+}
+.theme-classic-light ::-moz-selection {
+  background-color: rgba(37, 99, 235, 0.25);
+  color: #000000;
+}
+
+/* ============================================================
+   Custom Scrollbar — 与主题融合
+   ============================================================ */
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: var(--theme-scrollbar-thumb) transparent;
@@ -80,7 +227,9 @@ html, body, #root {
   mask-image: linear-gradient(to right, transparent, black 10px, black calc(100% - 10px), transparent);
 }
 
-/* Tooltip Styles */
+/* ============================================================
+   Tooltip Styles — 晕染阴影加持
+   ============================================================ */
 .tooltip-container {
   position: relative;
   display: inline-flex;
@@ -104,7 +253,7 @@ html, body, #root {
   opacity: 0;
   transition: all 0.2s var(--ease-out-expo);
   border: 1px solid var(--theme-border-secondary);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-ink-elevated);
   font-size: 0.75rem;
   font-weight: 500;
   white-space: normal;
@@ -119,10 +268,10 @@ html, body, #root {
   transform: translateX(-50%) scale(1);
 }
 
-/* 
-   EXPORT STYLES 
+/* ============================================================
+   EXPORT STYLES
    Target specific elements to hide during PNG export
-*/
+   ============================================================ */
 .is-exporting-png .message-actions,
 .is-exporting-png button:not(.code-block-dummy-btn), /* Keep code buttons structure but hide logic below */
 .is-exporting-png .code-block-utility-button,

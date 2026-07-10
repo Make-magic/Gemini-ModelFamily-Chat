@@ -36,11 +36,12 @@ export const TextEditorModal: React.FC<TextEditorModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      ariaLabelledBy="text-editor-modal-title"
       contentClassName="w-full h-full sm:h-[90vh] sm:w-[90vw] max-w-5xl bg-[var(--theme-bg-primary)] sm:rounded-xl shadow-2xl flex flex-col overflow-hidden border border-[var(--theme-border-primary)]"
       noPadding
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)]/50">
-        <h2 className="text-lg font-semibold text-[var(--theme-text-primary)]">{title}</h2>
+        <h2 id="text-editor-modal-title" className="text-lg font-semibold text-[var(--theme-text-primary)]">{title}</h2>
         <button
           onClick={onClose}
           className="p-1.5 text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] rounded-full transition-colors"

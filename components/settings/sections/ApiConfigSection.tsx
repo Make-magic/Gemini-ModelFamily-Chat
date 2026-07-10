@@ -35,6 +35,7 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
   // Test connection state
   const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = useState<string | null>(null);
+  const [testModel, setTestModel] = useState<string>('gemini-3.1-flash-lite');
 
   const iconSize = useResponsiveValue(18, 20);
   const hasEnvKey = !!process.env.API_KEY;
@@ -80,9 +81,8 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
           // Use the base API helper to get a client with sanitation logic
           const ai = getClient(firstKey, effectiveUrl);
           
-          // Using gemini-2.5-flash for a quick, cheap test
           await ai.models.generateContent({
-              model: 'gemini-2.5-flash',
+              model: testModel,
               contents: 'Hello',
           });
 
@@ -124,6 +124,8 @@ export const ApiConfigSection: React.FC<ApiConfigSectionProps> = ({
                     setUseApiProxy={(val) => { setUseApiProxy(val); setTestStatus('idle'); }}
                     apiProxyUrl={apiProxyUrl}
                     setApiProxyUrl={(val) => { setApiProxyUrl(val); setTestStatus('idle'); }}
+                    testModel={testModel}
+                    setTestModel={(val) => { setTestModel(val); setTestStatus('idle'); }}
                     t={t}
                 />
 

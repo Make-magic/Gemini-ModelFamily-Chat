@@ -5,6 +5,7 @@ import { logService } from '../services/logService';
 import { fileToBase64, fileToString } from './fileHelpers';
 import { isGemini3Model } from './modelHelpers';
 import { MediaResolution } from '../types/settings';
+import { toPartMediaResolutionLevel } from '../services/api/geminiAdapter';
 
 export const generateUniqueId = () => `chat-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -182,7 +183,7 @@ export const buildContentParts = async (
         const shouldInject = (part.fileData && !isYoutube) || (part.inlineData && !isTextLike);
 
         if (shouldInject) {
-            part.mediaResolution = { level: effectiveResolution };
+            part.mediaResolution = { level: toPartMediaResolutionLevel(effectiveResolution) };
         }
     }
     

@@ -4,7 +4,4 @@ export * from './types/settings';
 export * from './types/chat';
 export * from './types/api';
 export * from './types/theme';
-
-import { ChatHistoryItem } from "@google/genai";
-
-export type { ChatHistoryItem };
+export * from './types/gemini';

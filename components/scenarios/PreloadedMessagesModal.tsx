@@ -61,10 +61,6 @@ export const PreloadedMessagesModal: React.FC<PreloadedMessagesModalProps> = ({
   };
 
   const handleLoadAndClose = (scenario: SavedScenario) => {
-    if (scenario.messages.length === 0 && (!scenario.systemInstruction || !scenario.systemInstruction.trim())) {
-      showFeedback('error', t('scenarios_feedback_empty'));
-      return;
-    }
     onLoadScenario(scenario);
     showFeedback('success', t('scenarios_feedback_loaded'));
     setTimeout(handleClose, 300);
@@ -78,6 +74,7 @@ export const PreloadedMessagesModal: React.FC<PreloadedMessagesModalProps> = ({
     <Modal 
         isOpen={isOpen} 
         onClose={handleClose} 
+        ariaLabelledBy="scenarios-title"
         noPadding 
         contentClassName="w-full h-full sm:w-[95vw] sm:h-[90vh] sm:max-w-7xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden bg-[var(--theme-bg-primary)] border border-[var(--theme-border-primary)] transition-all"
     >

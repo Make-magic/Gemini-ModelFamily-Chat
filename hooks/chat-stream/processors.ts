@@ -1,8 +1,9 @@
-import { ChatMessage, UploadedFile, ChatSettings } from '../../types';
-import { Part, UsageMetadata } from '@google/genai';
+import { ChatMessage, GeminiUsageMetadata, UploadedFile, ChatSettings } from '../../types';
+import { Part } from '@google/genai';
 import { generateUniqueId, base64ToBlobUrl, getExtensionFromMimeType, getTranslator } from '../../utils/appUtils';
 import { isToolMessage } from './utils';
 import { SUPPORTED_GENERATED_MIME_TYPES } from './constants';
+import { getCompletionTokenCount } from '../../services/api/geminiAdapter';
 
 export const updateMessagesWithPart = (
     messages: ChatMessage[],
@@ -175,7 +176,7 @@ export const finalizeMessages = (
     currentChatSettings: ChatSettings,
     language: 'en' | 'zh',
     firstContentPartTime: Date | null,
-    usageMetadata?: UsageMetadata,
+    usageMetadata?: GeminiUsageMetadata,
     groundingMetadata?: any,
     urlContextMetadata?: any,
     isAborted?: boolean
@@ -197,14 +198,13 @@ export const finalizeMessages = (
             // Token Extraction Logic
             const totalTokenCount = isLastMessageOfRun ? (usageMetadata?.totalTokenCount || 0) : 0;
             const promptTokens = isLastMessageOfRun ? (usageMetadata?.promptTokenCount) : undefined;
-            let completionTokens = isLastMessageOfRun ? usageMetadata?.candidatesTokenCount : undefined;
+            let completionTokens = isLastMessageOfRun ? getCompletionTokenCount(usageMetadata) : undefined;
             
             // Fallback calculation
             if (completionTokens === undefined && promptTokens !== undefined && totalTokenCount > 0) {
                 completionTokens = totalTokenCount - promptTokens;
             }
 
-            // @ts-ignore
             const thoughtTokens = usageMetadata?.thoughtsTokenCount;
             
             cumulativeTotal += totalTokenCount;

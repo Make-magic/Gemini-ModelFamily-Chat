@@ -76,6 +76,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             isOpen={isOpen} 
             onClose={onClose} 
             noPadding 
+            ariaLabelledBy="settings-modal-title"
             contentClassName="w-full h-[100dvh] sm:h-[85vh] max-h-[800px] sm:w-[90vw] max-w-6xl sm:rounded-xl overflow-hidden flex flex-col md:flex-row shadow-2xl bg-[var(--theme-bg-primary)] transition-all"
         >
             <SettingsSidebar 
@@ -90,7 +91,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <main className="flex-1 flex flex-col min-w-0 bg-[var(--theme-bg-primary)] relative overflow-hidden">
                 {/* Desktop Header */}
                 <header className="hidden md:flex items-center px-8 py-6 flex-shrink-0">
-                    <h2 className="text-2xl font-bold text-[var(--theme-text-primary)] tracking-tight">
+                    <h2 id="settings-modal-title" className="text-2xl font-bold text-[var(--theme-text-primary)] tracking-tight">
                         {t(tabs.find(t => t.id === activeTab)?.labelKey as any)}
                     </h2>
                 </header>

@@ -19,7 +19,7 @@ export const ExportChatModal: React.FC<ExportChatModalProps> = ({ isOpen, onClos
     const isLoading = exportStatus === 'exporting';
 
     return (
-        <Modal isOpen={isOpen} onClose={isLoading ? () => {} : onClose}>
+        <Modal isOpen={isOpen} onClose={isLoading ? () => {} : onClose} ariaLabelledBy="export-chat-title">
             <div 
                 className="bg-[var(--theme-bg-primary)] rounded-xl shadow-premium w-full max-w-md sm:max-w-4xl flex flex-col"
                 role="document"
