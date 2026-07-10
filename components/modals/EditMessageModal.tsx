@@ -51,12 +51,13 @@ export const EditMessageModal: React.FC<EditMessageModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      ariaLabelledBy="edit-message-modal-title"
       contentClassName="w-full max-w-3xl bg-[var(--theme-bg-primary)] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-[var(--theme-border-primary)] max-h-[85vh]"
       noPadding
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)]/50">
-        <h2 className="text-lg font-semibold text-[var(--theme-text-primary)] flex items-center gap-2">
+        <h2 id="edit-message-modal-title" className="text-lg font-semibold text-[var(--theme-text-primary)] flex items-center gap-2">
           <span className="text-[var(--theme-text-tertiary)]">
             {t('edit')} {message.role === 'user' ? t('scenarios_editor_role_user') : t('scenarios_editor_role_model')}
           </span>

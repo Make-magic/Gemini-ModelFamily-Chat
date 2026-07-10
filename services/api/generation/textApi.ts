@@ -1,6 +1,7 @@
 import { getConfiguredApiClient } from '../baseApi';
 import { logService } from "../../logService";
 import { Type } from "@google/genai";
+import { toGeminiThinkingLevel } from '../geminiAdapter';
 
 export const translateTextApi = async (apiKey: string, text: string, targetLanguage: string = 'English'): Promise<string> => {
     logService.info(`Translating text to ${targetLanguage}...`);
@@ -14,7 +15,7 @@ export const translateTextApi = async (apiKey: string, text: string, targetLangu
             config: {
                 temperature: 0.1,
                 topP: 0.95,
-                thinkingConfig: { thinkingLevel: 'LOW' },
+                thinkingConfig: { thinkingLevel: toGeminiThinkingLevel('LOW') },
             }
         });
 
@@ -55,7 +56,7 @@ ASSISTANT: "${modelContent}"`;
             model: 'gemini-3.1-flash-lite',
             contents: prompt,
             config: {
-                thinkingConfig: { thinkingLevel: 'LOW' }, // auto
+                thinkingConfig: { thinkingLevel: toGeminiThinkingLevel('LOW') }, // auto
                 temperature: 0.8,
                 topP: 0.95,
                 responseMimeType: "application/json",
@@ -92,7 +93,7 @@ ASSISTANT: "${modelContent}"`;
                 model: 'gemini-3.1-flash-lite',
                 contents: fallbackPrompt,
                 config: {
-                    thinkingConfig: { thinkingLevel: 'LOW' },
+                    thinkingConfig: { thinkingLevel: toGeminiThinkingLevel('LOW') },
                     temperature: 0.8,
                     topP: 0.95,
                 }
@@ -119,7 +120,7 @@ export const generateTitleApi = async (apiKey: string, userContent: string, mode
             model: 'gemini-3.1-flash-lite',
             contents: prompt,
             config: {
-                thinkingConfig: { thinkingLevel: 'LOW' },
+                thinkingConfig: { thinkingLevel: toGeminiThinkingLevel('LOW') },
                 temperature: 0.3,
                 topP: 0.9,
             }

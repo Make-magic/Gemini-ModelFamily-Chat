@@ -3,6 +3,7 @@ import React, { useState, useMemo, useCallback, Dispatch, SetStateAction } from 
 import { Command } from '../components/chat/input/SlashCommandMenu';
 import { translations } from '../utils/appUtils';
 import { ModelOption } from '../types';
+import type { ThinkingLevel } from '../types/settings';
 
 interface UseSlashCommandsProps {
   t: (key: keyof typeof translations) => string;
@@ -27,8 +28,8 @@ interface UseSlashCommandsProps {
   onTogglePip: () => void;
   setInputText: Dispatch<SetStateAction<string>>;
   currentModelId: string;
-  onSetThinkingLevel: (level: 'LOW' | 'HIGH') => void;
-  thinkingLevel?: 'LOW' | 'HIGH';
+  onSetThinkingLevel: (level: ThinkingLevel) => void;
+  thinkingLevel?: ThinkingLevel;
 }
 
 export const useSlashCommands = ({

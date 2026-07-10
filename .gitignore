@@ -16,6 +16,7 @@ storage
 
 # Editor directories and files
 .vscode/*
+.agents/*
 !.vscode/extensions.json
 .idea
 .DS_Store

@@ -6,6 +6,7 @@ const { SyncService, ConnectionRegistry, LoggingService, createSyncRouter } = re
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 const server = http.createServer(app);
 
 // Initialize Sync Services
@@ -18,7 +19,9 @@ syncService.init().then(() => {
 });
 
 // Setup Sync API routes
-app.use('/api/sync', createSyncRouter(syncService));
+app.use('/api/sync', createSyncRouter(syncService, {
+  jsonLimit: process.env.SYNC_JSON_LIMIT || '600mb',
+}));
 
 // Setup WebSocket for Sync
 const wsServer = new WebSocket.Server({ server });
@@ -36,6 +39,6 @@ app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-server.listen(PORT, () => {
-  console.log(`本地服务已启动: http://localhost:${PORT}`);
+server.listen(PORT, HOST, () => {
+  console.log(`本地服务已启动: http://${HOST}:${PORT}`);
 });

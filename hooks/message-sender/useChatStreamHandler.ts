@@ -1,10 +1,11 @@
 import React, { Dispatch, SetStateAction, useCallback } from 'react';
-import { AppSettings, SavedChatSession, ChatMessage, ChatSettings as IndividualChatSettings } from '../../types';
-import { Part, UsageMetadata } from '@google/genai';
+import { AppSettings, SavedChatSession, ChatMessage, ChatSettings as IndividualChatSettings, GeminiUsageMetadata } from '../../types';
+import { Part } from '@google/genai';
 import { useApiErrorHandler } from './useApiErrorHandler';
 import { logService, showNotification } from '../../utils/appUtils';
 import { APP_LOGO_SVG_DATA_URI } from '../../constants/appConstants';
 import { updateMessagesWithPart, updateMessagesWithThought, finalizeMessages } from '../chat-stream/processors';
+import { getCompletionTokenCount } from '../../services/api/geminiAdapter';
 
 type SessionsUpdater = (updater: (prev: SavedChatSession[]) => SavedChatSession[], options?: { persist?: boolean }) => void;
 
@@ -41,7 +42,7 @@ export const useChatStreamHandler = ({
             activeJobs.current.delete(generationId);
         };
 
-        const streamOnComplete = (usageMetadata?: UsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => {
+        const streamOnComplete = (usageMetadata?: GeminiUsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => {
             // Use correct language from state
             const lang = appSettings.language === 'system' 
                 ? (navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en')
@@ -55,7 +56,7 @@ export const useChatStreamHandler = ({
             if (usageMetadata) {
                 let promptTokens = usageMetadata.promptTokenCount || 0;
                 // Fallback if completion count missing
-                let completionTokens = usageMetadata.candidatesTokenCount || 0;
+                let completionTokens = getCompletionTokenCount(usageMetadata) || 0;
                 const totalTokens = usageMetadata.totalTokenCount || 0;
                 if (!completionTokens && totalTokens > 0 && promptTokens > 0) {
                     completionTokens = totalTokens - promptTokens;

@@ -3,6 +3,13 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :where(a[href], button, input, select, textarea, summary, [role="button"], [tabindex]):focus-visible {
+    outline: 2px solid var(--theme-border-focus, #2563eb) !important;
+    outline-offset: 2px !important;
+  }
+}
+
 /* ============================================================
    中华传统美学设计系统 — Oriental Cyber Design System
    ============================================================ */

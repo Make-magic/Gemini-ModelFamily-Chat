@@ -1,6 +1,8 @@
 
 import { Theme, ThemeColors } from '../types/theme';
 
+export type { Theme } from '../types/theme';
+
 export const ONYX_THEME_COLORS: ThemeColors = {
   // Backgrounds — 千里江山 (Vast Mountains & Rivers)
   bgPrimary: '#141A1C',     // 鸦青 (Raven Cyan) - Main Content

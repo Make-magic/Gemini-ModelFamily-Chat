@@ -141,9 +141,9 @@ export const exportChatAsPdfDocument = async (
 
     // 5. Configure html2pdf
     const opt = {
-        margin:       [10, 10, 10, 10], 
+        margin:       [10, 10, 10, 10] as [number, number, number, number],
         filename:     `${sanitizeFilename(title)}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
+        image:        { type: 'jpeg' as const, quality: 0.98 },
         html2canvas:  { 
             scale: 2, 
             useCORS: true, 
@@ -154,7 +154,7 @@ export const exportChatAsPdfDocument = async (
             scrollX: 0,
             backgroundColor: '#ffffff'
         },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
         pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] } 
     };
 
@@ -164,7 +164,7 @@ export const exportChatAsPdfDocument = async (
         
         // Use the worker API for more reliable generation
         // sequence: from -> set -> save
-        await html2pdf().from(element).set(opt).save();
+        await html2pdf().from(element as HTMLElement).set(opt).save();
     } catch (err) {
         console.error("PDF generation failed", err);
         throw err;

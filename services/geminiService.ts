@@ -1,6 +1,6 @@
 
-import { GeminiService, ModelOption } from '../types';
-import { Part, UsageMetadata, File as GeminiFile, ChatHistoryItem, Modality } from "@google/genai";
+import { ChatHistoryItem, GeminiService, GeminiUsageMetadata, ModelOption } from '../types';
+import { Part, File as GeminiFile, Modality } from "@google/genai";
 import { uploadFileApi, getFileMetadataApi } from './api/fileApi';
 import { generateImagesApi, generateSpeechApi, transcribeAudioApi, translateTextApi, generateTitleApi, generateSuggestionsApi, countTokensApi } from './api/generationApi';
 import { sendStatelessMessageStreamApi, sendStatelessMessageNonStreamApi } from './api/chatApi';
@@ -105,7 +105,7 @@ class GeminiServiceImpl implements GeminiService {
         onPart: (part: Part) => void,
         onThoughtChunk: (chunk: string) => void,
         onError: (error: Error) => void,
-        onComplete: (usageMetadata?: UsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
+        onComplete: (usageMetadata?: GeminiUsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
     ): Promise<void> {
         return sendStatelessMessageStreamApi(
             apiKey, modelId, history, parts, config, abortSignal, onPart, onThoughtChunk, onError, onComplete
@@ -120,7 +120,7 @@ class GeminiServiceImpl implements GeminiService {
         config: any,
         abortSignal: AbortSignal,
         onError: (error: Error) => void,
-        onComplete: (parts: Part[], thoughtsText?: string, usageMetadata?: UsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
+        onComplete: (parts: Part[], thoughtsText?: string, usageMetadata?: GeminiUsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
     ): Promise<void> {
         return sendStatelessMessageNonStreamApi(
             apiKey, modelId, history, parts, config, abortSignal, onError, onComplete

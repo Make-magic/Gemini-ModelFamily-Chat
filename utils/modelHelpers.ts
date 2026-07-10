@@ -1,7 +1,7 @@
 
 import { ModelOption } from '../types';
 import { GEMINI_3_RO_MODELS, STATIC_TTS_MODELS, STATIC_IMAGEN_MODELS, TAB_CYCLE_MODELS, INITIAL_PINNED_MODELS } from '../constants/appConstants';
-import { MediaResolution } from '../types/settings';
+import { MediaResolution, ThinkingLevel } from '../types/settings';
 
 // --- Model Sorting & Defaults ---
 
@@ -74,7 +74,7 @@ const MODEL_SETTINGS_CACHE_KEY = 'model_settings_cache';
 export interface CachedModelSettings {
     mediaResolution?: MediaResolution;
     thinkingBudget?: number;
-    thinkingLevel?: 'LOW' | 'HIGH';
+    thinkingLevel?: ThinkingLevel;
 }
 
 export const getCachedModelSettings = (modelId: string): CachedModelSettings | undefined => {

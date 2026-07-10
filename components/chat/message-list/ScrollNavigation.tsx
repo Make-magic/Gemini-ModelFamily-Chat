@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
+import { FOCUS_VISIBLE_RING_CLASS } from '../../../constants/appConstants';
 
 interface ScrollNavigationProps {
     showUp: boolean;
@@ -19,16 +20,16 @@ export const ScrollNavigation: React.FC<ScrollNavigationProps> = ({ showUp, show
             {showUp && (
                 <button
                     onClick={onScrollToPrev}
-                    className="
+                    className={`
                         p-2.5 rounded-full 
                         bg-[var(--theme-bg-secondary)] 
                         border border-[var(--theme-border-secondary)] 
                         text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] 
                         hover:bg-[var(--theme-bg-primary)] hover:border-[var(--theme-border-focus)]
                         transition-colors duration-200
-                        focus:outline-none
                         pointer-events-auto
-                    "
+                        ${FOCUS_VISIBLE_RING_CLASS}
+                    `}
                     aria-label="Scroll to previous turn"
                     title="Scroll to previous turn"
                 >
@@ -38,16 +39,16 @@ export const ScrollNavigation: React.FC<ScrollNavigationProps> = ({ showUp, show
             {showDown && (
                 <button
                     onClick={onScrollToNext}
-                    className="
+                    className={`
                         p-2.5 rounded-full 
                         bg-[var(--theme-bg-secondary)] 
                         border border-[var(--theme-border-secondary)] 
                         text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] 
                         hover:bg-[var(--theme-bg-primary)] hover:border-[var(--theme-border-focus)]
                         transition-colors duration-200
-                        focus:outline-none
                         pointer-events-auto
-                    "
+                        ${FOCUS_VISIBLE_RING_CLASS}
+                    `}
                     aria-label="Scroll to next turn or bottom"
                     title="Scroll to next turn or bottom"
                 >

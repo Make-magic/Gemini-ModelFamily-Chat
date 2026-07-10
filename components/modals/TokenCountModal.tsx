@@ -45,12 +45,13 @@ export const TokenCountModal: React.FC<TokenCountModalProps> = (props) => {
         <Modal 
             isOpen={isOpen} 
             onClose={onClose} 
+            ariaLabelledBy="token-count-modal-title"
             contentClassName="w-full max-w-2xl bg-[var(--theme-bg-primary)] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-[var(--theme-border-primary)] max-h-[85vh]"
             noPadding
         >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-secondary)]/50">
-                <h2 className="text-lg font-semibold text-[var(--theme-text-primary)] flex items-center gap-2">
+                <h2 id="token-count-modal-title" className="text-lg font-semibold text-[var(--theme-text-primary)] flex items-center gap-2">
                     <Calculator size={20} className="text-[var(--theme-text-link)]" />
                     {t('tokenModal_title')}
                 </h2>

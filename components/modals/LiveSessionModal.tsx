@@ -44,6 +44,7 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({ isOpen, onCl
         <Modal 
             isOpen={isOpen} 
             onClose={disconnect}
+            ariaLabelledBy="live-session-modal-title"
             backdropClassName="bg-black/95 backdrop-blur-md"
             contentClassName="w-full h-full flex flex-col items-center justify-center text-white relative overflow-hidden"
             noPadding
@@ -76,7 +77,7 @@ export const LiveSessionModal: React.FC<LiveSessionModalProps> = ({ isOpen, onCl
                     <>
                         {/* Status Indicator */}
                         <div className="flex flex-col items-center gap-2">
-                            <h2 className="text-2xl font-light tracking-wide opacity-90 drop-shadow-md">
+                            <h2 id="live-session-modal-title" className="text-2xl font-light tracking-wide opacity-90 drop-shadow-md">
                                 {isConnected ? (isSpeaking ? "Gemini is speaking..." : "Listening...") : "Connecting..."}
                             </h2>
                             <p className="text-sm opacity-60 font-mono bg-black/20 px-2 py-1 rounded backdrop-blur-sm">{modelId}</p>

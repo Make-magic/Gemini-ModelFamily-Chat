@@ -89,13 +89,14 @@ export const LogViewer: React.FC<LogViewerProps> = ({ isOpen, onClose, appSettin
     <Modal 
         isOpen={isOpen} 
         onClose={onClose} 
+        ariaLabelledBy="log-viewer-title"
         backdropClassName="bg-black/70 backdrop-blur-md"
         contentClassName="w-full max-w-6xl h-[95vh]"
     >
       <div className="bg-[var(--theme-bg-primary)] w-full h-full shadow-2xl flex flex-col overflow-hidden rounded-xl border border-[var(--theme-border-primary)]">
         {/* Header */}
         <header className="py-2 px-4 border-b border-[var(--theme-border-secondary)] flex justify-between items-center bg-[var(--theme-bg-secondary)] flex-shrink-0">
-          <h2 className="text-lg font-semibold text-[var(--theme-text-link)] flex items-center gap-2">
+          <h2 id="log-viewer-title" className="text-lg font-semibold text-[var(--theme-text-link)] flex items-center gap-2">
             <Terminal size={20} /> System Logs
           </h2>
           <button onClick={onClose} className="p-1.5 text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] rounded-full transition-colors"><X size={22} /></button>

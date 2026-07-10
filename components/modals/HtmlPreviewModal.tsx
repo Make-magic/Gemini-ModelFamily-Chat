@@ -1,10 +1,9 @@
 
 import React, { useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { useWindowContext } from '../../contexts/WindowContext';
 import { useHtmlPreviewModal } from '../../hooks/useHtmlPreviewModal';
 import { HtmlPreviewHeader } from './html-preview/HtmlPreviewHeader';
 import { HtmlPreviewContent } from './html-preview/HtmlPreviewContent';
+import { Modal } from '../shared/Modal';
 
 interface HtmlPreviewModalProps {
   isOpen: boolean;
@@ -20,7 +19,6 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
   initialTrueFullscreenRequest,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { document: targetDocument } = useWindowContext();
 
   const {
       isActuallyOpen,
@@ -50,29 +48,15 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
     return null;
   }
 
-  // Skip animation if immediate fullscreen is requested to make it feel instant
-  const animationClass = isOpen 
-    ? (initialTrueFullscreenRequest ? '' : 'modal-enter-animation') 
-    : 'modal-exit-animation';
-
-  // If direct fullscreen launch is active, hide the modal chrome to prevent flash,
-  // but keep it in the DOM so the iframe can be fullscreened.
-  const containerClass = isDirectFullscreenLaunch 
-    ? 'fixed inset-0 z-[2100] opacity-0 pointer-events-none' 
-    : 'fixed inset-0 bg-black/80 flex items-center justify-center z-[2100] backdrop-blur-sm';
-
-  return createPortal(
-    <div
-      className={containerClass}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="html-preview-modal-title"
-      onClick={isTrueFullscreen ? undefined : onClose} 
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={isTrueFullscreen ? () => {} : onClose}
+      noPadding
+      ariaLabelledBy="html-preview-modal-title"
+      backdropClassName={isDirectFullscreenLaunch ? 'opacity-0 pointer-events-none' : 'bg-black/80 backdrop-blur-sm'}
+      contentClassName="bg-[var(--theme-bg-secondary)] w-full h-full flex flex-col overflow-hidden"
     >
-      <div
-        className={`bg-[var(--theme-bg-secondary)] w-full h-full flex flex-col overflow-hidden ${animationClass}`}
-        onClick={(e) => e.stopPropagation()} 
-      >
         <HtmlPreviewHeader 
             title={getPreviewTitle()}
             scale={scale}
@@ -94,8 +78,6 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
             htmlContent={htmlContent}
             scale={scale}
         />
-      </div>
-    </div>,
-    targetDocument.body
+    </Modal>
   );
 };

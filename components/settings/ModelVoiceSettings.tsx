@@ -9,7 +9,7 @@ import { ThinkingControl } from './controls/thinking/ThinkingControl';
 import { VoiceControl } from './controls/VoiceControl';
 import { SETTINGS_INPUT_CLASS } from '../../constants/appConstants';
 import { TextEditorModal } from '../modals/TextEditorModal';
-import { MediaResolution } from '../../types/settings';
+import { MediaResolution, ThinkingLevel } from '../../types/settings';
 
 interface ModelVoiceSettingsProps {
   modelId: string;
@@ -26,8 +26,8 @@ interface ModelVoiceSettingsProps {
   setSystemInstruction: (value: string) => void;
   thinkingBudget: number;
   setThinkingBudget: (value: number) => void;
-  thinkingLevel?: 'LOW' | 'HIGH';
-  setThinkingLevel?: (value: 'LOW' | 'HIGH') => void;
+  thinkingLevel?: ThinkingLevel;
+  setThinkingLevel?: (value: ThinkingLevel) => void;
   showThoughts: boolean;
   setShowThoughts: (value: boolean) => void;
   temperature: number;

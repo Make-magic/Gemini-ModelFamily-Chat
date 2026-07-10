@@ -6,14 +6,6 @@ import { triggerDownload } from './core';
  * @param filename The desired filename for the downloaded PNG.
  * @param options Configuration options for html2canvas.
  */
-import { triggerDownload } from './core';
-
-/**
- * Exports a given HTML element as a PNG image.
- * @param element The HTML element to capture.
- * @param filename The desired filename for the downloaded PNG.
- * @param options Configuration options for html2canvas.
- */
 export const exportElementAsPng = async (
     element: HTMLElement,
     filename: string,

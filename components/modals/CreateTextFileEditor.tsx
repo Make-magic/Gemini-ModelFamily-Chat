@@ -51,6 +51,7 @@ export const CreateTextFileEditor: React.FC<CreateTextFileEditorProps> = ({
     <Modal
       isOpen={true}
       onClose={onCancel}
+      ariaLabelledBy="create-text-file-title"
       noPadding
       contentClassName="w-full h-full sm:h-[85vh] sm:w-[90vw] md:max-w-4xl bg-[var(--theme-bg-primary)] sm:rounded-xl shadow-2xl flex flex-col overflow-hidden border-0 sm:border border-[var(--theme-border-primary)] animate-in fade-in zoom-in-95 duration-200"
     >

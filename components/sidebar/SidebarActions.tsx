@@ -61,7 +61,7 @@ export const SidebarActions: React.FC<SidebarActionsProps> = ({ onNewChat, onAdd
             aria-label={t('history_search_aria')}
         >
           <Search size={18} className="text-[var(--theme-icon-history)]" strokeWidth={2} />
-          <span className="text-[var(--theme-text-primary)]">{t('history_search_button', 'Search')}</span>
+          <span className="text-[var(--theme-text-primary)]">{t('history_search_button')}</span>
         </button>
       )}
     </div>

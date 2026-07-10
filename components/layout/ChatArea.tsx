@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Header } from '../header/Header';
 import { MessageList } from '../chat/MessageList';
 import { ChatInput } from '../chat/ChatInput';
@@ -7,6 +7,7 @@ import { DragDropOverlay } from '../chat/overlays/DragDropOverlay';
 import { ModelsErrorDisplay } from '../chat/overlays/ModelsErrorDisplay';
 import { ChatAreaProps } from './chat-area/ChatAreaProps';
 import { useChatArea } from './chat-area/useChatArea';
+import { AccessibilityLiveRegions, LiveAnnouncement } from '../shared/AccessibilityLiveRegions';
 
 // Re-export props for consumers like useAppProps
 export type { ChatAreaProps };
@@ -50,6 +51,60 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
   } = props;
 
   const { chatInputHeight, chatInputContainerRef, isImagenModel, handleQuote } = useChatArea(props);
+  const [politeAnnouncement, setPoliteAnnouncement] = useState<LiveAnnouncement>({ id: 0, message: '' });
+  const [assertiveAnnouncement, setAssertiveAnnouncement] = useState<LiveAnnouncement>({ id: 0, message: '' });
+  const announcementIdRef = useRef(0);
+  const previousLoadingRef = useRef(isLoading);
+  const previousPullStatusRef = useRef(pullStatus);
+  const previousPushStatusRef = useRef(pushStatus);
+  const lastAnnouncedErrorIdRef = useRef<string | null>(null);
+
+  const announcePolite = useCallback((message: string) => {
+    setPoliteAnnouncement({ id: ++announcementIdRef.current, message });
+  }, []);
+
+  const announceAssertive = useCallback((message: string) => {
+    setAssertiveAnnouncement({ id: ++announcementIdRef.current, message });
+  }, []);
+
+  useEffect(() => {
+    if (isLoading !== previousLoadingRef.current) {
+      announcePolite(t(isLoading ? 'a11y_generation_started' : 'a11y_generation_completed'));
+      previousLoadingRef.current = isLoading;
+    }
+  }, [announcePolite, isLoading, t]);
+
+  useEffect(() => {
+    if (fileError) announceAssertive(fileError);
+  }, [announceAssertive, fileError]);
+
+  useEffect(() => {
+    if (modelsLoadingError) announceAssertive(modelsLoadingError);
+  }, [announceAssertive, modelsLoadingError]);
+
+  useEffect(() => {
+    const latestError = [...messages].reverse().find(message => message.role === 'error');
+    if (latestError && latestError.id !== lastAnnouncedErrorIdRef.current) {
+      lastAnnouncedErrorIdRef.current = latestError.id;
+      announceAssertive(latestError.content);
+    }
+  }, [announceAssertive, messages]);
+
+  useEffect(() => {
+    if (pullStatus !== previousPullStatusRef.current) {
+      if (pullStatus === 'success') announcePolite(t('a11y_sync_pull_completed'));
+      if (pullStatus === 'error') announceAssertive(t('a11y_sync_failed'));
+      previousPullStatusRef.current = pullStatus;
+    }
+  }, [announceAssertive, announcePolite, pullStatus, t]);
+
+  useEffect(() => {
+    if (pushStatus !== previousPushStatusRef.current) {
+      if (pushStatus === 'success') announcePolite(t('a11y_sync_push_completed'));
+      if (pushStatus === 'error') announceAssertive(t('a11y_sync_failed'));
+      previousPushStatusRef.current = pushStatus;
+    }
+  }, [announceAssertive, announcePolite, pushStatus, t]);
 
   return (
     <div
@@ -59,6 +114,7 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
       onDragLeave={handleAppDragLeave}
       onDrop={handleAppDrop}
     >
+      <AccessibilityLiveRegions polite={politeAnnouncement} assertive={assertiveAnnouncement} />
       <DragDropOverlay isDraggingOver={isAppDraggingOver} t={t} />
 
       <Header

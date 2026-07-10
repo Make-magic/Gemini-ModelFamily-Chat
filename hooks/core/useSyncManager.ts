@@ -1,18 +1,41 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { dbService } from '../../utils/db';
 import { AppSettings, SavedChatSession, ChatGroup, SavedScenario, UploadedFile } from '../../types';
 import { logService } from '../../utils/appUtils';
 import { fileToBase64, base64ToBlob } from '../../utils/fileHelpers';
 
+const MAX_INLINE_SYNC_FILE_BYTES = 5 * 1024 * 1024;
+const SYNC_BLOB_ID_PATTERN = /^[A-Fa-f0-9]{64}$/;
+
+type SyncItemType = 'session' | 'groups' | 'settings' | 'scenarios';
+
+interface SyncMetadata {
+    sessions: Record<string, number>;
+    groups: { updatedAt: number };
+    settings: { updatedAt: number };
+    scenarios: { updatedAt: number };
+    revisions?: {
+        sessions?: Record<string, string>;
+        groups?: string | null;
+        settings?: string | null;
+        scenarios?: string | null;
+    };
+}
+
+interface SyncBlobUploadResult {
+    blobId: string;
+    size: number;
+}
+
 interface SyncManagerProps {
     appSettings: AppSettings;
-    setAppSettings: (settings: AppSettings) => void;
+    setAppSettings: Dispatch<SetStateAction<AppSettings>>;
     savedSessions: SavedChatSession[];
-    setSavedSessions: (updater: (prev: SavedChatSession[]) => SavedChatSession[]) => void;
+    setSavedSessions: Dispatch<SetStateAction<SavedChatSession[]>>;
     savedGroups: ChatGroup[];
-    setSavedGroups: (updater: (prev: ChatGroup[]) => ChatGroup[]) => void;
+    setSavedGroups: Dispatch<SetStateAction<ChatGroup[]>>;
     savedScenarios: SavedScenario[];
-    setSavedScenarios: (updater: (prev: SavedScenario[]) => SavedScenario[]) => void;
+    setSavedScenarios: Dispatch<SetStateAction<SavedScenario[]>>;
     isSettingsLoaded: boolean;
     isHistoryLoaded: boolean;
 }
@@ -42,57 +65,131 @@ export const useSyncManager = ({
     const isDev = import.meta.env.DEV;
     const syncPort = isDev ? '8889' : (window.location.port || '3000');
     const syncServerUrl = `${window.location.protocol}//${window.location.hostname}:${syncPort}`;
+    const buildSyncHeaders = useCallback((includeJson = false): Record<string, string> => ({
+        ...(includeJson ? { 'Content-Type': 'application/json' } : {}),
+    }), []);
 
-    // Helper to process session data after pull (convert Base64 back to Blobs)
-    const rehydrateSyncedSession = useCallback((session: SavedChatSession): SavedChatSession => {
-        const newMessages = session.messages.map(msg => {
-            if (!msg.files?.length) return msg;
-            const newFiles = msg.files.map(file => {
-                // If file has syncData (Base64), convert back to Blob for local IndexedDB
-                if ((file as any).syncData && typeof (file as any).syncData === 'string') {
-                    const blob = base64ToBlob((file as any).syncData, file.type);
-                    const { syncData, ...rest } = file as any;
-                    return { ...rest, rawFile: blob } as UploadedFile;
-                }
-                return file;
-            });
-            return { ...msg, files: newFiles };
+    const uploadSyncBlob = useCallback(async (rawFile: Blob): Promise<SyncBlobUploadResult> => {
+        const response = await fetch(`${syncServerUrl}/api/sync/blob`, {
+            method: 'POST',
+            headers: { 'Content-Type': rawFile.type || 'application/octet-stream' },
+            body: rawFile,
         });
-        return { ...session, messages: newMessages };
-    }, []);
+        if (!response.ok) {
+            const body = await response.json().catch(() => null);
+            throw new Error(body?.error || `Blob upload failed (${response.status})`);
+        }
 
-    // Helper to process session data before push (convert Blobs to Base64)
-    const prepareSessionForSync = async (session: SavedChatSession): Promise<SavedChatSession> => {
-        const newMessages = await Promise.all(session.messages.map(async (msg) => {
+        const result = await response.json() as SyncBlobUploadResult;
+        if (!SYNC_BLOB_ID_PATTERN.test(result.blobId) || result.size !== rawFile.size) {
+            throw new Error('Sync server returned invalid blob metadata.');
+        }
+        return result;
+    }, [syncServerUrl]);
+
+    // Helper to process session data after pull (restore Base64 or independent Blob files).
+    const rehydrateSyncedSession = useCallback(async (session: SavedChatSession): Promise<SavedChatSession> => {
+        const newMessages = await Promise.all(session.messages.map(async msg => {
             if (!msg.files?.length) return msg;
-            const newFiles = await Promise.all(msg.files.map(async (file) => {
-                // If it has a rawFile Blob, we must convert it to Base64 string to survive JSON sync
-                if (file.rawFile instanceof Blob) {
-                    try {
-                        const base64 = await fileToBase64(file.rawFile as File);
-                        return { ...file, syncData: base64, rawFile: {} } as any;
-                    } catch (e) {
-                        logService.error(`Failed to serialize file ${file.name} for sync`, e);
-                        return file;
+            const newFiles = await Promise.all(msg.files.map(async file => {
+                if (file.syncBlobId) {
+                    if (!SYNC_BLOB_ID_PATTERN.test(file.syncBlobId)) {
+                        throw new Error(`Invalid synced blob id for file: ${file.name}`);
                     }
+                    const response = await fetch(`${syncServerUrl}/api/sync/blob/${encodeURIComponent(file.syncBlobId)}`, {
+                        headers: buildSyncHeaders(),
+                    });
+                    if (!response.ok) {
+                        throw new Error(`Blob download failed for ${file.name} (${response.status})`);
+                    }
+                    const blob = await response.blob();
+                    if (file.syncBlobSize !== undefined && blob.size !== file.syncBlobSize) {
+                        throw new Error(`Blob size mismatch for file: ${file.name}`);
+                    }
+                    const rawFile = new File([blob], file.name, { type: file.type || blob.type });
+                    return { ...file, rawFile, dataUrl: URL.createObjectURL(rawFile) } as UploadedFile;
+                }
+
+                // If file has syncData (Base64), convert it back to a File for local IndexedDB.
+                if (file.syncData && typeof file.syncData === 'string') {
+                    const blob = base64ToBlob(file.syncData, file.type);
+                    const rawFile = new File([blob], file.name, { type: file.type || blob.type });
+                    const { syncData, ...rest } = file;
+                    return { ...rest, rawFile, dataUrl: URL.createObjectURL(rawFile) } as UploadedFile;
                 }
                 return file;
             }));
             return { ...msg, files: newFiles };
         }));
         return { ...session, messages: newMessages };
-    };
+    }, [syncServerUrl, buildSyncHeaders]);
 
-    const pullItem = useCallback(async (type: string, id?: string, remoteTimestamp?: number) => {
-        const url = id ? `${syncServerUrl}/api/sync/pull?type=${type}&id=${id}` : `${syncServerUrl}/api/sync/pull?type=${type}`;
-        const response = await fetch(url);
+    // Helper to process session data before push (small files use Base64; large files use Blob storage).
+    const prepareSessionForSync = useCallback(async (session: SavedChatSession): Promise<SavedChatSession> => {
+        const newMessages = await Promise.all(session.messages.map(async (msg) => {
+            if (!msg.files?.length) return msg;
+            const newFiles = await Promise.all(msg.files.map(async (file) => {
+                if (file.rawFile instanceof Blob) {
+                    const {
+                        rawFile,
+                        syncData: _syncData,
+                        syncBlobId: _syncBlobId,
+                        syncBlobSize: _syncBlobSize,
+                        syncSkipped: _legacySyncSkipped,
+                        ...serializableFile
+                    } = file as UploadedFile & { syncSkipped?: boolean };
+                    const safeDataUrl = file.dataUrl?.startsWith('data:') || file.dataUrl?.startsWith('blob:')
+                        ? undefined
+                        : file.dataUrl;
+
+                    if (rawFile.size > MAX_INLINE_SYNC_FILE_BYTES) {
+                        try {
+                            const blob = await uploadSyncBlob(rawFile);
+                            return {
+                                ...serializableFile,
+                                dataUrl: safeDataUrl,
+                                syncBlobId: blob.blobId,
+                                syncBlobSize: blob.size,
+                            };
+                        } catch (error) {
+                            logService.error(`Failed to upload sync blob for ${file.name}`, error);
+                            throw error;
+                        }
+                    }
+
+                    try {
+                        const base64 = await fileToBase64(rawFile as File);
+                        return { ...serializableFile, dataUrl: safeDataUrl, syncData: base64 };
+                    } catch (error) {
+                        logService.error(`Failed to serialize file ${file.name} for sync`, error);
+                        throw error;
+                    }
+                }
+
+                const { syncSkipped: _legacySyncSkipped, ...serializableFile } = file as UploadedFile & { syncSkipped?: boolean };
+                const safeDataUrl = file.dataUrl?.startsWith('data:') || file.dataUrl?.startsWith('blob:')
+                    ? undefined
+                    : file.dataUrl;
+                return { ...serializableFile, dataUrl: safeDataUrl };
+            }));
+            return { ...msg, files: newFiles };
+        }));
+        return { ...session, messages: newMessages };
+    }, [uploadSyncBlob]);
+
+    const pullItem = useCallback(async (type: SyncItemType, id?: string, remoteTimestamp?: number) => {
+        const query = new URLSearchParams({ type });
+        if (id) query.set('id', id);
+        const response = await fetch(`${syncServerUrl}/api/sync/pull?${query.toString()}`, {
+            headers: buildSyncHeaders(),
+        });
         if (!response.ok) return;
         const data = await response.json();
         if (!data) return;
 
         if (type === 'session') {
             let session = data as SavedChatSession;
-            session = rehydrateSyncedSession(session);
+            session = await rehydrateSyncedSession(session);
 
             if (typeof setSavedSessions !== 'function') {
                 logService.error("setSavedSessions is not a function in pullItem");
@@ -146,9 +243,9 @@ export const useSyncManager = ({
             dbService.setAllScenarios(userScenariosOnly);
             setSavedScenarios(userScenariosOnly);
         }
-    }, [syncServerUrl, setSavedSessions, setSavedGroups, setAppSettings, setSavedScenarios, rehydrateSyncedSession]);
+    }, [syncServerUrl, buildSyncHeaders, setSavedSessions, setSavedGroups, setAppSettings, setSavedScenarios, rehydrateSyncedSession]);
 
-    const pushItem = useCallback(async (type: string, data: any) => {
+    const pushItem = useCallback(async (type: SyncItemType, data: unknown, baseRevision: string | null) => {
         let syncData = data;
         if (type === 'session') {
             syncData = await prepareSessionForSync(data as SavedChatSession);
@@ -156,11 +253,14 @@ export const useSyncManager = ({
 
         const response = await fetch(`${syncServerUrl}/api/sync/push`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, data: syncData })
+            headers: buildSyncHeaders(true),
+            body: JSON.stringify({ type, data: syncData, baseRevision })
         });
-        if (!response.ok) throw new Error(`Push failed for ${type} (${response.status})`);
-    }, [syncServerUrl]);
+        if (!response.ok) {
+            const body = await response.json().catch(() => null);
+            throw new Error(body?.error || `Push failed for ${type} (${response.status})`);
+        }
+    }, [syncServerUrl, buildSyncHeaders, prepareSessionForSync]);
 
     const pullFromServer = useCallback(async () => {
         if (!isSettingsLoaded || !isHistoryLoaded) {
@@ -169,9 +269,9 @@ export const useSyncManager = ({
         }
         setPullStatus('syncing');
         try {
-            const metaRes = await fetch(`${syncServerUrl}/api/sync/metadata`);
+            const metaRes = await fetch(`${syncServerUrl}/api/sync/metadata`, { headers: buildSyncHeaders() });
             if (!metaRes.ok) throw new Error("Server offline");
-            const metadata = await metaRes.json();
+            const metadata = await metaRes.json() as SyncMetadata;
 
             logService.info("Metadata from server:", metadata);
 
@@ -210,7 +310,7 @@ export const useSyncManager = ({
             setPullStatus('error');
             setTimeout(() => setPullStatus('idle'), 5000);
         }
-    }, [isSettingsLoaded, isHistoryLoaded, syncServerUrl, savedSessions, savedGroups, savedScenarios, pullItem]);
+    }, [isSettingsLoaded, isHistoryLoaded, syncServerUrl, buildSyncHeaders, savedSessions, savedGroups, savedScenarios, pullItem]);
 
     const pushToServer = useCallback(async () => {
         if (!isSettingsLoaded || !isHistoryLoaded) {
@@ -219,9 +319,9 @@ export const useSyncManager = ({
         }
         setPushStatus('syncing');
         try {
-            const metaRes = await fetch(`${syncServerUrl}/api/sync/metadata`);
+            const metaRes = await fetch(`${syncServerUrl}/api/sync/metadata`, { headers: buildSyncHeaders() });
             if (!metaRes.ok) throw new Error("Server offline");
-            const metadata = await metaRes.json();
+            const metadata = await metaRes.json() as SyncMetadata;
 
             let pushCount = 0;
             let sessionFailCount = 0;
@@ -232,7 +332,7 @@ export const useSyncManager = ({
                     const remoteUpdate = metadata.sessions[session.id] || 0;
                     const localUpdate = session.updatedAt || session.timestamp || 0;
                     if (localUpdate > remoteUpdate) {
-                        await pushItem('session', session);
+                        await pushItem('session', session, metadata.revisions?.sessions?.[session.id] ?? null);
                         pushCount++;
                     }
                 } catch (e) {
@@ -242,26 +342,26 @@ export const useSyncManager = ({
             }
 
             // 2. Push Global State (Critical Files) - Separate calls to ensure partial success
+            let globalFailCount = 0;
             const localGroupsMax = Math.max(...savedGroups.map(g => g.updatedAt || g.timestamp || 0), 0);
             if (localGroupsMax > metadata.groups.updatedAt || metadata.groups.updatedAt === 0) {
-                try { await pushItem('groups', savedGroups); pushCount++; } catch(e) { logService.error("Failed to push groups", e); }
+                try { await pushItem('groups', savedGroups, metadata.revisions?.groups ?? null); pushCount++; } catch(e) { globalFailCount++; logService.error("Failed to push groups", e); }
             }
 
             const localSettings = await dbService.getAppSettings();
             if ((localSettings?.updatedAt || 0) > metadata.settings.updatedAt || metadata.settings.updatedAt === 0) {
-                try { await pushItem('settings', appSettings); pushCount++; } catch(e) { logService.error("Failed to push settings", e); }
+                try { await pushItem('settings', appSettings, metadata.revisions?.settings ?? null); pushCount++; } catch(e) { globalFailCount++; logService.error("Failed to push settings", e); }
             }
 
             const localScenariosMax = Math.max(...savedScenarios.map(s => s.updatedAt || 0), 0);
             if (localScenariosMax > metadata.scenarios.updatedAt || metadata.scenarios.updatedAt === 0) {
-                try { await pushItem('scenarios', savedScenarios); pushCount++; } catch(e) { logService.error("Failed to push scenarios", e); }
+                try { await pushItem('scenarios', savedScenarios, metadata.revisions?.scenarios ?? null); pushCount++; } catch(e) { globalFailCount++; logService.error("Failed to push scenarios", e); }
             }
 
-            if (sessionFailCount > 0) {
-                logService.warn(`Pushed ${pushCount} items, but ${sessionFailCount} sessions failed (likely too large).`);
-            } else {
-                logService.info(`Successfully pushed ${pushCount} items to server.`);
+            if (sessionFailCount > 0 || globalFailCount > 0) {
+                throw new Error(`Pushed ${pushCount} items, but ${sessionFailCount + globalFailCount} items failed or conflicted.`);
             }
+            logService.info(`Successfully pushed ${pushCount} items to server.`);
 
             setPushStatus('success');
             setLastPushTime(Date.now());
@@ -271,7 +371,7 @@ export const useSyncManager = ({
             setPushStatus('error');
             setTimeout(() => setPushStatus('idle'), 5000);
         }
-    }, [isSettingsLoaded, isHistoryLoaded, syncServerUrl, savedSessions, savedGroups, savedScenarios, appSettings, pushItem]);
+    }, [isSettingsLoaded, isHistoryLoaded, syncServerUrl, buildSyncHeaders, savedSessions, savedGroups, savedScenarios, appSettings, pushItem]);
 
     return {
         pullStatus,

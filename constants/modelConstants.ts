@@ -1,5 +1,6 @@
 
 import { ModelOption } from '../types';
+import type { ThinkingLevel } from '../types/settings';
 
 export const DEFAULT_MODEL_ID = 'gemini-3.1-pro-preview';
 
@@ -49,7 +50,7 @@ export const THINKING_LEVELS = [
     { id: 'HIGH', name: 'High' },
 ];
 
-export const DEFAULT_THINKING_LEVEL = 'HIGH';
+export const DEFAULT_THINKING_LEVEL: ThinkingLevel = 'HIGH';
 
 export const THINKING_BUDGET_RANGES: { [key: string]: { min: number; max: number } } = {
     'gemini-2.5-pro': { min: 128, max: 32768 },

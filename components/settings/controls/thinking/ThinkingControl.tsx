@@ -7,13 +7,14 @@ import { isGemini3Model } from '../../../../utils/appUtils';
 import { ThinkingModeSelector } from './ThinkingModeSelector';
 import { ThinkingLevelSelector } from './ThinkingLevelSelector';
 import { ThinkingBudgetSlider } from './ThinkingBudgetSlider';
+import type { ThinkingLevel } from '../../../../types/settings';
 
 interface ThinkingControlProps {
   modelId: string;
   thinkingBudget: number;
   setThinkingBudget: (value: number) => void;
-  thinkingLevel?: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH';
-  setThinkingLevel?: (value: 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH') => void;
+  thinkingLevel?: ThinkingLevel;
+  setThinkingLevel?: (value: ThinkingLevel) => void;
   showThoughts: boolean;
   setShowThoughts: (value: boolean) => void;
   t: (key: string) => string;

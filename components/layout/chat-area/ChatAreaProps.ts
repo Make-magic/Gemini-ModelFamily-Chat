@@ -73,7 +73,7 @@ export interface ChatAreaProps {
   exportStatus?: 'idle' | 'exporting';
 
   // Edit Content
-  onEditMessageContent: (message: ChatMessage) => void;
+  onEditMessageContent: (messageId: string, newContent: string) => void;
   onUpdateMessageFile: (messageId: string, fileId: string, updates: { videoMetadata?: VideoMetadata, mediaResolution?: MediaResolution }) => void;
 
   // ChatInput Props
