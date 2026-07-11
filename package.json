@@ -15,7 +15,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "node scripts/run-playwright.mjs"
+    "test:e2e": "node scripts/run-playwright.mjs",
+    "build:exe": "npm run build && pkg . --targets node18-win-x64 --compress Brotli --output release/AMC.exe"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.2.0",
