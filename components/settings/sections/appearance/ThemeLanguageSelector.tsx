@@ -4,10 +4,11 @@ import { ChevronDown, Check } from 'lucide-react';
 import { translations } from '../../../../utils/appUtils';
 import { IconThemeSystem, IconThemeDark, IconThemeLight } from '../../../icons/CustomIcons';
 import { useClickOutside } from '../../../../hooks/useClickOutside';
+import { ThemePreference } from '../../../../types/theme';
 
 interface ThemeLanguageSelectorProps {
-  themeId: 'system' | 'onyx' | 'pearl' | 'wenxin' | 'gewu' | 'jingshi' | 'classic-light';
-  setThemeId: (value: 'system' | 'onyx' | 'pearl' | 'wenxin' | 'gewu' | 'jingshi' | 'classic-light') => void;
+  themeId: ThemePreference;
+  setThemeId: (value: ThemePreference) => void;
   language: 'en' | 'zh' | 'system';
   setLanguage: (value: 'en' | 'zh' | 'system') => void;
   t: (key: keyof typeof translations) => string;
@@ -25,8 +26,10 @@ export const ThemeLanguageSelector: React.FC<ThemeLanguageSelectorProps> = ({
 
   useClickOutside(languageDropdownRef, () => setIsLanguageDropdownOpen(false), isLanguageDropdownOpen);
 
-  const themeOptions: { id: 'system' | 'onyx' | 'pearl' | 'wenxin' | 'gewu' | 'jingshi' | 'classic-light'; labelKey: keyof typeof translations; icon: React.ReactNode }[] = [
+  const themeOptions: { id: ThemePreference; labelKey: keyof typeof translations; icon: React.ReactNode }[] = [
     { id: 'system', labelKey: 'settingsThemeSystem', icon: <IconThemeSystem size={16} strokeWidth={1.5} /> },
+    { id: 'claude-light', labelKey: 'settingsThemeClaudeLight', icon: <IconThemeLight size={16} strokeWidth={1.5} /> },
+    { id: 'claude-dark', labelKey: 'settingsThemeClaudeDark', icon: <IconThemeDark size={16} strokeWidth={1.5} /> },
     { id: 'onyx', labelKey: 'settingsThemeDark', icon: <IconThemeDark size={16} strokeWidth={1.5} /> },
     { id: 'pearl', labelKey: 'settingsThemeLight', icon: <IconThemeLight size={16} strokeWidth={1.5} /> },
     { id: 'wenxin', labelKey: 'settingsThemeWenxin', icon: <IconThemeLight size={16} strokeWidth={1.5} /> },
@@ -46,11 +49,11 @@ export const ThemeLanguageSelector: React.FC<ThemeLanguageSelectorProps> = ({
   return (
     <div className="grid grid-cols-1 gap-2">
       {/* Theme Selector */}
-      <div className="flex items-center justify-between py-3 transition-colors">
+      <div className="flex flex-col gap-2 py-3 transition-colors sm:flex-row sm:items-center sm:justify-between">
           <span className="text-sm font-medium text-[var(--theme-text-primary)] flex items-center gap-2">
               {t('settingsTheme')}
           </span>
-          <div className="flex p-1 bg-[var(--theme-bg-tertiary)]/50 rounded-lg border border-[var(--theme-border-secondary)]">
+          <div className="flex flex-wrap justify-end gap-1 p-1 bg-[var(--theme-bg-tertiary)]/50 rounded-lg border border-[var(--theme-border-secondary)]">
               {themeOptions.map(option => (
                 <button
                     key={option.id}

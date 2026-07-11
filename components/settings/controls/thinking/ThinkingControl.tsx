@@ -30,8 +30,8 @@ export const ThinkingControl: React.FC<ThinkingControlProps> = ({
   t
 }) => {
   const capabilities = getModelCapabilities(modelId);
-  const isGemini3 = capabilities.thinking === 'level' || capabilities.thinking === 'budget-and-level';
-  const isFlash3 = isGemini3 && modelId.toLowerCase().includes('flash');
+  const isGemini3 = capabilities.family === 'gemini' && capabilities.generation === '3';
+  const isFlash3 = isGemini3 && capabilities.variant === 'flash';
   const budgetConfig = capabilities.thinkingBudgetRange;
   
   const isMandatoryThinking = capabilities.thinkingRequired;

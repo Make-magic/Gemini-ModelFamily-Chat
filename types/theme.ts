@@ -1,4 +1,16 @@
 
+export type BuiltInThemeId =
+  | 'onyx'
+  | 'pearl'
+  | 'wenxin'
+  | 'gewu'
+  | 'jingshi'
+  | 'classic-light'
+  | 'claude-light'
+  | 'claude-dark';
+
+export type ThemePreference = 'system' | BuiltInThemeId;
+
 export interface ThemeColors {
   // Backgrounds
   bgPrimary: string;
@@ -57,7 +69,7 @@ export interface ThemeColors {
 }
 
 export interface Theme {
-  id: string;
+  id: BuiltInThemeId;
   name: string;
   colors: ThemeColors;
 }

@@ -6,10 +6,11 @@ import { ThemeLanguageSelector } from './appearance/ThemeLanguageSelector';
 import { FontSizeControl } from './appearance/FontSizeControl';
 import { FileStrategyControl } from './appearance/FileStrategyControl';
 import { InterfaceToggles } from './appearance/InterfaceToggles';
+import { ThemePreference } from '../../../types/theme';
 
 interface AppearanceSectionProps {
-  themeId: 'system' | 'onyx' | 'pearl';
-  setThemeId: (value: 'system' | 'onyx' | 'pearl') => void;
+  themeId: ThemePreference;
+  setThemeId: (value: ThemePreference) => void;
   language: 'en' | 'zh' | 'system';
   setLanguage: (value: 'en' | 'zh' | 'system') => void;
   isCompletionNotificationEnabled: boolean;

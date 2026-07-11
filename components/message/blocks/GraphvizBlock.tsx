@@ -6,6 +6,7 @@ import { exportSvgAsPng } from '../../../utils/exportUtils';
 import { useCopyToClipboard } from '../../../hooks/useCopyToClipboard';
 import { MESSAGE_BLOCK_BUTTON_CLASS } from '../../../constants/appConstants';
 import { translations } from '../../../utils/appUtils';
+import { isDarkThemeId } from '../../../constants/themeConstants';
 
 declare var Viz: any;
 
@@ -59,7 +60,7 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({ code, onImageClick
       }
 
       // 2. Theme Injection
-      const isDark = themeId === 'onyx';
+      const isDark = isDarkThemeId(themeId);
       const color = isDark ? '#e4e4e7' : '#374151'; // zinc-200 : gray-700
       const themeDefaults = `
         graph [bgcolor="transparent" fontcolor="${color}"];
@@ -147,7 +148,7 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({ code, onImageClick
   };
 
   const containerClasses = "p-4 border border-[var(--theme-border-secondary)] rounded-md shadow-inner overflow-auto custom-scrollbar flex items-center justify-center min-h-[150px] transition-colors duration-300";
-  const bgClass = themeId === 'onyx' ? 'bg-[var(--theme-bg-secondary)]' : 'bg-white';
+  const bgClass = isDarkThemeId(themeId) ? 'bg-[var(--theme-bg-secondary)]' : 'bg-white';
 
   if (isRendering) {
       return (

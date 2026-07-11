@@ -7,12 +7,12 @@ import { getModelCapabilities } from '../constants/modelRegistry';
 // --- Model Sorting & Defaults ---
 
 export const sortModels = (models: ModelOption[]): ModelOption[] => {
-    const getCategoryWeight = (id: string) => {
-        const lower = id.toLowerCase();
-        if (lower.includes('tts')) return 5;
-        if (lower.includes('imagen')) return 4;
-        if (lower.includes('image')) return 3;
-        if (lower.includes('native-audio')) return 2;
+    const getCategoryWeight = (model: ModelOption) => {
+        const capabilities = getModelCapabilities(model.id, model.capabilities);
+        if (capabilities.tts) return 5;
+        if (capabilities.imageModelKind === 'imagen') return 4;
+        if (capabilities.imageGeneration) return 3;
+        if (capabilities.live) return 2;
         return 1;
     };
 
@@ -21,24 +21,14 @@ export const sortModels = (models: ModelOption[]): ModelOption[] => {
         if (!a.isPinned && b.isPinned) return 1;
         
         if (a.isPinned && b.isPinned) {
-            const weightA = getCategoryWeight(a.id);
-            const weightB = getCategoryWeight(b.id);
+            const capabilitiesA = getModelCapabilities(a.id, a.capabilities);
+            const capabilitiesB = getModelCapabilities(b.id, b.capabilities);
+            const weightA = getCategoryWeight(a);
+            const weightB = getCategoryWeight(b);
             if (weightA !== weightB) return weightA - weightB;
-
-            const isA35 = a.id.includes('gemini-3.5');
-            const isB35 = b.id.includes('gemini-3.5');
-            if (isA35 && !isB35) return -1;
-            if (!isA35 && isB35) return 1;
-
-            const isA31 = a.id.includes('gemini-3.1');
-            const isB31 = b.id.includes('gemini-3.1');
-            if (isA31 && !isB31) return -1;
-            if (!isA31 && isB31) return 1;
-
-            const isA3 = a.id.includes('gemini-3');
-            const isB3 = b.id.includes('gemini-3');
-            if (isA3 && !isB3) return -1;
-            if (!isA3 && isB3) return 1;
+            if (capabilitiesA.catalogPriority !== capabilitiesB.catalogPriority) {
+                return capabilitiesB.catalogPriority - capabilitiesA.catalogPriority;
+            }
         }
 
         return a.name.localeCompare(b.name);
@@ -60,12 +50,6 @@ export const getDefaultModelOptions = (): ModelOption[] => {
         return { id, name, isPinned: true };
     });
     return sortModels([...pinnedInternalModels, ...STATIC_TTS_MODELS, ...STATIC_IMAGEN_MODELS]);
-};
-
-// --- Helper for Model Capabilities ---
-export const isGemini3Model = (modelId: string): boolean => {
-    const thinking = getModelCapabilities(modelId).thinking;
-    return thinking === 'level' || thinking === 'budget-and-level';
 };
 
 // --- Model Settings Cache ---

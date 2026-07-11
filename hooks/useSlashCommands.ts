@@ -4,6 +4,7 @@ import { Command } from '../components/chat/input/SlashCommandMenu';
 import { translations } from '../utils/appUtils';
 import { ModelOption } from '../types';
 import type { ThinkingLevel } from '../types/settings';
+import { getModelCapabilities } from '../constants/modelRegistry';
 
 interface UseSlashCommandsProps {
   t: (key: keyof typeof translations) => string;
@@ -139,7 +140,9 @@ export const useSlashCommands = ({
       const modelCommands: Command[] = filteredModels.map(model => ({
         name: model.name,
         description: model.isPinned ? `Pinned Model` : `ID: ${model.id}`,
-        icon: model.id.includes('imagen') ? 'image' : (model.isPinned ? 'pin' : 'bot'),
+        icon: getModelCapabilities(model.id, model.capabilities).imageGeneration
+          ? 'image'
+          : (model.isPinned ? 'pin' : 'bot'),
         action: () => {
           onSelectModel(model.id);
           setInputText('');

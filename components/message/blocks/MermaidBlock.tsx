@@ -7,6 +7,7 @@ import { exportSvgAsPng } from '../../../utils/exportUtils';
 import { useCopyToClipboard } from '../../../hooks/useCopyToClipboard';
 import { MESSAGE_BLOCK_BUTTON_CLASS } from '../../../constants/appConstants';
 import { translations } from '../../../utils/appUtils';
+import { isDarkThemeId } from '../../../constants/themeConstants';
 
 interface MermaidBlockProps {
   code: string;
@@ -37,7 +38,7 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
         
         mermaid.initialize({ 
             startOnLoad: false, 
-            theme: themeId === 'onyx' ? 'dark' : 'default',
+            theme: isDarkThemeId(themeId) ? 'dark' : 'default',
             securityLevel: 'loose',
             fontFamily: 'inherit'
         });
@@ -91,7 +92,7 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
   };
 
   const containerClasses = "p-4 border border-[var(--theme-border-secondary)] rounded-md shadow-inner overflow-auto custom-scrollbar flex items-center justify-center min-h-[150px] transition-colors duration-300";
-  const bgClass = themeId === 'onyx' ? 'bg-[var(--theme-bg-secondary)]' : 'bg-white';
+  const bgClass = isDarkThemeId(themeId) ? 'bg-[var(--theme-bg-secondary)]' : 'bg-white';
 
   if (isRendering) {
     return (

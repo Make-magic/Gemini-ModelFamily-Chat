@@ -46,6 +46,15 @@ const processResponse = (response: GenerateContentResponse) => {
     };
 };
 
+const createTerminalEmitter = (onTerminal: (result: ChatTerminalResult) => void) => {
+    let terminalSent = false;
+    return (result: ChatTerminalResult) => {
+        if (terminalSent) return;
+        terminalSent = true;
+        onTerminal(result);
+    };
+};
+
 export const sendStatelessMessageStreamApi = async (
     apiKey: string,
     modelId: string,
@@ -63,12 +72,7 @@ export const sendStatelessMessageStreamApi = async (
     let finalUrlContextMetadata: any = null;
 
     let emittedContent = false;
-    let terminalSent = false;
-    const finish = (result: ChatTerminalResult) => {
-        if (terminalSent) return;
-        terminalSent = true;
-        onTerminal(result);
-    };
+    const finish = createTerminalEmitter(onTerminal);
 
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
@@ -155,11 +159,12 @@ export const sendStatelessMessageNonStreamApi = async (
     onTerminal: (result: ChatTerminalResult) => void
 ): Promise<void> => {
     logService.info(`Sending message via stateless generateContent (non-stream) for model ${modelId}`);
+    const finish = createTerminalEmitter(onTerminal);
     
     try {
         const ai = await getConfiguredApiClient(apiKey);
 
-        if (abortSignal.aborted) { onTerminal({ status: 'abort', parts: [] }); return; }
+        if (abortSignal.aborted) { finish({ status: 'abort', parts: [] }); return; }
 
         const response = await ai.models.generateContent({
             model: modelId,
@@ -167,20 +172,20 @@ export const sendStatelessMessageNonStreamApi = async (
             config: { ...config, abortSignal }
         });
 
-        if (abortSignal.aborted) { onTerminal({ status: 'abort', parts: [] }); return; }
+        if (abortSignal.aborted) { finish({ status: 'abort', parts: [] }); return; }
 
         const { parts: responseParts, thoughts, usage, grounding, urlContext } = processResponse(response);
 
         logService.info(`Stateless non-stream complete for ${modelId}.`, { usage, hasGrounding: !!grounding, hasUrlContext: !!urlContext });
         if (responseParts.length === 0 && !thoughts) throw new Error('The model returned an empty response.');
-        onTerminal({ status: 'success', parts: responseParts, thoughtsText: thoughts, usageMetadata: usage, groundingMetadata: grounding, urlContextMetadata: urlContext });
+        finish({ status: 'success', parts: responseParts, thoughtsText: thoughts, usageMetadata: usage, groundingMetadata: grounding, urlContextMetadata: urlContext });
     } catch (error) {
         const classified = classifyApiError(error);
         if (classified.kind === 'aborted' || abortSignal.aborted) {
-            onTerminal({ status: 'abort', error: classified, parts: [] });
+            finish({ status: 'abort', error: classified, parts: [] });
             return;
         }
         logService.error(`Error in stateless non-stream for ${modelId}:`, classified);
-        onTerminal({ status: 'error', error: classified, parts: [] });
+        finish({ status: 'error', error: classified, parts: [] });
     }
 };

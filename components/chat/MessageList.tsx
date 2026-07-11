@@ -11,7 +11,7 @@ import { WelcomeScreen } from './message-list/WelcomeScreen';
 import { ScrollNavigation } from './message-list/ScrollNavigation';
 import { FileConfigurationModal } from '../modals/FileConfigurationModal';
 import { MediaResolution } from '../../types/settings';
-import { isGemini3Model } from '../../utils/appUtils';
+import { getModelCapabilities } from '../../constants/modelRegistry';
 import { TextSelectionToolbar } from './message-list/TextSelectionToolbar';
 import { useMessageListUI } from '../../hooks/useMessageListUI';
 import { VIRTUOSO_COMPONENTS, type MessageListVirtuosoContext } from './message-list/StreamingMessageFooter';
@@ -80,10 +80,10 @@ export const MessageList: React.FC<MessageListProps> = ({
     handleSaveFileConfig,
   } = useMessageListUI({ messages, onUpdateMessageFile });
 
-  // Determine if current model is Gemini 3 to enable per-part resolution
-  const isGemini3 = useMemo(() => {
-    return isGemini3Model(currentModelId);
-  }, [currentModelId]);
+  const isGemini3 = useMemo(
+    () => getModelCapabilities(currentModelId).mediaResolution === 'per-part',
+    [currentModelId],
+  );
 
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const activeScrollerRef = useRef<HTMLElement | null>(null);

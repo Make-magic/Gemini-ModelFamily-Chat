@@ -5,6 +5,7 @@ import { uploadFileApi, getFileMetadataApi } from './api/fileApi';
 import { generateImagesApi, generateSpeechApi, transcribeAudioApi, translateTextApi, generateTitleApi, generateSuggestionsApi, countTokensApi } from './api/generationApi';
 import { sendStatelessMessageStreamApi, sendStatelessMessageNonStreamApi } from './api/chatApi';
 import { logService } from "./logService";
+import { getModelCapabilities } from '../constants/modelRegistry';
 
 class GeminiServiceImpl implements GeminiService {
     constructor() {
@@ -71,7 +72,8 @@ class GeminiServiceImpl implements GeminiService {
                 config.imageConfig.aspectRatio = aspectRatio;
             }
 
-            if (modelId === 'gemini-3-pro-image-preview' && imageSize) {
+            const supportedImageSizes = getModelCapabilities(modelId).imageSizes;
+            if (imageSize && supportedImageSizes?.includes(imageSize)) {
                 if (!config.imageConfig) config.imageConfig = {};
                 config.imageConfig.imageSize = imageSize;
             }

@@ -3,7 +3,7 @@ import { ChatMessage, ContentPart, UploadedFile, ChatHistoryItem, SavedChatSessi
 import { SUPPORTED_TEXT_MIME_TYPES, TEXT_BASED_EXTENSIONS, SUPPORTED_IMAGE_MIME_TYPES } from '../constants/fileConstants';
 import { logService } from '../services/logService';
 import { fileToBase64, fileToString } from './fileHelpers';
-import { isGemini3Model } from './modelHelpers';
+import { getModelCapabilities } from '../constants/modelRegistry';
 import { MediaResolution } from '../types/settings';
 import { toPartMediaResolutionLevel } from '../services/api/geminiAdapter';
 import { materializeFileObjectUrl } from './objectUrlManager';
@@ -87,8 +87,8 @@ export const buildContentParts = async (
 }> => {
   const filesToProcess = files || [];
   
-  // Check if model supports per-part resolution (Gemini 3 family)
-  const isGemini3 = modelId && isGemini3Model(modelId);
+  const supportsPerPartResolution = !!modelId
+    && getModelCapabilities(modelId).mediaResolution === 'per-part';
   
   const processedResults = await Promise.all(filesToProcess.map(async (file) => {
     const newFile = { ...file };
@@ -177,7 +177,7 @@ export const buildContentParts = async (
     // Prioritize file-level resolution, then global resolution
     const effectiveResolution = file.mediaResolution || mediaResolution;
     
-    if (part && isGemini3 && effectiveResolution && effectiveResolution !== MediaResolution.MEDIA_RESOLUTION_UNSPECIFIED) {
+    if (part && supportsPerPartResolution && effectiveResolution && effectiveResolution !== MediaResolution.MEDIA_RESOLUTION_UNSPECIFIED) {
         // Logic update: 
         // 1. If it's fileData (File API), we always inject resolution (unless it's YouTube link which uses fileUri but is special).
         // 2. If it's inlineData, we ensure it's not text-like.

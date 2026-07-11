@@ -1,3 +1,5 @@
+import { AVAILABLE_THEMES } from '../../constants/themeConstants';
+
 /**
  * Gathers all style and link tags from the current document's head to be inlined.
  * @returns A promise that resolves to a string of HTML style and link tags.
@@ -97,7 +99,7 @@ export const createSnapshotContainer = async (
 
     let rootBgColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-primary').trim();
     if (!rootBgColor || rootBgColor === 'transparent' || rootBgColor === 'rgba(0, 0, 0, 0)') {
-        rootBgColor = themeId === 'onyx' ? '#09090b' : '#FFFFFF';
+        rootBgColor = AVAILABLE_THEMES.find(theme => theme.id === themeId)?.colors.bgPrimary ?? '#FFFFFF';
     }
 
     tempContainer.innerHTML = `
