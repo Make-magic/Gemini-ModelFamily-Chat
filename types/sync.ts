@@ -28,10 +28,12 @@ export interface SyncedItemState {
   revision: string | null;
   lastSyncedAt: number;
   localUpdatedAt: number;
+  /** Stable fingerprint of the last content known to be shared by this client and the server. */
+  baseFingerprint?: string;
 }
 
 export interface SyncClientState {
-  version: 1;
+  version: 2;
   sessions: Record<string, SyncedItemState>;
   globals: Record<'groups' | 'settings' | 'scenarios', SyncedItemState>;
   baseSnapshots: {
@@ -51,3 +53,14 @@ export interface SyncConflictRequest {
   detail: string;
   defaultChoice: SyncConflictChoice;
 }
+
+export type SyncDirection = 'pull' | 'push';
+
+export type SessionSyncDecision =
+  | 'same'
+  | 'bootstrap_local'
+  | 'bootstrap_remote'
+  | 'local_only'
+  | 'remote_only'
+  | 'conflict'
+  | 'unchanged';

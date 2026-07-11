@@ -27,6 +27,8 @@ export const SyncConflictDialog: React.FC<SyncConflictDialogProps> = ({ conflict
         <p id="sync-conflict-description" className="mt-2 text-sm leading-6 text-[var(--theme-text-secondary)]">
           {t('sync_conflict_description')}
         </p>
+        <p className="mt-3 text-sm font-medium text-[var(--theme-text-primary)]">{conflict.title}</p>
+        <p className="mt-1 text-sm leading-6 text-[var(--theme-text-secondary)]">{conflict.detail}</p>
         <p className="mt-2 text-xs text-[var(--theme-text-tertiary)]">
           {t('sync_conflict_item')}: {conflict.itemType}
         </p>

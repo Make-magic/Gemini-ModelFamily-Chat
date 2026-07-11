@@ -16,6 +16,14 @@ import { logService } from '../../utils/appUtils';
 import { fileToBase64, base64ToBlob } from '../../utils/fileHelpers';
 import { createManagedObjectUrl, releaseSessionObjectUrls } from '../../utils/objectUrlManager';
 import { mergeEntitiesThreeWay, mergeSettingsThreeWay } from '../../utils/syncMerge';
+import {
+    createConflictCopy,
+    decideSessionSync,
+    findRedundantConflictCopyIds,
+    fingerprintSession,
+    migrateSyncClientState,
+    stableStringify,
+} from '../../utils/syncSession';
 
 const MAX_INLINE_SYNC_FILE_BYTES = 5 * 1024 * 1024;
 const SYNC_BLOB_ID_PATTERN = /^[A-Fa-f0-9]{64}$/;
@@ -47,38 +55,16 @@ interface SyncManagerProps {
 
 export type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 
-const emptyItemState = () => ({ revision: null, lastSyncedAt: 0, localUpdatedAt: 0 });
-const createEmptyClientState = (): SyncClientState => ({
-    version: 1,
-    sessions: {},
-    globals: { groups: emptyItemState(), settings: emptyItemState(), scenarios: emptyItemState() },
-    baseSnapshots: {},
-    knownTombstones: {},
-});
-
 const sessionUpdatedAt = (session: SavedChatSession): number => session.updatedAt || session.timestamp || 0;
 const groupsUpdatedAt = (groups: ChatGroup[]): number => Math.max(...groups.map(item => item.updatedAt || item.timestamp || 0), 0);
 const scenariosUpdatedAt = (scenarios: SavedScenario[]): number => Math.max(...scenarios.map(item => item.updatedAt || 0), 0);
-const same = (left: unknown, right: unknown): boolean => JSON.stringify(left) === JSON.stringify(right);
+const same = (left: unknown, right: unknown): boolean => stableStringify(left) === stableStringify(right);
 const clone = <T,>(value: T): T => structuredClone(value);
-const combineWithoutBase = (
-    type: GlobalSyncType,
-    local: AppSettings | ChatGroup[] | SavedScenario[],
-    remote: AppSettings | ChatGroup[] | SavedScenario[],
-): AppSettings | ChatGroup[] | SavedScenario[] => {
-    if (type === 'settings') return { ...(remote as AppSettings), ...(local as AppSettings) };
-    const remoteItems = remote as Array<ChatGroup | SavedScenario>;
-    const localItems = local as Array<ChatGroup | SavedScenario>;
-    const combined = [...remoteItems];
-    const remoteById = new Map(remoteItems.map(item => [item.id, item]));
-    localItems.forEach((item, index) => {
-        const remoteItem = remoteById.get(item.id);
-        if (!remoteItem) combined.push(item);
-        else if (!same(remoteItem, item)) combined.push({ ...item, id: `${item.id}-local-${Date.now()}-${index}` });
-    });
-    return combined as ChatGroup[] | SavedScenario[];
+const globalUpdatedAt = (type: GlobalSyncType, value: AppSettings | ChatGroup[] | SavedScenario[]): number => {
+    if (type === 'settings') return (value as AppSettings).updatedAt || 0;
+    if (type === 'groups') return groupsUpdatedAt(value as ChatGroup[]);
+    return scenariosUpdatedAt(value as SavedScenario[]);
 };
-
 export const useSyncManager = ({
     appSettings,
     setAppSettings,
@@ -98,6 +84,7 @@ export const useSyncManager = ({
     const [lastPushTime, setLastPushTime] = useState<number | null>(null);
     const [syncConflict, setSyncConflict] = useState<SyncConflictRequest | null>(null);
     const conflictResolverRef = useRef<((choice: SyncConflictChoice) => void) | null>(null);
+    const syncInProgressRef = useRef(false);
 
     const isDev = import.meta.env.DEV;
     const syncPort = isDev ? '8889' : (window.location.port || '3000');
@@ -108,7 +95,15 @@ export const useSyncManager = ({
 
     const loadClientState = useCallback(async (): Promise<SyncClientState> => {
         const state = await dbService.getSyncClientState();
-        return state?.version === 1 ? state : createEmptyClientState();
+        const migrated = migrateSyncClientState(state);
+        if (!state || (state as { version?: number }).version !== migrated.version) {
+            await dbService.setSyncClientState(migrated);
+        }
+        return migrated;
+    }, []);
+
+    const persistClientState = useCallback(async (state: SyncClientState) => {
+        await dbService.setSyncClientState(clone(state));
     }, []);
 
     const requestConflictChoice = useCallback((request: Omit<SyncConflictRequest, 'id'>): Promise<SyncConflictChoice> => (
@@ -251,6 +246,32 @@ export const useSyncManager = ({
         await dbService.deleteSession(id);
     }, [setSavedSessions]);
 
+    const markSessionSynced = useCallback(async (
+        state: SyncClientState,
+        session: SavedChatSession,
+        revision: string,
+        baseFingerprint: string,
+    ) => {
+        state.sessions[session.id] = {
+            revision,
+            lastSyncedAt: Date.now(),
+            localUpdatedAt: sessionUpdatedAt(session),
+            baseFingerprint,
+        };
+        delete state.knownTombstones[session.id];
+        await persistClientState(state);
+    }, [persistClientState]);
+
+    const markSessionDeleted = useCallback(async (
+        state: SyncClientState,
+        id: string,
+        tombstone: { revision: string; deletedAt: number },
+    ) => {
+        delete state.sessions[id];
+        state.knownTombstones[id] = tombstone;
+        await persistClientState(state);
+    }, [persistClientState]);
+
     const applyGlobalValue = useCallback(async (type: GlobalSyncType, value: AppSettings | ChatGroup[] | SavedScenario[]) => {
         if (type === 'settings') {
             const settings = value as AppSettings;
@@ -273,18 +294,17 @@ export const useSyncManager = ({
         return savedScenarios;
     }, [appSettings, savedGroups, savedScenarios]);
 
-    const getGlobalUpdatedAt = useCallback((type: GlobalSyncType): number => {
-        if (type === 'settings') return appSettings.updatedAt || 0;
-        if (type === 'groups') return groupsUpdatedAt(savedGroups);
-        return scenariosUpdatedAt(savedScenarios);
-    }, [appSettings, savedGroups, savedScenarios]);
-
     const markGlobalSynced = useCallback((state: SyncClientState, type: GlobalSyncType, metadata: SyncItemMetadata, value: AppSettings | ChatGroup[] | SavedScenario[]) => {
-        state.globals[type] = { revision: metadata.revision, lastSyncedAt: Date.now(), localUpdatedAt: getGlobalUpdatedAt(type) };
+        state.globals[type] = {
+            revision: metadata.revision,
+            lastSyncedAt: Date.now(),
+            localUpdatedAt: globalUpdatedAt(type, value),
+            baseFingerprint: stableStringify(value),
+        };
         if (type === 'settings') state.baseSnapshots.settings = clone(value as AppSettings);
         else if (type === 'groups') state.baseSnapshots.groups = clone(value as ChatGroup[]);
         else state.baseSnapshots.scenarios = clone(value as SavedScenario[]);
-    }, [getGlobalUpdatedAt]);
+    }, []);
 
     const pullGlobal = useCallback(async (type: GlobalSyncType, metadata: SyncItemMetadata, state: SyncClientState) => {
         if (!metadata.revision) return;
@@ -292,10 +312,18 @@ export const useSyncManager = ({
         const local = getGlobalLocal(type);
         const base = state.baseSnapshots[type] as never;
         const remoteChanged = known.revision !== metadata.revision;
-        const localChanged = base === undefined || !same(local, base);
+        const localChanged = base !== undefined && !same(local, base);
         if (!remoteChanged) return;
         const remote = await pullRawItem<AppSettings | ChatGroup[] | SavedScenario[]>(type);
         if (!remote) return;
+
+        if (base === undefined) {
+            const value = same(local, remote) ? local : remote;
+            if (!same(value, local)) await applyGlobalValue(type, value);
+            markGlobalSynced(state, type, metadata, value);
+            await persistClientState(state);
+            return;
+        }
 
         let merged: AppSettings | ChatGroup[] | SavedScenario[] = remote;
         let conflicts: string[] = [];
@@ -313,7 +341,7 @@ export const useSyncManager = ({
             conflicts = result.conflicts;
         }
 
-        if (localChanged && (conflicts.length || base === undefined)) {
+        if (localChanged && conflicts.length) {
             const choice = await requestConflictChoice({
                 itemType: type,
                 title: `同步冲突：${type}`,
@@ -322,79 +350,111 @@ export const useSyncManager = ({
             });
             if (choice === 'use_remote') merged = remote;
             if (choice === 'overwrite_remote') merged = local;
-            if (choice === 'keep_both' && base === undefined) merged = combineWithoutBase(type, local, remote);
         }
 
         await applyGlobalValue(type, merged);
         let revision = metadata.revision;
         if (!same(merged, remote)) revision = (await pushItem(type, merged, metadata.revision)).revision;
         markGlobalSynced(state, type, { ...metadata, revision }, merged);
-    }, [applyGlobalValue, getGlobalLocal, markGlobalSynced, pullRawItem, pushItem, requestConflictChoice]);
+        await persistClientState(state);
+    }, [applyGlobalValue, getGlobalLocal, markGlobalSynced, persistClientState, pullRawItem, pushItem, requestConflictChoice]);
 
     const pullFromServer = useCallback(async () => {
-        if (!isSettingsLoaded || !isHistoryLoaded) return;
+        if (!isSettingsLoaded || !isHistoryLoaded || syncInProgressRef.current) return;
+        syncInProgressRef.current = true;
         setPullStatus('syncing');
         try {
             const [metadata, state] = await Promise.all([fetchMetadata(), loadClientState()]);
 
             for (const [id, tombstone] of Object.entries(metadata.tombstones.sessions)) {
-                state.knownTombstones[id] = tombstone;
-                delete state.sessions[id];
                 if (savedSessions.some(session => session.id === id)) await removeLocalSession(id);
+                await markSessionDeleted(state, id, tombstone);
             }
 
             for (const [id, remoteMetadata] of Object.entries(metadata.sessions)) {
                 const local = savedSessions.find(session => session.id === id);
                 const known = state.sessions[id];
-                const remoteChanged = known?.revision !== remoteMetadata.revision;
-                const localChanged = local ? (!known || sessionUpdatedAt(local) > known.localUpdatedAt) : false;
+                if (!remoteMetadata.revision) continue;
                 if (!local) {
                     const remote = await pullRawItem<SavedChatSession>('session', id);
                     if (!remote) continue;
+                    const remoteFingerprint = await fingerprintSession(remote);
                     const hydrated = await rehydrateSyncedSession(remote);
                     await savePulledSession(hydrated);
-                    state.sessions[id] = { revision: remoteMetadata.revision, lastSyncedAt: Date.now(), localUpdatedAt: sessionUpdatedAt(hydrated) };
+                    await markSessionSynced(state, hydrated, remoteMetadata.revision, remoteFingerprint);
                     continue;
                 }
-                if (!remoteChanged) continue;
 
-                if (localChanged) {
-                    const choice = await requestConflictChoice({
-                        itemType: 'session',
-                        title: `会话冲突：${local.title}`,
-                        detail: '本地和远端都修改了此会话。默认保留两份，避免任何一侧内容丢失。',
-                        defaultChoice: 'keep_both',
-                    });
-                    if (choice === 'overwrite_remote') {
-                        const result = await pushItem('session', local, remoteMetadata.revision);
-                        state.sessions[id] = { revision: result.revision, lastSyncedAt: Date.now(), localUpdatedAt: sessionUpdatedAt(local) };
-                        continue;
-                    }
-                    const remote = await pullRawItem<SavedChatSession>('session', id);
-                    if (!remote) continue;
-                    const hydrated = await rehydrateSyncedSession(remote);
-                    if (choice === 'keep_both') {
-                        const duplicate = { ...local, id: `${local.id}-local-${Date.now()}`, title: `${local.title}（本地冲突副本）`, updatedAt: Date.now() };
-                        await dbService.saveSession(duplicate);
-                        setSavedSessions(previous => [duplicate, ...previous.filter(item => item.id !== id)]);
-                        const result = await pushItem('session', duplicate, null);
-                        state.sessions[duplicate.id] = { revision: result.revision, lastSyncedAt: Date.now(), localUpdatedAt: sessionUpdatedAt(duplicate) };
-                    }
-                    await savePulledSession(hydrated);
-                    state.sessions[id] = { revision: remoteMetadata.revision, lastSyncedAt: Date.now(), localUpdatedAt: sessionUpdatedAt(hydrated) };
-                } else {
-                    const remote = await pullRawItem<SavedChatSession>('session', id);
-                    if (!remote) continue;
-                    const hydrated = await rehydrateSyncedSession(remote);
-                    await savePulledSession(hydrated);
-                    state.sessions[id] = { revision: remoteMetadata.revision, lastSyncedAt: Date.now(), localUpdatedAt: sessionUpdatedAt(hydrated) };
+                if (known?.revision === remoteMetadata.revision && known.baseFingerprint) continue;
+
+                const [localFingerprint, remote] = await Promise.all([
+                    fingerprintSession(local),
+                    pullRawItem<SavedChatSession>('session', id),
+                ]);
+                if (!remote) continue;
+                const remoteFingerprint = await fingerprintSession(remote);
+                const legacyLocalChanged = Boolean(
+                    known && !known.baseFingerprint && (
+                        known.revision === remoteMetadata.revision || sessionUpdatedAt(local) > known.localUpdatedAt
+                    ),
+                );
+                const decision = decideSessionSync({
+                    direction: 'pull',
+                    known,
+                    localFingerprint,
+                    remoteFingerprint,
+                    remoteRevision: remoteMetadata.revision,
+                    legacyLocalChanged,
+                });
+
+                if (decision === 'same') {
+                    await markSessionSynced(state, local, remoteMetadata.revision, remoteFingerprint);
+                    continue;
                 }
+
+                if (decision === 'bootstrap_remote' || decision === 'remote_only') {
+                    const hydrated = await rehydrateSyncedSession(remote);
+                    await savePulledSession(hydrated);
+                    await markSessionSynced(state, hydrated, remoteMetadata.revision, remoteFingerprint);
+                    continue;
+                }
+
+                if (decision === 'local_only' || decision === 'unchanged') {
+                    if (known && !known.baseFingerprint) {
+                        known.baseFingerprint = remoteFingerprint;
+                        await persistClientState(state);
+                    }
+                    continue;
+                }
+
+                const choice = await requestConflictChoice({
+                    itemType: 'session',
+                    title: `会话冲突：${local.title}`,
+                    detail: '此会话在上次成功同步后，本地和远端都发生了不同修改。',
+                    defaultChoice: 'keep_both',
+                });
+                if (choice === 'overwrite_remote') {
+                    const result = await pushItem('session', local, remoteMetadata.revision);
+                    await markSessionSynced(state, local, result.revision, localFingerprint);
+                    continue;
+                }
+                if (choice === 'keep_both') {
+                    const duplicate = createConflictCopy(local, 'local');
+                    const duplicateFingerprint = await fingerprintSession(duplicate);
+                    await dbService.saveSession(duplicate);
+                    setSavedSessions(previous => [duplicate, ...previous]);
+                    const result = await pushItem('session', duplicate, null);
+                    await markSessionSynced(state, duplicate, result.revision, duplicateFingerprint);
+                }
+                const hydrated = await rehydrateSyncedSession(remote);
+                await savePulledSession(hydrated);
+                await markSessionSynced(state, hydrated, remoteMetadata.revision, remoteFingerprint);
             }
 
             await pullGlobal('groups', metadata.globals.groups, state);
             await pullGlobal('settings', metadata.globals.settings, state);
             await pullGlobal('scenarios', metadata.globals.scenarios, state);
-            await dbService.setSyncClientState(state);
+            await persistClientState(state);
             setPullStatus('success');
             setLastPullTime(Date.now());
             window.setTimeout(() => setPullStatus('idle'), 3000);
@@ -402,8 +462,10 @@ export const useSyncManager = ({
             logService.error('Pull from server failed', { error });
             setPullStatus('error');
             window.setTimeout(() => setPullStatus('idle'), 5000);
+        } finally {
+            syncInProgressRef.current = false;
         }
-    }, [fetchMetadata, isHistoryLoaded, isSettingsLoaded, loadClientState, pullGlobal, pullRawItem, rehydrateSyncedSession, removeLocalSession, requestConflictChoice, savePulledSession, savedSessions, setSavedSessions, pushItem]);
+    }, [fetchMetadata, isHistoryLoaded, isSettingsLoaded, loadClientState, markSessionDeleted, markSessionSynced, persistClientState, pullGlobal, pullRawItem, pushItem, rehydrateSyncedSession, removeLocalSession, requestConflictChoice, savePulledSession, savedSessions, setSavedSessions]);
 
     const pushGlobal = useCallback(async (type: GlobalSyncType, remoteMetadata: SyncItemMetadata, state: SyncClientState) => {
         const local = getGlobalLocal(type);
@@ -412,25 +474,18 @@ export const useSyncManager = ({
         const localChanged = base === undefined || !same(local, base);
         if (!localChanged) return;
 
-        if (base === undefined && remoteMetadata.revision) {
-            const choice = await requestConflictChoice({
-                itemType: type,
-                title: `同步冲突：${type}`,
-                detail: '本地和远端都存在尚未建立共同基础的数据。',
-                defaultChoice: 'keep_both',
-            });
-            if (choice === 'use_remote') {
-                await pullGlobal(type, remoteMetadata, state);
-                return;
-            }
-            let value = local;
-            if (choice === 'keep_both') {
+        if (base === undefined) {
+            if (remoteMetadata.revision) {
                 const remote = await pullRawItem<AppSettings | ChatGroup[] | SavedScenario[]>(type);
-                if (remote) value = combineWithoutBase(type, local, remote);
-                await applyGlobalValue(type, value);
+                if (remote && same(local, remote)) {
+                    markGlobalSynced(state, type, remoteMetadata, local);
+                    await persistClientState(state);
+                    return;
+                }
             }
-            const result = await pushItem(type, value, remoteMetadata.revision);
-            markGlobalSynced(state, type, { ...remoteMetadata, revision: result.revision }, value);
+            const result = await pushItem(type, local, remoteMetadata.revision);
+            markGlobalSynced(state, type, { ...remoteMetadata, revision: result.revision }, local);
+            await persistClientState(state);
             return;
         }
         if (known.revision !== remoteMetadata.revision && remoteMetadata.revision) {
@@ -439,72 +494,144 @@ export const useSyncManager = ({
         }
         const result = await pushItem(type, local, known.revision);
         markGlobalSynced(state, type, { ...remoteMetadata, revision: result.revision }, local);
-    }, [applyGlobalValue, getGlobalLocal, markGlobalSynced, pullGlobal, pullRawItem, pushItem, requestConflictChoice]);
+        await persistClientState(state);
+    }, [getGlobalLocal, markGlobalSynced, persistClientState, pullGlobal, pullRawItem, pushItem]);
 
     const pushToServer = useCallback(async () => {
-        if (!isSettingsLoaded || !isHistoryLoaded) return;
+        if (!isSettingsLoaded || !isHistoryLoaded || syncInProgressRef.current) return;
+        syncInProgressRef.current = true;
         setPushStatus('syncing');
         try {
             const [metadata, state] = await Promise.all([fetchMetadata(), loadClientState()]);
-            const localById = new Map(savedSessions.map(session => [session.id, session]));
+            const redundantCopyIds = new Set(await findRedundantConflictCopyIds(savedSessions));
+            for (const id of redundantCopyIds) {
+                await removeLocalSession(id);
+                const known = state.sessions[id];
+                const existingTombstone = metadata.tombstones.sessions[id];
+                if (existingTombstone) {
+                    await markSessionDeleted(state, id, existingTombstone);
+                    continue;
+                }
+                const currentRevision = metadata.sessions[id]?.revision ?? known?.revision ?? null;
+                const deletion = await deleteRemoteSession(id, currentRevision);
+                await markSessionDeleted(state, id, deletion);
+            }
+            if (redundantCopyIds.size) {
+                logService.info(`Removed ${redundantCopyIds.size} identical generated sync conflict copies.`);
+            }
+
+            const sessionsForPush = savedSessions.filter(session => !redundantCopyIds.has(session.id));
+            const localById = new Map(sessionsForPush.map(session => [session.id, session]));
 
             for (const [id, known] of Object.entries(state.sessions)) {
                 if (localById.has(id)) continue;
                 if (metadata.tombstones.sessions[id]) {
-                    delete state.sessions[id];
-                    state.knownTombstones[id] = metadata.tombstones.sessions[id];
+                    await markSessionDeleted(state, id, metadata.tombstones.sessions[id]);
                     continue;
                 }
-                const result = await deleteRemoteSession(id, known.revision);
-                state.knownTombstones[id] = { deletedAt: result.deletedAt, revision: result.revision };
-                delete state.sessions[id];
+                const currentRemoteRevision = metadata.sessions[id]?.revision ?? known.revision;
+                const result = await deleteRemoteSession(id, currentRemoteRevision);
+                await markSessionDeleted(state, id, result);
             }
 
-            for (const session of savedSessions) {
+            for (const session of sessionsForPush) {
                 const id = session.id;
                 if (metadata.tombstones.sessions[id]) {
                     await removeLocalSession(id);
-                    state.knownTombstones[id] = metadata.tombstones.sessions[id];
-                    delete state.sessions[id];
+                    await markSessionDeleted(state, id, metadata.tombstones.sessions[id]);
                     continue;
                 }
                 const known = state.sessions[id];
-                const remote = metadata.sessions[id];
-                const localChanged = !known || sessionUpdatedAt(session) > known.localUpdatedAt;
-                if (!localChanged) continue;
-                if (remote && (!known || remote.revision !== known.revision)) {
-                    const choice = await requestConflictChoice({
-                        itemType: 'session',
-                        title: `会话冲突：${session.title}`,
-                        detail: '远端自上次同步后已变化。默认保留两份。',
-                        defaultChoice: 'keep_both',
-                    });
-                    if (choice === 'use_remote') {
-                        const remoteSession = await pullRawItem<SavedChatSession>('session', id);
-                        if (remoteSession) {
-                            const hydrated = await rehydrateSyncedSession(remoteSession);
-                            await savePulledSession(hydrated);
-                            state.sessions[id] = { revision: remote.revision, lastSyncedAt: Date.now(), localUpdatedAt: sessionUpdatedAt(hydrated) };
-                        }
-                        continue;
-                    }
-                    if (choice === 'keep_both') {
-                        const duplicate = { ...session, id: `${session.id}-local-${Date.now()}`, title: `${session.title}（本地冲突副本）`, updatedAt: Date.now() };
-                        await dbService.saveSession(duplicate);
-                        setSavedSessions(previous => [duplicate, ...previous]);
-                        const result = await pushItem('session', duplicate, null);
-                        state.sessions[duplicate.id] = { revision: result.revision, lastSyncedAt: Date.now(), localUpdatedAt: sessionUpdatedAt(duplicate) };
-                        continue;
-                    }
+                const remoteMetadata = metadata.sessions[id];
+                const localFingerprint = await fingerprintSession(session);
+
+                if (!remoteMetadata?.revision) {
+                    const result = await pushItem('session', session, null);
+                    await markSessionSynced(state, session, result.revision, localFingerprint);
+                    continue;
                 }
-                const result = await pushItem('session', session, known?.revision ?? null);
-                state.sessions[id] = { revision: result.revision, lastSyncedAt: Date.now(), localUpdatedAt: sessionUpdatedAt(session) };
+
+                if (known?.baseFingerprint && known.revision === remoteMetadata.revision) {
+                    if (known.baseFingerprint === localFingerprint) continue;
+                    const result = await pushItem('session', session, remoteMetadata.revision);
+                    await markSessionSynced(state, session, result.revision, localFingerprint);
+                    continue;
+                }
+
+                const remote = await pullRawItem<SavedChatSession>('session', id);
+                if (!remote) continue;
+                const remoteFingerprint = await fingerprintSession(remote);
+                const legacyLocalChanged = Boolean(
+                    known && !known.baseFingerprint && (
+                        known.revision === remoteMetadata.revision || sessionUpdatedAt(session) > known.localUpdatedAt
+                    ),
+                );
+                const decision = decideSessionSync({
+                    direction: 'push',
+                    known,
+                    localFingerprint,
+                    remoteFingerprint,
+                    remoteRevision: remoteMetadata.revision,
+                    legacyLocalChanged,
+                });
+
+                if (decision === 'same') {
+                    await markSessionSynced(state, session, remoteMetadata.revision, remoteFingerprint);
+                    continue;
+                }
+
+                if (decision === 'bootstrap_local' || decision === 'local_only') {
+                    const result = await pushItem('session', session, remoteMetadata.revision);
+                    await markSessionSynced(state, session, result.revision, localFingerprint);
+                    continue;
+                }
+
+                if (decision === 'remote_only') {
+                    logService.info(`Push skipped for ${session.title}: the server has a newer version. Pull to download it.`);
+                    continue;
+                }
+
+                if (decision === 'unchanged') {
+                    if (known && !known.baseFingerprint) {
+                        known.baseFingerprint = remoteFingerprint;
+                        await persistClientState(state);
+                    }
+                    continue;
+                }
+
+                const choice = await requestConflictChoice({
+                    itemType: 'session',
+                    title: `会话冲突：${session.title}`,
+                    detail: '此会话在上次成功同步后，本地和远端都发生了不同修改。',
+                    defaultChoice: 'keep_both',
+                });
+                if (choice === 'use_remote') {
+                    const hydrated = await rehydrateSyncedSession(remote);
+                    await savePulledSession(hydrated);
+                    await markSessionSynced(state, hydrated, remoteMetadata.revision, remoteFingerprint);
+                    continue;
+                }
+                if (choice === 'keep_both') {
+                    const remoteCopyRaw = createConflictCopy(remote, 'remote');
+                    const remoteCopyFingerprint = await fingerprintSession(remoteCopyRaw);
+                    const remoteCopy = await rehydrateSyncedSession(remoteCopyRaw);
+                    await dbService.saveSession(remoteCopy);
+                    setSavedSessions(previous => [remoteCopy, ...previous]);
+
+                    const originalResult = await pushItem('session', session, remoteMetadata.revision);
+                    await markSessionSynced(state, session, originalResult.revision, localFingerprint);
+                    const copyResult = await pushItem('session', remoteCopy, null);
+                    await markSessionSynced(state, remoteCopy, copyResult.revision, remoteCopyFingerprint);
+                    continue;
+                }
+                const result = await pushItem('session', session, remoteMetadata.revision);
+                await markSessionSynced(state, session, result.revision, localFingerprint);
             }
 
             await pushGlobal('groups', metadata.globals.groups, state);
             await pushGlobal('settings', metadata.globals.settings, state);
             await pushGlobal('scenarios', metadata.globals.scenarios, state);
-            await dbService.setSyncClientState(state);
+            await persistClientState(state);
             setPushStatus('success');
             setLastPushTime(Date.now());
             window.setTimeout(() => setPushStatus('idle'), 3000);
@@ -512,8 +639,10 @@ export const useSyncManager = ({
             logService.error('Push to server failed', { error });
             setPushStatus('error');
             window.setTimeout(() => setPushStatus('idle'), 5000);
+        } finally {
+            syncInProgressRef.current = false;
         }
-    }, [deleteRemoteSession, fetchMetadata, isHistoryLoaded, isSettingsLoaded, loadClientState, pullRawItem, pushGlobal, pushItem, rehydrateSyncedSession, removeLocalSession, requestConflictChoice, savePulledSession, savedSessions, setSavedSessions]);
+    }, [deleteRemoteSession, fetchMetadata, isHistoryLoaded, isSettingsLoaded, loadClientState, markSessionDeleted, markSessionSynced, persistClientState, pullRawItem, pushGlobal, pushItem, rehydrateSyncedSession, removeLocalSession, requestConflictChoice, savePulledSession, savedSessions, setSavedSessions]);
 
     return {
         pullStatus,
