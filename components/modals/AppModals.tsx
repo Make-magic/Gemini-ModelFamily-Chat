@@ -44,6 +44,9 @@ export interface AppModalsProps {
 
   t: (key: keyof typeof translations, fallback?: string) => string;
   setAvailableModels: (models: ModelOption[]) => void;
+  onRefreshModels: () => Promise<void>;
+  isRefreshingModels: boolean;
+  modelRefreshError: string | null;
 }
 
 export const AppModals: React.FC<AppModalsProps> = (props) => {
@@ -59,7 +62,7 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
         handleSaveAllScenarios, handleLoadPreloadedScenario,
         isExportModalOpen, setIsExportModalOpen, handleExportChat, exportStatus,
         isLogViewerOpen, setIsLogViewerOpen, currentChatSettings,
-        t, setAvailableModels
+        t, setAvailableModels, onRefreshModels, isRefreshingModels, modelRefreshError
     } = props;
     
     return (
@@ -93,6 +96,9 @@ export const AppModals: React.FC<AppModalsProps> = (props) => {
               onExportScenarios={handleExportAllScenarios}
               t={t}
               setAvailableModels={setAvailableModels}
+              onRefreshModels={onRefreshModels}
+              isRefreshingModels={isRefreshingModels}
+              modelRefreshError={modelRefreshError}
             />
           )}
           {isPreloadedMessagesModalOpen && (

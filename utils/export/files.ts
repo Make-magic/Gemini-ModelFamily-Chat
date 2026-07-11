@@ -1,4 +1,4 @@
-import { triggerDownload } from './core';
+import { downloadBlob } from '../objectUrlManager';
 
 /**
  * Exports a string of HTML content as an .html file.
@@ -7,7 +7,7 @@ import { triggerDownload } from './core';
  */
 export const exportHtmlStringAsFile = (htmlContent: string, filename:string) => {
     const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-    triggerDownload(URL.createObjectURL(blob), filename);
+    downloadBlob(blob, filename);
 };
 
 /**
@@ -17,5 +17,5 @@ export const exportHtmlStringAsFile = (htmlContent: string, filename:string) => 
  */
 export const exportTextStringAsFile = (textContent: string, filename: string) => {
     const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
-    triggerDownload(URL.createObjectURL(blob), filename);
+    downloadBlob(blob, filename);
 };

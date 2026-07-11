@@ -2,6 +2,33 @@ export interface ModelOption {
   id: string;
   name: string;
   isPinned?: boolean;
+  source?: 'static' | 'user' | 'provider';
+  supportedActions?: string[];
+  capabilities?: Partial<ModelCapabilities>;
+}
+
+export interface ModelCapabilities {
+  text: boolean;
+  imageGeneration: boolean;
+  imageEditing: boolean;
+  tts: boolean;
+  live: boolean;
+  thinking: 'none' | 'budget' | 'level' | 'budget-and-level';
+  thinkingRequired: boolean;
+  thinkingBudgetRange?: { min: number; max: number };
+  tools: {
+    googleSearch: boolean;
+    codeExecution: boolean;
+    urlContext: boolean;
+  };
+  mediaResolution: 'none' | 'global' | 'per-part';
+  imageSizes?: string[];
+  aspectRatios?: string[];
+  quadImageGeneration: boolean;
+}
+
+export interface ModelDescriptor extends ModelOption {
+  capabilities: ModelCapabilities;
 }
 
 export type ThinkingLevel = 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH';

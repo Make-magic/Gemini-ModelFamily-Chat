@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { UploadedFile } from '../../types';
+import { createManagedObjectUrl, revokeManagedObjectUrl } from '../../utils/objectUrlManager';
 
 interface UseChatInputLocalStateProps {
     setSelectedFiles: React.Dispatch<React.SetStateAction<UploadedFile[]>>;
@@ -40,14 +41,19 @@ export const useChatInputLocalState = ({
     };
 
     const handleSavePreviewTextFile = (fileId: string, content: string, newName: string) => {
-        setSelectedFiles(prev => prev.map(f => f.id === fileId ? {
+        setSelectedFiles(prev => prev.map(f => {
+          if (f.id !== fileId) return f;
+          revokeManagedObjectUrl(f.dataUrl);
+          const rawFile = new File([content], newName, { type: 'text/plain' });
+          return {
             ...f,
             name: newName,
             textContent: content,
             size: content.length,
-            dataUrl: URL.createObjectURL(new File([content], newName, { type: 'text/plain' })),
-            rawFile: new File([content], newName, { type: 'text/plain' })
-        } : f));
+            dataUrl: createManagedObjectUrl(rawFile),
+            rawFile,
+          };
+        }));
     };
 
     const handleConfigureFile = (file: UploadedFile) => {

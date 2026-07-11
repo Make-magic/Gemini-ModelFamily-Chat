@@ -8,6 +8,7 @@ import { ModelsErrorDisplay } from '../chat/overlays/ModelsErrorDisplay';
 import { ChatAreaProps } from './chat-area/ChatAreaProps';
 import { useChatArea } from './chat-area/useChatArea';
 import { AccessibilityLiveRegions, LiveAnnouncement } from '../shared/AccessibilityLiveRegions';
+import { SyncConflictDialog } from '../sync/SyncConflictDialog';
 
 // Re-export props for consumers like useAppProps
 export type { ChatAreaProps };
@@ -29,7 +30,7 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
     onScrollToPrevTurn, onScrollToNextTurn, onEditMessageContent, onUpdateMessageFile,
     appSettings, commandedInput, setCommandedInput, onMessageSent,
     selectedFiles, setSelectedFiles, onSendMessage, isEditing, editMode, editingMessageId, setEditingMessageId, onStopGenerating,
-    onCancelEdit, onProcessFiles, onAddFileById, onCancelUpload, onTranscribeAudio,
+    onCancelEdit, onProcessFiles, onAddFileById, onCancelUpload, onRetryUpload, onTranscribeAudio,
     isProcessingFile, fileError, isImageEditModel, aspectRatio, setAspectRatio, imageSize, setImageSize,
     isGoogleSearchEnabled, onToggleGoogleSearch, isCodeExecutionEnabled, onToggleCodeExecution,
     isUrlContextEnabled, onToggleUrlContext, isDeepSearchEnabled, onToggleDeepSearch,
@@ -47,6 +48,8 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
     lastPushTime,
     onPullFromServer,
     onPushToServer,
+    syncConflict,
+    onResolveSyncConflict,
     t
   } = props;
 
@@ -115,6 +118,7 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
       onDrop={handleAppDrop}
     >
       <AccessibilityLiveRegions polite={politeAnnouncement} assertive={assertiveAnnouncement} />
+      {syncConflict && <SyncConflictDialog conflict={syncConflict} onResolve={onResolveSyncConflict} t={t} />}
       <DragDropOverlay isDraggingOver={isAppDraggingOver} t={t} />
 
       <Header
@@ -208,6 +212,7 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
             onProcessFiles={onProcessFiles}
             onAddFileById={onAddFileById}
             onCancelUpload={onCancelUpload}
+            onRetryUpload={onRetryUpload}
             onTranscribeAudio={onTranscribeAudio}
             isProcessingFile={isProcessingFile}
             fileError={fileError}

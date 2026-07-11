@@ -4,6 +4,7 @@ import { AppSettings, SavedChatSession, ChatGroup, UploadedFile, ChatSettings } 
 import { DEFAULT_CHAT_SETTINGS } from '../../../constants/appConstants';
 import { createNewSession, rehydrateSession, logService } from '../../../utils/appUtils';
 import { dbService } from '../../../utils/db';
+import { materializeFileObjectUrl, releaseFilesObjectUrls, releaseSessionObjectUrls } from '../../../utils/objectUrlManager';
 
 interface UseSessionLoaderProps {
     appSettings: AppSettings;
@@ -44,6 +45,8 @@ export const useSessionLoader = ({
         // Save current files to draft before switching
         if (activeSessionId) {
             fileDraftsRef.current[activeSessionId] = selectedFiles;
+            if (activeChat) releaseSessionObjectUrls(activeChat.messages);
+            releaseFilesObjectUrls(selectedFiles);
         }
 
         let settingsForNewChat: ChatSettings = { ...DEFAULT_CHAT_SETTINGS, ...appSettings };
@@ -84,15 +87,19 @@ export const useSessionLoader = ({
         // Save current files to draft before switching
         if (activeSessionId) {
             fileDraftsRef.current[activeSessionId] = selectedFiles;
+            if (activeChat) releaseSessionObjectUrls(activeChat.messages);
+            releaseFilesObjectUrls(selectedFiles);
         }
 
         const sessionToLoad = allSessions.find(s => s.id === sessionId);
         if (sessionToLoad) {
-            setActiveSessionId(sessionToLoad.id);
+            const hydratedSession = rehydrateSession(sessionToLoad, true);
+            setSavedSessions(prev => prev.map(session => session.id === sessionId ? hydratedSession : session));
+            setActiveSessionId(hydratedSession.id);
             dbService.setActiveSessionId(sessionId);
             
             // Restore files from draft for the target session, or empty if none
-            const draftFiles = fileDraftsRef.current[sessionId] || [];
+            const draftFiles = (fileDraftsRef.current[sessionId] || []).map(materializeFileObjectUrl);
             setSelectedFiles(draftFiles);
             
             setEditingMessageId(null);
@@ -103,7 +110,7 @@ export const useSessionLoader = ({
             logService.warn(`Session ${sessionId} not found. Starting new chat.`);
             startNewChat();
         }
-    }, [setActiveSessionId, setSelectedFiles, setEditingMessageId, startNewChat, userScrolledUp, activeSessionId, selectedFiles, fileDraftsRef]);
+    }, [activeChat, setSavedSessions, setActiveSessionId, setSelectedFiles, setEditingMessageId, startNewChat, userScrolledUp, activeSessionId, selectedFiles, fileDraftsRef]);
 
     const loadInitialData = useCallback(async () => {
         try {
@@ -114,7 +121,7 @@ export const useSessionLoader = ({
                 dbService.getActiveSessionId()
             ]);
 
-            const rehydratedSessions = sessions.map(rehydrateSession);
+            const rehydratedSessions = sessions.map(session => rehydrateSession(session, false));
             rehydratedSessions.sort((a,b) => b.timestamp - a.timestamp);
             
             setSavedSessions(rehydratedSessions);

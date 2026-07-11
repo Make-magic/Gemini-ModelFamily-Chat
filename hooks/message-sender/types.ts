@@ -1,12 +1,10 @@
 import React, { Dispatch, SetStateAction } from 'react';
-import { AppSettings, ChatMessage, UploadedFile, ChatSettings as IndividualChatSettings, SavedChatSession } from '../../types';
-import { UsageMetadata } from '@google/genai';
+import { AppSettings, ChatMessage, UploadedFile, ChatSettings as IndividualChatSettings, SavedChatSession, ChatTerminalResult } from '../../types';
 
 export type SessionsUpdater = (updater: (prev: SavedChatSession[]) => SavedChatSession[]) => void;
 
 export interface StreamHandlerFunctions {
-    streamOnError: (error: Error) => void;
-    streamOnComplete: (usageMetadata?: UsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void;
+    streamOnTerminal: (result: ChatTerminalResult) => void;
     streamOnPart: (part: any) => void;
     onThoughtChunk: (thoughtChunk: string) => void;
 }

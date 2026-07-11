@@ -4,6 +4,7 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import hljs from 'highlight.js';
 import { ChatMessage } from '../types';
+import { downloadBlob } from '../utils/objectUrlManager';
 import {
     exportElementAsPng,
     exportHtmlStringAsFile,
@@ -198,7 +199,7 @@ export const useMessageExport = ({ message, sessionTitle, messageIndex, themeId 
                 exportTextStringAsFile(txtContent, `${filenameBase}.md`);
             } else if (type === 'json') {
                 const blob = new Blob([JSON.stringify(message, null, 2)], { type: 'application/json' });
-                triggerDownload(URL.createObjectURL(blob), `${filenameBase}.json`);
+                downloadBlob(blob, `${filenameBase}.json`);
             }
             
             if (onSuccess) onSuccess();

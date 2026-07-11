@@ -61,7 +61,7 @@ export const ApiProxySettings: React.FC<ApiProxySettingsProps> = ({
             <div className="flex items-center justify-between py-2">
                 <div className="flex items-center gap-2">
                     <label htmlFor="use-api-proxy-toggle" className="text-xs font-semibold uppercase tracking-wider text-[var(--theme-text-tertiary)] cursor-pointer">
-                        API Proxy
+                        {t('apiConfig_proxy_label')}
                     </label>
                     <button
                         type="button"
@@ -79,10 +79,10 @@ export const ApiProxySettings: React.FC<ApiProxySettingsProps> = ({
                         type="button"
                         onClick={handleResetProxy}
                         className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium transition-colors border text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] border-transparent hover:border-[var(--theme-border-secondary)]"
-                        title="Reset to default"
+                        title={t('apiConfig_proxy_reset')}
                     >
                         <RotateCcw size={10} strokeWidth={1.5} />
-                        <span>Reset</span>
+                        <span>{t('settingsModelSelection_reset')}</span>
                     </button>
                 </div>
                 <Toggle
@@ -102,13 +102,15 @@ export const ApiProxySettings: React.FC<ApiProxySettingsProps> = ({
                     onChange={(e) => setApiProxyUrl(e.target.value)}
                     className={`${inputBaseClasses} ${SETTINGS_INPUT_CLASS}`}
                     placeholder={getProxyPlaceholder()}
-                    aria-label="API Proxy URL"
+                    aria-label={t('apiConfig_proxy_url_label')}
+                    aria-describedby="api-proxy-url-help"
                 />
+                <p id="api-proxy-url-help" className="mt-1.5 text-xs text-[var(--theme-text-tertiary)]">{t('apiConfig_proxy_url_help')}</p>
 
                 <div className="mt-3">
                     <Select
                         id="test-model-select"
-                        label="Test Connection Model"
+                        label={t('apiConfig_test_model')}
                         value={testModel}
                         onChange={(e) => setTestModel(e.target.value)}
                     >

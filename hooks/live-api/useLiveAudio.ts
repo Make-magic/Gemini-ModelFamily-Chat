@@ -3,6 +3,7 @@ import { useState, useRef, useCallback } from 'react';
 import { audioWorkletCode } from '../../utils/audio/audioWorklet';
 import { decodeBase64ToArrayBuffer, decodeAudioData } from '../../utils/audio/audioProcessing';
 import { logService } from '../../utils/appUtils';
+import { createManagedObjectUrl, revokeManagedObjectUrl } from '../../utils/objectUrlManager';
 
 export const useLiveAudio = () => {
     const [volume, setVolume] = useState(0);
@@ -42,12 +43,12 @@ export const useLiveAudio = () => {
 
         // AudioWorklet Setup
         const blob = new Blob([audioWorkletCode], { type: 'application/javascript' });
-        const blobUrl = URL.createObjectURL(blob);
+        const blobUrl = createManagedObjectUrl(blob);
 
         try {
             await inputCtx.audioWorklet.addModule(blobUrl);
         } finally {
-            URL.revokeObjectURL(blobUrl);
+            revokeManagedObjectUrl(blobUrl);
         }
 
         const workletNode = new AudioWorkletNode(inputCtx, 'pcm-processor');

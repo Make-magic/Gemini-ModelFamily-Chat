@@ -10,6 +10,9 @@ interface ModelSelectorProps {
   onSelectModel: (id: string) => void;
   t: (key: string) => string;
   setAvailableModels: (models: ModelOption[]) => void;
+  onRefreshModels: () => Promise<void>;
+  isRefreshingModels: boolean;
+  modelRefreshError: string | null;
 }
 
 
@@ -22,7 +25,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 
   onSelectModel,
 
-  setAvailableModels,
+  setAvailableModels, onRefreshModels, isRefreshingModels, modelRefreshError,
 
   t
 
@@ -59,6 +62,9 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           setIsEditingList={setIsEditingList}
 
           t={t}
+          onRefreshModels={onRefreshModels}
+          isRefreshingModels={isRefreshingModels}
+          modelRefreshError={modelRefreshError}
 
         />
 

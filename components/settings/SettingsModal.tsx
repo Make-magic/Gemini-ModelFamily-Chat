@@ -29,6 +29,9 @@ interface SettingsModalProps {
   onExportScenarios: () => void;
   t: (key: keyof typeof translations) => string;
   setAvailableModels: (models: ModelOption[]) => void;
+  onRefreshModels: () => Promise<void>;
+  isRefreshingModels: boolean;
+  modelRefreshError: string | null;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -38,7 +41,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onImportSettings, onExportSettings,
   onImportHistory, onExportHistory,
   onImportScenarios, onExportScenarios,
-  setAvailableModels
+  setAvailableModels, onRefreshModels, isRefreshingModels, modelRefreshError
 }) => {
   
   const {
@@ -109,6 +112,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         updateSetting={updateSetting}
                         handleModelChange={handleModelChange}
                         setAvailableModels={setAvailableModels}
+                        onRefreshModels={onRefreshModels}
+                        isRefreshingModels={isRefreshingModels}
+                        modelRefreshError={modelRefreshError}
                         onClearHistory={handleRequestClearHistory}
                         onClearCache={handleRequestClearCache}
                         onOpenLogViewer={() => { onOpenLogViewer(); onClose(); }}

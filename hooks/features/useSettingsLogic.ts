@@ -1,9 +1,10 @@
 
 import { useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react';
 import { AppSettings } from '../../types';
-import { DEFAULT_APP_SETTINGS, THINKING_BUDGET_RANGES, MODELS_MANDATORY_THINKING } from '../../constants/appConstants';
+import { DEFAULT_APP_SETTINGS } from '../../constants/appConstants';
 import { translations, logService, cacheModelSettings, getCachedModelSettings } from '../../utils/appUtils';
 import { MediaResolution } from '../../types/settings';
+import { getModelCapabilities } from '../../constants/modelRegistry';
 import { IconInterface, IconModel, IconApiKey, IconData, IconAbout, IconKeyboard } from '../../components/icons/CustomIcons';
 
 export type SettingsTab = 'interface' | 'model' | 'account' | 'data' | 'shortcuts' | 'about';
@@ -169,18 +170,19 @@ export const useSettingsLogic = ({
         const newMediaResolution = cached?.mediaResolution ?? currentSettings.mediaResolution ?? MediaResolution.MEDIA_RESOLUTION_UNSPECIFIED;
 
         // 3. Apply defaults/clamping logic (mirroring useChatActions)
-        const range = THINKING_BUDGET_RANGES[newModelId];
+        const capabilities = getModelCapabilities(newModelId);
+        const range = capabilities.thinkingBudgetRange;
         if (range) {
-            const isGemini3 = newModelId.includes('gemini-3');
-            const isMandatory = MODELS_MANDATORY_THINKING.includes(newModelId);
+            const supportsLevel = capabilities.thinking === 'level' || capabilities.thinking === 'budget-and-level';
+            const isMandatory = capabilities.thinkingRequired;
 
             // Mandatory Check
             if (isMandatory && newThinkingBudget === 0) {
-                newThinkingBudget = isGemini3 ? -1 : range.max;
+                newThinkingBudget = supportsLevel ? -1 : range.max;
             }
 
             // Auto Compatibility Check
-            if (!isGemini3 && newThinkingBudget === -1) {
+            if (!supportsLevel && newThinkingBudget === -1) {
                 newThinkingBudget = range.max;
             }
 

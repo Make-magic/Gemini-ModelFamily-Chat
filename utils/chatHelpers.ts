@@ -6,6 +6,7 @@ import { fileToBase64, fileToString } from './fileHelpers';
 import { isGemini3Model } from './modelHelpers';
 import { MediaResolution } from '../types/settings';
 import { toPartMediaResolutionLevel } from '../services/api/geminiAdapter';
+import { materializeFileObjectUrl } from './objectUrlManager';
 
 export const generateUniqueId = () => `chat-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -227,7 +228,7 @@ export const createChatHistoryForApi = async (msgs: ChatMessage[]): Promise<Chat
     return Promise.all(historyItemsPromises);
 };
 
-export const rehydrateSession = (session: SavedChatSession): SavedChatSession => {
+export const rehydrateSession = (session: SavedChatSession, materializeUrls = true): SavedChatSession => {
     const newMessages = session.messages.map(message => {
         let currentMessage = { ...message };
 
@@ -247,11 +248,9 @@ export const rehydrateSession = (session: SavedChatSession): SavedChatSession =>
                 const newFiles = currentMessage.files.map(file => {
                     // Check if it's an image that was stored locally (has rawFile)
                     // JSON serialization from server turns Blob into {}, which breaks URL.createObjectURL.
-                    if (SUPPORTED_IMAGE_MIME_TYPES.includes(file.type) && file.rawFile instanceof Blob) {
+                    if (materializeUrls && file.rawFile instanceof Blob) {
                         try {
-                            // Create a new blob URL. The browser will handle the old invalid one on page unload.
-                            const dataUrl = URL.createObjectURL(file.rawFile);
-                            return { ...file, dataUrl: dataUrl };
+                            return materializeFileObjectUrl(file);
                         } catch (error) {
                             logService.error("Failed to create object URL for file on load", { fileId: file.id, error }); 
                             // Keep the file but mark that preview failed

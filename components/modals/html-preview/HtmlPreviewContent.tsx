@@ -1,16 +1,19 @@
 
 import React from 'react';
+import { translations } from '../../../utils/appUtils';
 
 interface HtmlPreviewContentProps {
     iframeRef: React.RefObject<HTMLIFrameElement>;
     htmlContent: string;
     scale: number;
+    t: (key: keyof typeof translations) => string;
 }
 
 export const HtmlPreviewContent: React.FC<HtmlPreviewContentProps> = ({
     iframeRef,
     htmlContent,
-    scale
+    scale,
+    t,
 }) => {
     const handleIframeError = (event: React.SyntheticEvent<HTMLIFrameElement, Event>) => {
         console.error("Iframe loading error:", event);
@@ -29,7 +32,7 @@ export const HtmlPreviewContent: React.FC<HtmlPreviewContentProps> = ({
             <iframe
                 ref={iframeRef}
                 srcDoc={htmlContent}
-                title="HTML Content Preview"
+                title={t('html_content_preview')}
                 className="border-none bg-white shadow-sm origin-top-left" 
                 style={{
                     width: `${100 / scale}%`,

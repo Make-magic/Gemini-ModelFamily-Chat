@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, RotateCcw, Check } from 'lucide-react';
+import { Plus, RotateCcw, Check, RefreshCw } from 'lucide-react';
 import { ModelOption } from '../../../../types';
 import { getDefaultModelOptions } from '../../../../utils/appUtils';
 import { ModelListEditorRow } from './ModelListEditorRow';
@@ -9,9 +9,12 @@ interface ModelListEditorProps {
     onSave: (models: ModelOption[]) => void;
     setIsEditingList: (value: boolean) => void;
     t: (key: string) => string;
+    onRefreshModels: () => Promise<void>;
+    isRefreshingModels: boolean;
+    modelRefreshError: string | null;
 }
 
-export const ModelListEditor: React.FC<ModelListEditorProps> = ({ availableModels, onSave, setIsEditingList, t }) => {
+export const ModelListEditor: React.FC<ModelListEditorProps> = ({ availableModels, onSave, setIsEditingList, t, onRefreshModels, isRefreshingModels, modelRefreshError }) => {
     const [tempModels, setTempModels] = useState<ModelOption[]>(availableModels);
 
     // Sync when entering edit mode (mounting) or parent updates
@@ -59,6 +62,7 @@ export const ModelListEditor: React.FC<ModelListEditorProps> = ({ availableModel
                         index={idx} 
                         onUpdate={handleUpdateTempModel} 
                         onDelete={handleDeleteModel} 
+                        t={t}
                     />
                 ))}
                 
@@ -83,6 +87,15 @@ export const ModelListEditor: React.FC<ModelListEditorProps> = ({ availableModel
                     >
                         <RotateCcw size={14} /> {t('settingsModelSelection_reset')}
                     </button>
+                    <button
+                        type="button"
+                        onClick={() => void onRefreshModels()}
+                        disabled={isRefreshingModels}
+                        className="flex min-h-11 items-center gap-1.5 rounded px-3 py-1.5 text-xs font-medium text-[var(--theme-text-tertiary)] hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] disabled:opacity-60"
+                    >
+                        <RefreshCw size={14} className={isRefreshingModels ? 'animate-spin' : ''} />
+                        {t('settingsModelSelection_refreshProvider')}
+                    </button>
                 </div>
                 
                 <button 
@@ -92,6 +105,7 @@ export const ModelListEditor: React.FC<ModelListEditorProps> = ({ availableModel
                     <Check size={14} /> {t('settingsModelSelection_saveList')}
                 </button>
             </div>
+            {modelRefreshError && <p role="alert" className="px-3 pb-3 text-xs text-red-500">{t('settingsModelSelection_refreshFailed')}: {modelRefreshError}</p>}
         </div>
     );
 };

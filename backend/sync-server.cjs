@@ -17,6 +17,8 @@ const SYNC_ITEM_TYPE_SET = new Set(SYNC_ITEM_TYPES);
 const SESSION_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const BLOB_ID_PATTERN = /^[A-Fa-f0-9]{64}$/;
 const DEFAULT_JSON_LIMIT = '600mb';
+const METADATA_VERSION = 2;
+const GLOBAL_SYNC_TYPES = Object.freeze(['groups', 'settings', 'scenarios']);
 
 class SyncValidationError extends Error {
   constructor(message, statusCode = 400) {
@@ -93,14 +95,105 @@ class SyncService {
     this.storagePath = path.resolve(options.storagePath || path.join(baseDir, 'storage'));
     this.sessionsPath = path.resolve(this.storagePath, 'sessions');
     this.blobsPath = path.resolve(this.storagePath, 'blobs');
+    this.metadataPath = path.resolve(this.storagePath, 'metadata.json');
     this.writeQueues = new Map();
+    this.metadata = this.createEmptyMetadata();
   }
 
   async init() {
     await fs.mkdir(this.storagePath, { recursive: true });
     await fs.mkdir(this.sessionsPath, { recursive: true });
     await fs.mkdir(this.blobsPath, { recursive: true });
+    await this.loadMetadataIndex();
     this.logger.info(`同步存储目录已就绪: ${this.storagePath}`);
+  }
+
+  createEmptyMetadata() {
+    return {
+      version: METADATA_VERSION,
+      updatedAt: 0,
+      sessions: {},
+      globals: {
+        groups: { updatedAt: 0, revision: null, size: 0 },
+        settings: { updatedAt: 0, revision: null, size: 0 },
+        scenarios: { updatedAt: 0, revision: null, size: 0 },
+      },
+      tombstones: { sessions: {} },
+    };
+  }
+
+  isMetadataIndex(value) {
+    return Boolean(
+      value && value.version === METADATA_VERSION && value.sessions && value.globals &&
+      value.tombstones && value.tombstones.sessions
+    );
+  }
+
+  async loadMetadataIndex() {
+    try {
+      await this.assertNotSymlink(this.metadataPath);
+      const stored = JSON.parse(await fs.readFile(this.metadataPath, 'utf-8'));
+      if (!this.isMetadataIndex(stored)) throw new Error('Unsupported metadata index version.');
+      this.metadata = stored;
+      this.logger.info(`已加载同步 metadata v${METADATA_VERSION} 索引。`);
+      return;
+    } catch (error) {
+      if (error.code !== 'ENOENT') this.logger.warn(`metadata 索引不可用，将重建: ${error.message}`);
+    }
+
+    this.metadata = await this.rebuildMetadataIndex();
+    await this.persistMetadata();
+    this.logger.info(`已从旧存储重建同步 metadata v${METADATA_VERSION} 索引。`);
+  }
+
+  async rebuildMetadataIndex() {
+    const metadata = this.createEmptyMetadata();
+    const files = await fs.readdir(this.sessionsPath).catch(error => {
+      if (error.code === 'ENOENT') return [];
+      throw error;
+    });
+
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+      const candidatePath = path.resolve(this.sessionsPath, file);
+      this.assertPathWithin(this.sessionsPath, candidatePath);
+      try {
+        const item = await this.readItemFile(candidatePath);
+        const sessionId = this.validateSessionId(item.data.id);
+        metadata.sessions[sessionId] = {
+          updatedAt: item.data.updatedAt || item.data.timestamp || item.mtimeMs,
+          revision: item.revision,
+          size: item.size,
+        };
+      } catch (error) {
+        this.logger.warn(`跳过无效会话文件 ${file}: ${error.message}`);
+      }
+    }
+
+    for (const type of GLOBAL_SYNC_TYPES) {
+      const filePath = this.resolveItemPath(type);
+      try {
+        const item = await this.readItemFile(filePath);
+        const internalMax = Array.isArray(item.data)
+          ? Math.max(...item.data.map(entry => entry.updatedAt || entry.timestamp || 0), 0)
+          : item.data.updatedAt || 0;
+        metadata.globals[type] = {
+          updatedAt: Math.max(internalMax, item.mtimeMs),
+          revision: item.revision,
+          size: item.size,
+        };
+      } catch (error) {
+        if (error.code !== 'ENOENT') this.logger.warn(`重建 ${type} 元数据失败: ${error.message}`);
+      }
+    }
+
+    metadata.updatedAt = Date.now();
+    return metadata;
+  }
+
+  async persistMetadata() {
+    this.metadata.updatedAt = Date.now();
+    return this.withWriteLock(this.metadataPath, () => this.atomicWriteJson(this.metadataPath, this.metadata));
   }
 
   validateType(type) {
@@ -303,51 +396,7 @@ class SyncService {
   }
 
   async getMetadata() {
-    const metadata = {
-      sessions: {},
-      groups: { updatedAt: 0 },
-      settings: { updatedAt: 0 },
-      scenarios: { updatedAt: 0 },
-      revisions: { sessions: {}, groups: null, settings: null, scenarios: null },
-      sizes: { sessions: {}, groups: 0, settings: 0, scenarios: 0 },
-    };
-
-    try {
-      const files = await fs.readdir(this.sessionsPath);
-      for (const file of files) {
-        if (!file.endsWith('.json')) continue;
-        const candidatePath = path.resolve(this.sessionsPath, file);
-        this.assertPathWithin(this.sessionsPath, candidatePath);
-        try {
-          const item = await this.readItemFile(candidatePath);
-          const sessionId = this.validateSessionId(item.data.id);
-          metadata.sessions[sessionId] = item.data.updatedAt || item.data.timestamp || 0;
-          metadata.revisions.sessions[sessionId] = item.revision;
-          metadata.sizes.sessions[sessionId] = item.size;
-        } catch (error) {
-          this.logger.warn(`跳过无效会话文件 ${file}: ${error.message}`);
-        }
-      }
-    } catch (error) {
-      if (error.code !== 'ENOENT') this.logger.error(`读取会话元数据失败: ${error.message}`);
-    }
-
-    for (const type of ['groups', 'settings', 'scenarios']) {
-      const filePath = this.resolveItemPath(type);
-      try {
-        const item = await this.readItemFile(filePath);
-        const internalMax = Array.isArray(item.data)
-          ? Math.max(...item.data.map(entry => entry.updatedAt || entry.timestamp || 0), 0)
-          : item.data.updatedAt || 0;
-        metadata[type].updatedAt = Math.max(internalMax, item.mtimeMs);
-        metadata.revisions[type] = item.revision;
-        metadata.sizes[type] = item.size;
-      } catch (error) {
-        if (error.code !== 'ENOENT') this.logger.warn(`读取 ${type} 元数据失败: ${error.message}`);
-      }
-    }
-
-    return metadata;
+    return JSON.parse(JSON.stringify(this.metadata));
   }
 
   async saveItem(type, data, expectedRevision) {
@@ -357,10 +406,21 @@ class SyncService {
     const filePath = this.resolveItemPath(type, id);
 
     return this.withWriteLock(filePath, async () => {
+      if (type === 'session' && this.metadata.tombstones.sessions[id]) {
+        throw new SyncValidationError('This session id was permanently deleted and cannot be restored.', 410);
+      }
       const currentRevision = await this.getRevisionForPath(filePath);
       if (expectedRevision !== currentRevision) throw new SyncConflictError(currentRevision);
 
       const revision = await this.atomicWriteJson(filePath, data);
+      const stats = await fs.stat(filePath);
+      const updatedAt = data.updatedAt || data.timestamp || stats.mtimeMs;
+      if (type === 'session') {
+        this.metadata.sessions[id] = { updatedAt, revision, size: stats.size };
+      } else {
+        this.metadata.globals[type] = { updatedAt, revision, size: stats.size };
+      }
+      await this.persistMetadata();
       this.connectionRegistry.broadcast({
         type: 'SYNC_EVENT',
         dataType: type,
@@ -378,21 +438,28 @@ class SyncService {
     const filePath = this.resolveItemPath(type, id);
 
     return this.withWriteLock(filePath, async () => {
+      const existingTombstone = this.metadata.tombstones.sessions[id];
+      if (existingTombstone) return { success: true, revision: existingTombstone.revision, deletedAt: existingTombstone.deletedAt };
       const currentRevision = await this.getRevisionForPath(filePath);
-      if (currentRevision === null) return { success: true, revision: null };
-      if (expectedRevision !== currentRevision) throw new SyncConflictError(currentRevision);
+      if (currentRevision !== null && expectedRevision !== currentRevision) throw new SyncConflictError(currentRevision);
 
-      await fs.unlink(filePath);
+      if (currentRevision !== null) await fs.unlink(filePath);
+      const deletedAt = Date.now();
+      const tombstoneRevision = this.hashContent(`session:${id}:deleted:${deletedAt}`);
+      delete this.metadata.sessions[id];
+      this.metadata.tombstones.sessions[id] = { deletedAt, revision: tombstoneRevision };
+      await this.persistMetadata();
       this.connectionRegistry.broadcast({
         type: 'SYNC_DELETE_EVENT',
         dataType: type,
         itemId: id,
       });
-      return { success: true, revision: null };
+      return { success: true, revision: tombstoneRevision, deletedAt };
     });
   }
 
   async getItem(type, id) {
+    if (type === 'session' && this.metadata.tombstones.sessions[this.validateSessionId(id)]) return null;
     const filePath = this.resolveItemPath(type, id);
     try {
       return (await this.readItemFile(filePath)).data;

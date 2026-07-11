@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { useChatInputHeight } from '../../../hooks/chat-input/useChatInputHeight';
 import { ChatAreaProps } from './ChatAreaProps';
+import { getModelCapabilities } from '../../../constants/modelRegistry';
 
 export const useChatArea = (props: ChatAreaProps) => {
   const { currentChatSettings, setCommandedInput } = props;
@@ -10,7 +11,7 @@ export const useChatArea = (props: ChatAreaProps) => {
   const { chatInputHeight, chatInputContainerRef } = useChatInputHeight();
 
   // Helper to determine model capabilities for UI logic
-  const isImagenModel = currentChatSettings.modelId?.includes('imagen') || currentChatSettings.modelId?.includes('gemini-2.5-flash-image');
+  const isImagenModel = getModelCapabilities(currentChatSettings.modelId).imageGeneration;
 
   const handleQuote = useCallback((text: string) => {
       setCommandedInput({ text: text, id: Date.now(), mode: 'quote' });

@@ -1,5 +1,6 @@
 
 import { MIME_TO_EXTENSION_MAP } from '../constants/fileConstants';
+import { createManagedObjectUrl } from './objectUrlManager';
 
 export const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -28,7 +29,7 @@ export const fileToString = (file: File): Promise<string> => {
 };
 
 export const fileToBlobUrl = (file: File): string => {
-    return URL.createObjectURL(file);
+    return createManagedObjectUrl(file);
 };
 
 export const base64ToBlob = (base64: string, mimeType: string): Blob => {
@@ -43,7 +44,7 @@ export const base64ToBlob = (base64: string, mimeType: string): Blob => {
 
 export const base64ToBlobUrl = (base64: string, mimeType: string): string => {
     const blob = base64ToBlob(base64, mimeType);
-    return URL.createObjectURL(blob);
+    return createManagedObjectUrl(blob);
 };
 
 export const getExtensionFromMimeType = (mimeType: string): string => {

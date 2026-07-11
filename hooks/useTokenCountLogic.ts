@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { UploadedFile, AppSettings, ModelOption } from '../types';
 import { generateUniqueId, getKeyForRequest, buildContentParts } from '../utils/appUtils';
 import { geminiServiceInstance } from '../services/geminiService';
+import { createManagedObjectUrl } from '../utils/objectUrlManager';
 
 interface UseTokenCountLogicProps {
     isOpen: boolean;
@@ -84,7 +85,7 @@ export const useTokenCountLogic = ({
                 type: file.type,
                 size: file.size,
                 rawFile: file,
-                dataUrl: URL.createObjectURL(file),
+                dataUrl: createManagedObjectUrl(file),
                 uploadState: 'active' as const
             }));
             setFiles(prev => [...prev, ...newFiles]);

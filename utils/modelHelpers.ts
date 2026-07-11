@@ -1,7 +1,8 @@
 
 import { ModelOption } from '../types';
-import { GEMINI_3_RO_MODELS, STATIC_TTS_MODELS, STATIC_IMAGEN_MODELS, TAB_CYCLE_MODELS, INITIAL_PINNED_MODELS } from '../constants/appConstants';
+import { STATIC_TTS_MODELS, STATIC_IMAGEN_MODELS, TAB_CYCLE_MODELS, INITIAL_PINNED_MODELS } from '../constants/appConstants';
 import { MediaResolution, ThinkingLevel } from '../types/settings';
+import { getModelCapabilities } from '../constants/modelRegistry';
 
 // --- Model Sorting & Defaults ---
 
@@ -63,9 +64,8 @@ export const getDefaultModelOptions = (): ModelOption[] => {
 
 // --- Helper for Model Capabilities ---
 export const isGemini3Model = (modelId: string): boolean => {
-    if (!modelId) return false;
-    const lowerId = modelId.toLowerCase();
-    return GEMINI_3_RO_MODELS.some(m => lowerId.includes(m)) || lowerId.includes('gemini-3-pro') || lowerId.includes('gemini-3.1-pro');
+    const thinking = getModelCapabilities(modelId).thinking;
+    return thinking === 'level' || thinking === 'budget-and-level';
 };
 
 // --- Model Settings Cache ---

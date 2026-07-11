@@ -166,7 +166,8 @@ http://www.zlib.net/zlib_license.html
 
         canvas.toBlob(function (blob) {
           var image = new Image();
-          image.src = URL.createObjectURL(blob);
+          // Keep the bundled helper self-contained without leaking an Object URL.
+          image.src = canvas.toDataURL(mimeType, quality);
           image.width = svgImage.width;
           image.height = svgImage.height;
 

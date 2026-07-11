@@ -34,6 +34,9 @@ interface ChatBehaviorSectionProps {
     setSafetySettings: (settings: SafetySetting[]) => void;
     t: (key: string) => string;
     setAvailableModels: (models: ModelOption[]) => void;
+    onRefreshModels: () => Promise<void>;
+    isRefreshingModels: boolean;
+    modelRefreshError: string | null;
     mediaResolution?: MediaResolution;
     setMediaResolution?: (resolution: MediaResolution) => void;
     autoCanvasVisualization: boolean;
@@ -52,6 +55,9 @@ export const ChatBehaviorSection: React.FC<ChatBehaviorSectionProps> = (props) =
                 setModelId={props.setModelId}
                 availableModels={props.availableModels}
                 setAvailableModels={props.setAvailableModels}
+                onRefreshModels={props.onRefreshModels}
+                isRefreshingModels={props.isRefreshingModels}
+                modelRefreshError={props.modelRefreshError}
                 transcriptionModelId={props.transcriptionModelId}
                 setTranscriptionModelId={props.setTranscriptionModelId}
                 generateQuadImages={props.generateQuadImages}

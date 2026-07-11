@@ -25,7 +25,7 @@ export const useFileHandling = (props: FileHandlingProps) => {
         currentChatSettings: props.currentChatSettings,
     });
 
-    const { handleProcessAndAddFiles, handleCancelFileUpload, handleAddFileById } = useFileUpload({
+    const { handleProcessAndAddFiles, handleCancelFileUpload, handleRetryFileUpload, handleAddFileById } = useFileUpload({
         appSettings: props.appSettings,
         selectedFiles: props.selectedFiles,
         setSelectedFiles: props.setSelectedFiles,
@@ -42,6 +42,7 @@ export const useFileHandling = (props: FileHandlingProps) => {
     return {
         handleProcessAndAddFiles,
         handleCancelFileUpload,
+        handleRetryFileUpload,
         handleAddFileById,
     };
 };

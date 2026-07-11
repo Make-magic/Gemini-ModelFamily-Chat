@@ -44,6 +44,7 @@ export const MainContent: React.FC<MainContentProps> = ({
                     content={sidePanelContent} 
                     onClose={onCloseSidePanel}
                     themeId={themeId}
+                    t={chatAreaProps.t}
                 />
             )}
             

@@ -3,6 +3,9 @@ import { Filter, Download, Trash2, RefreshCw, Terminal } from 'lucide-react';
 import { LogEntry, LogLevel, LogCategory } from '../../services/logService';
 import { LOG_LEVEL_COLORS, CATEGORY_COLORS } from './constants';
 import { LogRow } from './LogRow';
+import { downloadBlob } from '../../utils/objectUrlManager';
+import { redactSensitiveData } from '../../utils/security';
+import { translations } from '../../utils/appUtils';
 
 interface ConsoleTabProps {
     logs: LogEntry[];
@@ -10,9 +13,10 @@ interface ConsoleTabProps {
     hasMore: boolean;
     onFetchMore: () => void;
     onClear: () => void;
+    t: (key: keyof typeof translations) => string;
 }
 
-export const ConsoleTab: React.FC<ConsoleTabProps> = ({ logs, isLoading, hasMore, onFetchMore, onClear }) => {
+export const ConsoleTab: React.FC<ConsoleTabProps> = ({ logs, isLoading, hasMore, onFetchMore, onClear, t }) => {
     const [filterText, setFilterText] = useState('');
     const [activeCategory, setActiveCategory] = useState<LogCategory | 'ALL'>('ALL');
     const [visibleLevels, setVisibleLevels] = useState<Record<LogLevel, boolean>>({
@@ -33,15 +37,9 @@ export const ConsoleTab: React.FC<ConsoleTabProps> = ({ logs, isLoading, hasMore
     });
 
     const handleExport = () => {
-        const dataStr = JSON.stringify(filteredLogs, null, 2);
+        const dataStr = JSON.stringify(redactSensitiveData(filteredLogs), null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `logs-export-${new Date().toISOString()}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        downloadBlob(blob, `logs-export-${new Date().toISOString()}.json`);
     };
 
     return (
@@ -50,7 +48,8 @@ export const ConsoleTab: React.FC<ConsoleTabProps> = ({ logs, isLoading, hasMore
             <div className="p-3 border-b border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)] flex flex-wrap items-center gap-3">
             <input 
                 type="text" 
-                placeholder="Search logs..." 
+                placeholder={t('logs_search')}
+                aria-label={t('logs_search')}
                 value={filterText} 
                 onChange={e => setFilterText(e.target.value)}
                 className="flex-grow min-w-[150px] px-3 py-1.5 text-sm bg-[var(--theme-bg-input)] border border-[var(--theme-border-secondary)] rounded-md focus:ring-1 focus:ring-[var(--theme-border-focus)] text-[var(--theme-text-primary)]"
@@ -65,7 +64,7 @@ export const ConsoleTab: React.FC<ConsoleTabProps> = ({ logs, isLoading, hasMore
                     onChange={(e) => setActiveCategory(e.target.value as any)}
                     className="bg-[var(--theme-bg-input)] text-[var(--theme-text-primary)] text-xs rounded border border-[var(--theme-border-secondary)] px-2 py-1 focus:outline-none"
                 >
-                    <option value="ALL">All Categories</option>
+                    <option value="ALL">{t('logs_all_categories')}</option>
                     {Object.keys(CATEGORY_COLORS).map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
             </div>
@@ -81,11 +80,11 @@ export const ConsoleTab: React.FC<ConsoleTabProps> = ({ logs, isLoading, hasMore
 
             <div className="flex-grow" />
 
-            <button onClick={handleExport} className="flex items-center gap-1.5 text-xs bg-[var(--theme-bg-tertiary)] hover:bg-[var(--theme-bg-input)] text-[var(--theme-text-primary)] px-3 py-1.5 rounded-md transition-colors" title="Export JSON">
-                <Download size={14} /> Export JSON
+            <button onClick={handleExport} className="flex items-center gap-1.5 text-xs bg-[var(--theme-bg-tertiary)] hover:bg-[var(--theme-bg-input)] text-[var(--theme-text-primary)] px-3 py-1.5 rounded-md transition-colors" title={t('logs_export_json')}>
+                <Download size={14} /> {t('logs_export_json')}
             </button>
             <button onClick={onClear} className="flex items-center gap-1.5 text-xs bg-[var(--theme-bg-danger)]/10 text-[var(--theme-text-danger)] hover:bg-[var(--theme-bg-danger)]/20 px-3 py-1.5 rounded-md transition-colors">
-                <Trash2 size={14} /> Clear
+                <Trash2 size={14} /> {t('logs_clear')}
             </button>
             </div>
 
@@ -94,7 +93,7 @@ export const ConsoleTab: React.FC<ConsoleTabProps> = ({ logs, isLoading, hasMore
             {filteredLogs.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-[var(--theme-text-tertiary)] opacity-50">
                     <Terminal size={48} className="mb-2" />
-                    <p>No logs found</p>
+                    <p>{t('logs_empty')}</p>
                 </div>
             ) : (
                 filteredLogs.map((log) => <LogRow key={log.id || log.timestamp.toISOString()} log={log} />)
@@ -109,7 +108,7 @@ export const ConsoleTab: React.FC<ConsoleTabProps> = ({ logs, isLoading, hasMore
                         className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[var(--theme-text-link)] hover:bg-[var(--theme-bg-tertiary)] rounded-lg transition-colors disabled:opacity-50"
                     >
                         {isLoading ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
-                        Load older logs
+                        {t('logs_load_older')}
                     </button>
                 </div>
             )}

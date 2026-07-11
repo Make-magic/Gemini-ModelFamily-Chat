@@ -222,7 +222,7 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ file, t }) => {
             {/* Bottom Controls */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
                 <div className={`${floatingBarBase} rounded-full p-1.5 flex items-center gap-1`}>
-                    <button onClick={() => handleZoom('out')} disabled={scale <= MIN_SCALE} className={pillButtonClass} title="Zoom Out">
+                    <button onClick={() => handleZoom('out')} disabled={scale <= MIN_SCALE} className={pillButtonClass} title={t('zoom_out')}>
                         <ZoomOut size={16} strokeWidth={1.5} />
                     </button>
                     
@@ -230,13 +230,13 @@ export const ImageViewer: React.FC<ImageViewerProps> = ({ file, t }) => {
                         {(scale * 100).toFixed(0)}%
                     </div>
 
-                    <button onClick={() => handleZoom('in')} disabled={scale >= MAX_SCALE} className={pillButtonClass} title="Zoom In">
+                    <button onClick={() => handleZoom('in')} disabled={scale >= MAX_SCALE} className={pillButtonClass} title={t('zoom_in')}>
                         <ZoomIn size={16} strokeWidth={1.5} />
                     </button>
 
                     <div className="w-px h-5 bg-white/10 mx-1"></div>
 
-                    <button onClick={handleReset} className={pillButtonClass} title="Reset View">
+                    <button onClick={handleReset} className={pillButtonClass} title={t('reset_view')}>
                         <RotateCw size={16} strokeWidth={1.5} />
                     </button>
                 </div>

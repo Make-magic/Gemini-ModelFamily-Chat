@@ -5,6 +5,7 @@ import { SideViewContent, UploadedFile } from '../../../types';
 import { exportSvgAsPng } from '../../../utils/exportUtils';
 import { useCopyToClipboard } from '../../../hooks/useCopyToClipboard';
 import { MESSAGE_BLOCK_BUTTON_CLASS } from '../../../constants/appConstants';
+import { translations } from '../../../utils/appUtils';
 
 declare var Viz: any;
 
@@ -14,9 +15,10 @@ interface GraphvizBlockProps {
   isLoading: boolean;
   themeId: string;
   onOpenSidePanel: (content: SideViewContent) => void;
+  t: (key: keyof typeof translations) => string;
 }
 
-export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({ code, onImageClick, isLoading: isMessageLoading, themeId, onOpenSidePanel }) => {
+export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({ code, onImageClick, isLoading: isMessageLoading, themeId, onOpenSidePanel, t }) => {
   const [svgContent, setSvgContent] = useState('');
   const [error, setError] = useState('');
   const [isRendering, setIsRendering] = useState(true);
@@ -161,7 +163,7 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({ code, onImageClick
             <div className={`${containerClasses} bg-red-900/20 mb-2`}>
                 <div className="text-center text-red-400">
                     <AlertTriangle className="mx-auto mb-2" />
-                    <strong className="font-semibold">Graphviz Error</strong>
+                    <strong className="font-semibold">Graphviz {t('error')}</strong>
                     <pre className="mt-1 text-xs text-left whitespace-pre-wrap">{error}</pre>
                 </div>
             </div>
@@ -177,16 +179,16 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({ code, onImageClick
       <div className="flex items-center justify-between px-3 py-2 border border-[var(--theme-border-secondary)] border-b-0 rounded-t-lg bg-[var(--theme-bg-tertiary)]/30 backdrop-blur-sm">
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] px-1">Graphviz</span>
           <div className="flex items-center gap-1 flex-shrink-0">
-             <button onClick={() => setShowSource(!showSource)} className={MESSAGE_BLOCK_BUTTON_CLASS} title={showSource ? "Hide Source" : "Show Source"}>
+             <button onClick={() => setShowSource(!showSource)} className={MESSAGE_BLOCK_BUTTON_CLASS} title={t(showSource ? 'hide_source' : 'show_source')}>
                 <Code size={14} />
              </button>
-             <button onClick={handleToggleLayout} disabled={isRendering} className={MESSAGE_BLOCK_BUTTON_CLASS} title={`Toggle Layout (Current: ${layout})`}>
+             <button onClick={handleToggleLayout} disabled={isRendering} className={MESSAGE_BLOCK_BUTTON_CLASS} title={`${t('toggle_layout')} (${t('current')}: ${layout})`}>
                 {isRendering ? <Loader2 size={14} className="animate-spin"/> : <Repeat size={14} />}
              </button>
              <button 
                 onClick={() => onOpenSidePanel({ type: 'graphviz', content: code, title: 'Graphviz Diagram' })}
                 className={`${MESSAGE_BLOCK_BUTTON_CLASS} hidden md:block`}
-                title="Open in Side Panel"
+                title={t('open_side_panel')}
              >
                 <Sidebar size={14} />
              </button>
@@ -195,7 +197,7 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({ code, onImageClick
                     <button 
                         onClick={(e) => { e.stopPropagation(); onImageClick(diagramFile); }}
                         className={MESSAGE_BLOCK_BUTTON_CLASS} 
-                        title="Zoom Diagram"
+                        title={t('zoom_diagram')}
                     >
                         <Maximize size={14} />
                     </button>
@@ -203,7 +205,7 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({ code, onImageClick
                         onClick={(e) => { e.stopPropagation(); handleDownloadPng(); }}
                         disabled={isDownloading} 
                         className={MESSAGE_BLOCK_BUTTON_CLASS} 
-                        title="Download as PNG"
+                        title={t('download_png')}
                     >
                         {isDownloading ? <Loader2 size={14} className="animate-spin"/> : <Download size={14} />}
                     </button>
@@ -222,7 +224,7 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({ code, onImageClick
       {showSource && (
           <div className="relative rounded-b-lg border border-[var(--theme-border-secondary)] border-t-0 bg-[var(--theme-bg-code-block)] overflow-hidden">
               <div className="absolute top-2 right-2 z-10">
-                  <button onClick={handleCopyCode} className={MESSAGE_BLOCK_BUTTON_CLASS} title="Copy Code">
+                  <button onClick={handleCopyCode} className={MESSAGE_BLOCK_BUTTON_CLASS} title={t('copy_code')}>
                       {isCopied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
                   </button>
               </div>

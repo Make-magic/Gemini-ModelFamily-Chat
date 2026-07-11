@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, RefObject } from 'react';
 import { useWindowContext } from '../contexts/WindowContext';
 import { sanitizeFilename, exportElementAsPng, triggerDownload, createSnapshotContainer, embedImagesInClone } from '../utils/exportUtils';
+import { downloadBlob } from '../utils/objectUrlManager';
 
 const ZOOM_STEP = 0.1;
 const MIN_ZOOM = 0.25;
@@ -150,8 +151,7 @@ export const useHtmlPreviewModal = ({
         const title = getPreviewTitle();
         const filename = `${sanitizeFilename(title)}.html`;
         const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        triggerDownload(url, filename);
+        downloadBlob(blob, filename);
     }, [htmlContent, getPreviewTitle]);
 
     const handleScreenshot = useCallback(async () => {

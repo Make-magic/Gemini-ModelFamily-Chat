@@ -15,7 +15,7 @@ export const triggerDownload = (href: string, filename: string, revokeBlob: bool
     // Delay revocation to ensure the download has started in all browsers
     if (revokeBlob && href.startsWith('blob:')) {
         setTimeout(() => {
-            URL.revokeObjectURL(href);
+            revokeManagedObjectUrl(href);
         }, 1000);
     }
 };
@@ -39,3 +39,4 @@ export const sanitizeFilename = (name: string): string => {
   }
   return saneName || "export";
 };
+import { revokeManagedObjectUrl } from '../objectUrlManager';

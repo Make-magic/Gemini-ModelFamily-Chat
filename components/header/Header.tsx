@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Wand2, PictureInPicture, PictureInPicture2, RefreshCw, CheckCircle2, AlertCircle, DownloadCloud, UploadCloud } from 'lucide-react';
+import { PictureInPicture, PictureInPicture2, RefreshCw, CheckCircle2, AlertCircle, DownloadCloud, UploadCloud, MoreHorizontal } from 'lucide-react';
 import { ModelOption } from '../../types';
 import { translations } from '../../utils/appUtils';
 import { IconNewChat, IconSidebarToggle, IconScenarios } from '../icons/CustomIcons';
@@ -67,6 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [newChatShortcut, setNewChatShortcut] = useState('');
   const [pipShortcut, setPipShortcut] = useState('');
+  const [isOverflowOpen, setIsOverflowOpen] = useState(false);
 
   useEffect(() => {
     const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -75,7 +76,7 @@ export const Header: React.FC<HeaderProps> = ({
     setPipShortcut(`${modifier} + Shift + P`);
   }, []);
 
-  const headerButtonBase = "w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl transition-all duration-200 ease-[cubic-bezier(0.19,1,0.22,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg-primary)] focus-visible:ring-[var(--theme-border-focus)] hover:scale-105 active:scale-95";
+  const headerButtonBase = "w-11 h-11 sm:w-10 sm:h-10 flex-shrink-0 flex items-center justify-center rounded-xl transition-all duration-200 ease-[cubic-bezier(0.19,1,0.22,1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--theme-bg-primary)] focus-visible:ring-[var(--theme-border-focus)] hover:scale-105 active:scale-95";
   const headerButtonInactive = "bg-transparent text-[var(--theme-icon-settings)] hover:bg-[var(--theme-bg-tertiary)] hover:text-[var(--theme-text-primary)] active:bg-[var(--theme-bg-tertiary)] active:text-[var(--theme-text-primary)]";
   const headerButtonActive = "text-[var(--theme-text-link)] bg-[var(--theme-bg-accent)]/10 hover:bg-[var(--theme-bg-accent)]/20";
 
@@ -102,6 +103,13 @@ export const Header: React.FC<HeaderProps> = ({
           ? <DownloadCloud size={iconSize} strokeWidth={strokeWidth} /> 
           : <UploadCloud size={iconSize} strokeWidth={strokeWidth} />;
     }
+  };
+
+  const syncLabel = (type: 'pull' | 'push', status: HeaderProps['pullStatus'], lastTime: number | null) => {
+    const action = t(type === 'pull' ? 'sync_pull' : 'sync_push');
+    const statusText = t(`sync_status_${status}` as keyof typeof translations);
+    const last = lastTime ? ` · ${t('sync_last')}: ${new Date(lastTime).toLocaleTimeString()}` : '';
+    return `${action} · ${statusText}${last}`;
   };
 
   return (
@@ -138,9 +146,9 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onPullFromServer}
           disabled={pullStatus === 'syncing' || pushStatus === 'syncing'}
-          className={`${headerButtonBase} ${headerButtonInactive} ${pullStatus !== 'idle' ? 'bg-[var(--theme-bg-tertiary)]' : ''}`}
-          aria-label="Pull data from server"
-          title={pullStatus === 'idle' ? `Pull from Hub (Server -> Local)${lastPullTime ? ` - Last: ${new Date(lastPullTime).toLocaleTimeString()}` : ''}` : `Pull ${pullStatus}`}
+          className={`${headerButtonBase} ${headerButtonInactive} ${pullStatus !== 'idle' ? 'bg-[var(--theme-bg-tertiary)]' : ''} hidden md:flex`}
+          aria-label={syncLabel('pull', pullStatus, lastPullTime)}
+          title={syncLabel('pull', pullStatus, lastPullTime)}
         >
           {getStatusIcon(pullStatus, 'pull')}
         </button>
@@ -149,9 +157,9 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onPushToServer}
           disabled={pullStatus === 'syncing' || pushStatus === 'syncing'}
-          className={`${headerButtonBase} ${headerButtonInactive} ${pushStatus !== 'idle' ? 'bg-[var(--theme-bg-tertiary)]' : ''}`}
-          aria-label="Push data to server"
-          title={pushStatus === 'idle' ? `Push to Hub (Local -> Server)${lastPushTime ? ` - Last: ${new Date(lastPushTime).toLocaleTimeString()}` : ''}` : `Push ${pushStatus}`}
+          className={`${headerButtonBase} ${headerButtonInactive} ${pushStatus !== 'idle' ? 'bg-[var(--theme-bg-tertiary)]' : ''} hidden md:flex`}
+          aria-label={syncLabel('push', pushStatus, lastPushTime)}
+          title={syncLabel('push', pushStatus, lastPushTime)}
         >
           {getStatusIcon(pushStatus, 'push')}
         </button>
@@ -160,13 +168,40 @@ export const Header: React.FC<HeaderProps> = ({
         {isPipSupported && (
           <button
             onClick={onTogglePip}
-            className={`${headerButtonBase} ${headerButtonInactive}`}
-            aria-label={isPipActive ? 'Exit Picture-in-Picture' : 'Enter Picture-in-Picture'}
-            title={`${isPipActive ? 'Exit Picture-in-Picture' : 'Enter Picture-in-Picture'} (${pipShortcut})`}
+            className={`${headerButtonBase} ${headerButtonInactive} hidden md:flex`}
+            aria-label={t(isPipActive ? 'pipExit' : 'pipEnter')}
+            title={`${t(isPipActive ? 'pipExit' : 'pipEnter')} (${pipShortcut})`}
           >
             {isPipActive ? <PictureInPicture2 size={iconSize} strokeWidth={strokeWidth} /> : <PictureInPicture size={iconSize} strokeWidth={strokeWidth} />}
           </button>
         )}
+
+        <div className="relative md:hidden">
+          <button
+            type="button"
+            onClick={() => setIsOverflowOpen(open => !open)}
+            className={`${headerButtonBase} ${headerButtonInactive}`}
+            aria-haspopup="menu"
+            aria-expanded={isOverflowOpen}
+            aria-label={t('more_actions')}
+            title={t('more_actions')}
+          >
+            <MoreHorizontal size={iconSize} />
+          </button>
+          {isOverflowOpen && (
+            <div role="menu" className="absolute right-0 top-12 z-50 min-w-56 rounded-xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)] p-1.5 shadow-xl">
+              <button role="menuitem" disabled={pullStatus === 'syncing' || pushStatus === 'syncing'} onClick={() => { setIsOverflowOpen(false); onPullFromServer(); }} className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] disabled:opacity-60">
+                {getStatusIcon(pullStatus, 'pull')} <span>{syncLabel('pull', pullStatus, lastPullTime)}</span>
+              </button>
+              <button role="menuitem" disabled={pullStatus === 'syncing' || pushStatus === 'syncing'} onClick={() => { setIsOverflowOpen(false); onPushToServer(); }} className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] disabled:opacity-60">
+                {getStatusIcon(pushStatus, 'push')} <span>{syncLabel('push', pushStatus, lastPushTime)}</span>
+              </button>
+              {isPipSupported && <button role="menuitem" onClick={() => { setIsOverflowOpen(false); onTogglePip(); }} className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]">
+                {isPipActive ? <PictureInPicture2 size={iconSize} /> : <PictureInPicture size={iconSize} />} <span>{t(isPipActive ? 'pipExit' : 'pipEnter')}</span>
+              </button>}
+            </div>
+          )}
+        </div>
 
         {/* 4. New Chat Button (formerly Settings) */}
         <button

@@ -4,17 +4,20 @@ import { X, Code, Eye, Download, Atom, FileCode2 } from 'lucide-react';
 import { SideViewContent } from '../../types';
 import { MermaidBlock } from '../message/blocks/MermaidBlock';
 import { GraphvizBlock } from '../message/blocks/GraphvizBlock';
-import { triggerDownload, sanitizeFilename } from '../../utils/exportUtils';
+import { sanitizeFilename } from '../../utils/exportUtils';
 import { CodeEditor } from '../shared/CodeEditor';
 import { useIsMobile } from '../../hooks/useDevice';
+import { downloadBlob } from '../../utils/objectUrlManager';
+import { translations } from '../../utils/appUtils';
 
 interface SidePanelProps {
     content: SideViewContent | null;
     onClose: () => void;
     themeId: string;
+    t: (key: keyof typeof translations) => string;
 }
 
-export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId }) => {
+export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId, t }) => {
     const [localCode, setLocalCode] = useState('');
     const [debouncedCode, setDebouncedCode] = useState('');
     const [activeTab, setActiveTab] = useState<'code' | 'preview'>('preview');
@@ -90,8 +93,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
     const handleDownload = () => {
         const ext = content.type === 'html' ? 'html' : content.type === 'mermaid' ? 'mmd' : 'txt';
         const blob = new Blob([localCode], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        triggerDownload(url, `${sanitizeFilename(content.title || 'snippet')}.${ext}`);
+        downloadBlob(blob, `${sanitizeFilename(content.title || 'snippet')}.${ext}`);
     };
 
     const renderPreview = () => {
@@ -103,7 +105,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
                         className="w-full h-full border-0"
                         // SECURITY: Removed allow-same-origin to prevent access to localStorage/parent DOM
                         sandbox="allow-scripts allow-forms allow-popups allow-modals"
-                        title="Live Preview"
+                        title={t('live_preview')}
                         srcDoc={debouncedCode}
                     />
                 </div>
@@ -119,6 +121,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
                             isLoading={false} 
                             themeId={themeId} 
                             onOpenSidePanel={() => {}} 
+                            t={t}
                         />
                     </div>
                 </div>
@@ -134,12 +137,13 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
                             isLoading={false} 
                             themeId={themeId} 
                             onOpenSidePanel={() => {}} 
+                            t={t}
                         />
                     </div>
                 </div>
             );
         }
-        return <div className="p-4 text-[var(--theme-text-tertiary)] flex items-center justify-center h-full">Preview not supported for this type.</div>;
+        return <div className="p-4 text-[var(--theme-text-tertiary)] flex items-center justify-center h-full">{t('preview_unavailable')}</div>;
     };
 
     const TabButton = ({ id, icon: Icon, label }: { id: typeof activeTab, icon: any, label: string }) => (
@@ -168,7 +172,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
     const isHtml = content.type === 'html' && !isReact;
 
     const PreviewIcon = isReact ? Atom : (isHtml ? FileCode2 : Eye);
-    const previewLabel = isReact ? "React" : (isHtml ? "HTML" : "Preview");
+    const previewLabel = isReact ? "React" : (isHtml ? "HTML" : t('preview'));
 
     return (
         <>
@@ -192,7 +196,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
                         flex items-center justify-center group transition-colors hover:bg-[var(--theme-bg-accent)]
                         ${isResizing ? 'bg-[var(--theme-bg-accent)]' : 'bg-transparent'}
                     `}
-                    title="Drag to resize"
+                    title={t('drag_resize')}
                 />
 
                 {/* Unified Header */}
@@ -200,15 +204,15 @@ export const SidePanel: React.FC<SidePanelProps> = ({ content, onClose, themeId 
                     {/* Left: Tabs */}
                     <div className="flex bg-[var(--theme-bg-input)] p-1 rounded-lg border border-[var(--theme-border-secondary)] flex-shrink-0">
                         <TabButton id="preview" icon={PreviewIcon} label={previewLabel} />
-                        <TabButton id="code" icon={Code} label="Code" />
+                        <TabButton id="code" icon={Code} label={t('code')} />
                     </div>
 
                     {/* Right: Actions */}
                     <div className="flex items-center gap-1 flex-shrink-0">
-                        <button onClick={handleDownload} className="p-2 text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] rounded-lg transition-colors" title="Download Code">
+                        <button onClick={handleDownload} className="p-2 text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] rounded-lg transition-colors" title={t('download_code')}>
                             <Download size={16} strokeWidth={1.5} />
                         </button>
-                        <button onClick={onClose} className="p-2 text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] rounded-lg transition-colors" title="Close Panel">
+                        <button onClick={onClose} className="p-2 text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] rounded-lg transition-colors" title={t('close_panel')}>
                             <X size={18} strokeWidth={1.5} />
                         </button>
                     </div>

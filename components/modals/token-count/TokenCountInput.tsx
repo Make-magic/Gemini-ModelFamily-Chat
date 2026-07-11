@@ -10,10 +10,11 @@ interface TokenCountInputProps {
 export const TokenCountInput: React.FC<TokenCountInputProps> = ({ text, onChange, t }) => {
     return (
         <div className="space-y-2 flex-grow flex flex-col">
-            <label className="text-xs font-bold uppercase text-[var(--theme-text-tertiary)] tracking-wider">
+            <label htmlFor="token-count-content" className="text-xs font-bold uppercase text-[var(--theme-text-tertiary)] tracking-wider">
                 {t('tokenModal_input')}
             </label>
             <textarea
+                id="token-count-content"
                 value={text}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={t('tokenModal_placeholder')}

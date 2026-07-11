@@ -48,6 +48,7 @@ export const useChatInputPropsBuilder = (
         t: props.t,
         selectedFiles: props.selectedFiles,
         onCancelUpload: props.onCancelUpload,
+        onRetryUpload: props.onRetryUpload,
         isRecording: voiceState.isRecording,
         isMicInitializing: voiceState.isMicInitializing,
         isTranscribing: voiceState.isTranscribing,

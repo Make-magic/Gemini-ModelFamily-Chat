@@ -26,7 +26,9 @@ export interface UploadedFile {
   rawFile?: File | Blob; // Persisted File/Blob for offline access, used to generate dataUrl on load.
   fileUri?: string; // URI returned by Gemini API (e.g., "files/xxxxxxxx")
   fileApiName?: string; // Full resource name from API (e.g., "files/xxxxxxxx")
-  uploadState?: 'pending' | 'uploading' | 'processing_api' | 'active' | 'failed' | 'cancelled'; // State of the file on Gemini API
+  uploadState?: 'pending' | 'uploading' | 'cancelling' | 'processing_api' | 'active' | 'failed' | 'cancelled'; // State of the file on Gemini API
+  failureStage?: 'upload' | 'processing';
+  retryCount?: number;
   abortController?: AbortController; // Added for cancelling uploads
   uploadSpeed?: string; // Added for upload speed display
   videoMetadata?: VideoMetadata; // Added for video clipping
@@ -210,6 +212,7 @@ export interface ChatInputProps {
   onProcessFiles: (files: FileList | File[]) => Promise<void>;
   onAddFileById: (fileId: string) => Promise<void>;
   onCancelUpload: (fileId: string) => void;
+  onRetryUpload: (fileId: string) => void;
   onTranscribeAudio: (file: File) => Promise<string | null>;
   isProcessingFile: boolean;
   fileError: string | null;

@@ -7,21 +7,22 @@ interface ScrollNavigationProps {
     showDown: boolean;
     onScrollToPrev: () => void;
     onScrollToNext: () => void;
+    bottomOffset?: number;
 }
 
-export const ScrollNavigation: React.FC<ScrollNavigationProps> = ({ showUp, showDown, onScrollToPrev, onScrollToNext }) => {
+export const ScrollNavigation: React.FC<ScrollNavigationProps> = ({ showUp, showDown, onScrollToPrev, onScrollToNext, bottomOffset = 16 }) => {
     if (!showUp && !showDown) return null;
 
     return (
         <div
-            className="sticky z-20 bottom-4 w-full flex flex-col items-end gap-3 pointer-events-none pr-1"
-            style={{ animation: 'fadeIn 0.3s ease-out both' }}
+            className="absolute z-20 right-2 flex flex-col items-end gap-3 pointer-events-none"
+            style={{ bottom: `${bottomOffset}px`, animation: 'fadeIn 0.3s ease-out both' }}
         >
             {showUp && (
                 <button
                     onClick={onScrollToPrev}
                     className={`
-                        p-2.5 rounded-full 
+                        h-11 w-11 rounded-full flex items-center justify-center
                         bg-[var(--theme-bg-secondary)] 
                         border border-[var(--theme-border-secondary)] 
                         text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] 
@@ -40,7 +41,7 @@ export const ScrollNavigation: React.FC<ScrollNavigationProps> = ({ showUp, show
                 <button
                     onClick={onScrollToNext}
                     className={`
-                        p-2.5 rounded-full 
+                        h-11 w-11 rounded-full flex items-center justify-center
                         bg-[var(--theme-bg-secondary)] 
                         border border-[var(--theme-border-secondary)] 
                         text-[var(--theme-text-secondary)] hover:text-[var(--theme-text-primary)] 

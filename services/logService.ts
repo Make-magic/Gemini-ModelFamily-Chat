@@ -1,5 +1,6 @@
 
 import { dbService } from "../utils/db";
+import { createApiKeyFingerprint, redactSensitiveData, redactSensitiveText } from '../utils/security';
 
 export type LogLevel = 'INFO' | 'WARN' | 'ERROR' | 'DEBUG';
 export type LogCategory = 'SYSTEM' | 'NETWORK' | 'USER' | 'MODEL' | 'DB' | 'AUTH' | 'FILE';
@@ -41,7 +42,7 @@ class LogServiceImpl {
   private flushTimer: any = null;
 
   constructor() {
-    this.loadApiKeyUsage();
+    void this.loadApiKeyUsage();
     this.loadTokenUsage();
     this.pruneOldLogs();
     this.info('Log service initialized (IndexedDB Batched Mode).', { category: 'SYSTEM' });
@@ -54,7 +55,7 @@ class LogServiceImpl {
       timestamp: new Date(),
       level,
       category,
-      message,
+      message: redactSensitiveText(message),
       data: this.safeSerialize(data),
     };
   }
@@ -62,13 +63,8 @@ class LogServiceImpl {
   private safeSerialize(data: any): any {
     if (data === undefined || data === null) return undefined;
     try {
-      // Simple circular reference handler
-      const seen = new WeakSet();
-      return JSON.parse(JSON.stringify(data, (key, value) => {
-        if (typeof value === 'object' && value !== null) {
-          if (seen.has(value)) return '[Circular]';
-          seen.add(value);
-        }
+      const sanitized = redactSensitiveData(data);
+      return JSON.parse(JSON.stringify(sanitized, (key, value) => {
         // Truncate extremely long strings to save DB space
         if (typeof value === 'string' && value.length > 5000) {
             return value.substring(0, 5000) + '...[TRUNCATED]';
@@ -130,13 +126,25 @@ class LogServiceImpl {
 
   // --- API Usage Tracking (Kept in LocalStorage for speed/simplicity) ---
 
-  private loadApiKeyUsage() {
+  private async loadApiKeyUsage() {
       try {
           const storedUsage = localStorage.getItem(API_USAGE_STORAGE_KEY);
           if (storedUsage) {
               const parsed = JSON.parse(storedUsage);
               if (Array.isArray(parsed)) {
-                  this.apiKeyUsage = new Map(parsed);
+                  localStorage.removeItem(API_USAGE_STORAGE_KEY);
+                  const migrated = new Map<string, number>();
+                  for (const [storedKey, rawCount] of parsed) {
+                      if (typeof storedKey !== 'string') continue;
+                      const count = Number(rawCount) || 0;
+                      const fingerprint = /^[^\s]{1,4}…[^\s]{1,4} · [a-f0-9]{12}$/i.test(storedKey)
+                          ? storedKey
+                          : await createApiKeyFingerprint(storedKey);
+                      migrated.set(fingerprint, (migrated.get(fingerprint) || 0) + count);
+                  }
+                  this.apiKeyUsage = migrated;
+                  this.saveApiKeyUsage();
+                  this.notifyApiKeyListeners();
               }
           }
       } catch (e) {
@@ -250,10 +258,14 @@ class LogServiceImpl {
 
   public recordApiKeyUsage(apiKey: string) {
     if (!apiKey) return;
-    const currentCount = this.apiKeyUsage.get(apiKey) || 0;
-    this.apiKeyUsage.set(apiKey, currentCount + 1);
-    this.saveApiKeyUsage();
-    this.notifyApiKeyListeners();
+    void createApiKeyFingerprint(apiKey).then(fingerprint => {
+      const currentCount = this.apiKeyUsage.get(fingerprint) || 0;
+      this.apiKeyUsage.set(fingerprint, currentCount + 1);
+      this.saveApiKeyUsage();
+      this.notifyApiKeyListeners();
+    }).catch(error => {
+      console.error('Failed to fingerprint API key usage:', error);
+    });
   }
 
   // --- Subscription & Retrieval ---

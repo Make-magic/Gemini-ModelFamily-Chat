@@ -2,7 +2,7 @@
 import { useCallback } from 'react';
 import { AppSettings, SavedChatSession, SavedScenario, ChatGroup } from '../../types';
 import { logService } from '../../utils/appUtils';
-import { triggerDownload } from '../../utils/exportUtils';
+import { downloadBlob } from '../../utils/objectUrlManager';
 
 interface UseDataExportProps {
     appSettings: AppSettings;
@@ -27,7 +27,7 @@ export const useDataExport = ({
             const jsonString = JSON.stringify(dataToExport, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const date = new Date().toISOString().slice(0, 10);
-            triggerDownload(URL.createObjectURL(blob), `all-model-chat-settings-${date}.json`);
+            downloadBlob(blob, `all-model-chat-settings-${date}.json`);
         } catch (error) {
             logService.error('Failed to export settings', { error });
             alert(t('export_failed_title'));
@@ -41,7 +41,7 @@ export const useDataExport = ({
             const jsonString = JSON.stringify(dataToExport, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const date = new Date().toISOString().slice(0, 10);
-            triggerDownload(URL.createObjectURL(blob), `all-model-chat-history-${date}.json`);
+            downloadBlob(blob, `all-model-chat-history-${date}.json`);
         } catch (error) {
             logService.error('Failed to export history', { error });
             alert(t('export_failed_title'));
@@ -55,7 +55,7 @@ export const useDataExport = ({
             const jsonString = JSON.stringify(dataToExport, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const date = new Date().toISOString().slice(0, 10);
-            triggerDownload(URL.createObjectURL(blob), `all-model-chat-scenarios-${date}.json`);
+            downloadBlob(blob, `all-model-chat-scenarios-${date}.json`);
         } catch (error) {
             logService.error('Failed to export scenarios', { error });
             alert(t('export_failed_title'));

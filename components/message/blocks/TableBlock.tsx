@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { Maximize2, Minimize2, Download } from 'lucide-react';
 import { useWindowContext } from '../../../contexts/WindowContext';
 import { triggerDownload } from '../../../utils/exportUtils';
+import { downloadBlob } from '../../../utils/objectUrlManager';
 
 export const TableBlock: React.FC<React.TableHTMLAttributes<HTMLTableElement>> = ({ children, className, ...props }) => {
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -25,8 +26,7 @@ export const TableBlock: React.FC<React.TableHTMLAttributes<HTMLTableElement>> =
         }).join('\n');
 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        triggerDownload(url, `table-export-${Date.now()}.csv`);
+        downloadBlob(blob, `table-export-${Date.now()}.csv`);
     };
 
     // When fullscreen, we use a portal and a specific layout.

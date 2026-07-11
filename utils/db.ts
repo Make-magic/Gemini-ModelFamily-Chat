@@ -1,5 +1,5 @@
 
-import { AppSettings, ChatGroup, SavedChatSession, SavedScenario } from '../types';
+import { AppSettings, ChatGroup, SavedChatSession, SavedScenario, SyncClientState } from '../types';
 import { LogEntry } from '../services/logService';
 
 const DB_NAME = 'AllModelChatDB';
@@ -215,6 +215,9 @@ export const dbService = {
 
   getLastSyncTime: () => getKeyValue<number>('lastSyncTime'),
   setLastSyncTime: (time: number) => setKeyValue<number>('lastSyncTime', time),
+
+  getSyncClientState: () => getKeyValue<SyncClientState>('syncClientState'),
+  setSyncClientState: (state: SyncClientState) => setKeyValue<SyncClientState>('syncClientState', state),
   
   // Log specific
   addLogs,

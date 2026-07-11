@@ -2,6 +2,7 @@
 import React, { useCallback } from 'react';
 import { SavedChatSession, Theme } from '../../types';
 import { logService } from '../../utils/appUtils';
+import { downloadBlob } from '../../utils/objectUrlManager';
 import {
     sanitizeFilename,
     exportElementAsPng,
@@ -218,7 +219,7 @@ export const useChatSessionExport = ({
                 };
                 const jsonString = JSON.stringify(dataToExport, null, 2);
                 const blob = new Blob([jsonString], { type: 'application/json' });
-                triggerDownload(URL.createObjectURL(blob), filename);
+                downloadBlob(blob, filename);
             } catch (error) {
                 logService.error('Failed to export chat as JSON', { error });
                 alert(t('export_failed_title'));

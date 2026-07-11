@@ -53,6 +53,7 @@ export const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ apiKey, setApiKey, t, 
                     className={`${inputBaseClasses} ${SETTINGS_INPUT_CLASS} resize-y min-h-[80px] ${apiKeyBlurClass}`}
                     placeholder={t('apiConfig_key_placeholder')}
                     spellCheck={false}
+                    aria-describedby="api-key-help"
                 />
                 {!isFocused && apiKey && (
                     <div className="absolute top-3 right-3 pointer-events-none">
@@ -60,7 +61,7 @@ export const ApiKeyInput: React.FC<ApiKeyInputProps> = ({ apiKey, setApiKey, t, 
                     </div>
                 )}
             </div>
-            <p className="text-xs text-[var(--theme-text-tertiary)] flex gap-1.5">
+            <p id="api-key-help" className="text-xs text-[var(--theme-text-tertiary)] flex gap-1.5">
                 <Info size={14} className="flex-shrink-0 mt-0.5" strokeWidth={1.5} />
                 <span>{t('settingsApiKeyHelpText')}</span>
             </p>

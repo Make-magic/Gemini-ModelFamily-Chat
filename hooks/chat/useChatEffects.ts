@@ -2,6 +2,8 @@
 import { useEffect, useRef } from 'react';
 import { UploadedFile, SavedChatSession, ChatSettings, ModelOption, ChatMessage } from '../../types';
 import { logService } from '../../utils/appUtils';
+import { releaseFileObjectUrl, revokeAllManagedObjectUrls } from '../../utils/objectUrlManager';
+import { getModelCapabilities } from '../../constants/modelRegistry';
 
 interface UseChatEffectsProps {
     activeSessionId: string | null;
@@ -94,15 +96,16 @@ export const useChatEffects = ({
         const prevFiles = messagesForCleanupRef.current.flatMap(m => m.files || []);
         const currentFiles = savedSessions.flatMap(s => s.messages).flatMap(m => m.files || []);
         const removedFiles = prevFiles.filter(prevFile => !currentFiles.some(currentFile => currentFile.id === prevFile.id));
-        removedFiles.forEach(file => { if (file.dataUrl && file.dataUrl.startsWith('blob:')) URL.revokeObjectURL(file.dataUrl); });
+        removedFiles.forEach(releaseFileObjectUrl);
         messagesForCleanupRef.current = savedSessions.flatMap(s => s.messages);
     }, [savedSessions]);
 
     // Cleanup on unmount
     useEffect(() => () => { 
         messagesForCleanupRef.current.flatMap(m => m.files || []).forEach(file => { 
-            if (file.dataUrl?.startsWith('blob:')) URL.revokeObjectURL(file.dataUrl); 
+            releaseFileObjectUrl(file);
         }); 
+        revokeAllManagedObjectUrls();
     }, []);
 
     // 6. Model Preference Auto-Correction
@@ -128,9 +131,9 @@ export const useChatEffects = ({
     useEffect(() => {
         if (prevModelIdRef.current !== currentChatSettings.modelId) {
             const modelId = currentChatSettings.modelId;
-            const isBananaModel = modelId.includes('gemini-2.5-flash-image') || modelId.includes('gemini-3-pro-image');
+            const capabilities = getModelCapabilities(modelId);
             
-            if (isBananaModel) {
+            if (capabilities.aspectRatios?.includes('Auto')) {
                 setAspectRatio('Auto');
             } else if (aspectRatio === 'Auto') {
                 setAspectRatio('1:1');

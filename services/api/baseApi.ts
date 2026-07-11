@@ -3,8 +3,8 @@ import { logService } from "../logService";
 import { dbService } from '../../utils/db';
 import { DEEP_SEARCH_SYSTEM_PROMPT } from "../../constants/promptConstants";
 import { SafetySetting, MediaResolution, ThinkingLevel } from "../../types/settings";
-import { isGemini3Model } from "../../utils/appUtils";
 import { toGeminiThinkingLevel } from './geminiAdapter';
+import { getModelCapabilities } from '../../constants/modelRegistry';
 
 
 const POLLING_INTERVAL_MS = 2000; // 2 seconds
@@ -107,7 +107,8 @@ export const buildGenerationConfig = (
     safetySettings?: SafetySetting[],
     mediaResolution?: MediaResolution
 ): any => {
-    if (modelId === 'gemini-2.5-flash-image') {
+    const capabilities = getModelCapabilities(modelId);
+    if (capabilities.imageGeneration && capabilities.imageEditing && !capabilities.imageSizes?.length) {
         const imageConfig: any = {};
         if (aspectRatio && aspectRatio !== 'Auto') imageConfig.aspectRatio = aspectRatio;
         
@@ -120,7 +121,7 @@ export const buildGenerationConfig = (
         return config;
     }
 
-    if (modelId === 'gemini-3-pro-image-preview') {
+    if (capabilities.imageGeneration && capabilities.imageEditing && capabilities.imageSizes?.length) {
          const imageConfig: any = {
             imageSize: imageSize || '1K',
          };
@@ -135,7 +136,7 @@ export const buildGenerationConfig = (
          
          // Add tools if enabled
          const tools = [];
-         if (isGoogleSearchEnabled || isDeepSearchEnabled) tools.push({ googleSearch: {} });
+         if ((isGoogleSearchEnabled || isDeepSearchEnabled) && capabilities.tools.googleSearch) tools.push({ googleSearch: {} });
          if (tools.length > 0) config.tools = tools;
          
          if (systemInstruction) config.systemInstruction = systemInstruction;
@@ -159,9 +160,7 @@ export const buildGenerationConfig = (
     // Check if model is Gemini 3. If so, prefer per-part media resolution (handled in content construction),
     // but we can omit the global config to avoid conflict, or set it if per-part isn't used.
     // However, if we are NOT Gemini 3, we MUST use global config.
-    const isGemini3 = isGemini3Model(modelId);
-    
-    if (!isGemini3 && mediaResolution) {
+    if (capabilities.mediaResolution === 'global' && mediaResolution) {
         // For non-Gemini 3 models, apply global resolution if specified
         generationConfig.mediaResolution = mediaResolution;
     } 
@@ -174,7 +173,7 @@ export const buildGenerationConfig = (
     }
 
     // Robust check for Gemini 3
-    if (isGemini3) {
+    if (capabilities.thinking === 'level' || capabilities.thinking === 'budget-and-level') {
         // Gemini 3.0 supports both thinkingLevel and thinkingBudget.
         // We prioritize budget if it's explicitly set (>0).
         generationConfig.thinkingConfig = {
@@ -187,9 +186,7 @@ export const buildGenerationConfig = (
             generationConfig.thinkingConfig.thinkingLevel = toGeminiThinkingLevel(thinkingLevel);
         }
     } else {
-        const modelSupportsThinking = [
-            'gemini-2.5-pro',
-        ].includes(modelId) || modelId.includes('gemini-2.5');
+        const modelSupportsThinking = capabilities.thinking === 'budget';
 
         if (modelSupportsThinking) {
             // Decouple thinking budget from showing thoughts.
@@ -204,13 +201,13 @@ export const buildGenerationConfig = (
 
     const tools = [];
     // Deep Search requires Google Search tool
-    if (isGoogleSearchEnabled || isDeepSearchEnabled) {
+    if ((isGoogleSearchEnabled || isDeepSearchEnabled) && capabilities.tools.googleSearch) {
         tools.push({ googleSearch: {} });
     }
-    if (isCodeExecutionEnabled) {
+    if (isCodeExecutionEnabled && capabilities.tools.codeExecution) {
         tools.push({ codeExecution: {} });
     }
-    if (isUrlContextEnabled) {
+    if (isUrlContextEnabled && capabilities.tools.urlContext) {
         tools.push({ urlContext: {} });
     }
 

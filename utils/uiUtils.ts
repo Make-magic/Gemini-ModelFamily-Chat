@@ -3,6 +3,7 @@ import React from 'react';
 import { ThemeColors } from '../types/theme';
 import { AppSettings, MediaResolution } from '../types';
 import { Theme, AVAILABLE_THEMES } from '../constants/themeConstants';
+import { createManagedObjectUrl } from './objectUrlManager';
 import { 
   SUPPORTED_IMAGE_MIME_TYPES, 
   SUPPORTED_AUDIO_MIME_TYPES, 
@@ -87,7 +88,7 @@ export function pcmBase64ToWavUrl(
   dv.setUint32(p, pcm.length, true); p += 4;
 
   new Uint8Array(wav, 44).set(pcm);
-  return URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }));
+  return createManagedObjectUrl(new Blob([wav], { type: 'audio/wav' }));
 }
 
 export const showNotification = async (title: string, options?: NotificationOptions) => {

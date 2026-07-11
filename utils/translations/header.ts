@@ -21,4 +21,12 @@ export const headerTranslations = {
     headerModelAriaLabel_current: { en: 'Current AI Model', zh: '当前 AI 模型' },
     headerModelAriaLabel_action: { en: `Click to change model`, zh: `点击更改模型` },
     header_model_search_placeholder: { en: 'Search models...', zh: '搜索模型...' },
+    sync_pull: { en: 'Pull from hub', zh: '从同步中心拉取' },
+    sync_push: { en: 'Push to hub', zh: '推送到同步中心' },
+    sync_status_idle: { en: 'Ready', zh: '就绪' },
+    sync_status_syncing: { en: 'Syncing', zh: '同步中' },
+    sync_status_success: { en: 'Completed', zh: '已完成' },
+    sync_status_error: { en: 'Failed', zh: '失败' },
+    sync_last: { en: 'Last', zh: '上次' },
+    more_actions: { en: 'More actions', zh: '更多操作' },
 };

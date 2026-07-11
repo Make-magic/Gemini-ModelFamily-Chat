@@ -3,6 +3,25 @@ import { Part, File as GeminiFile } from "@google/genai";
 import { ModelOption } from './settings';
 import { ChatHistoryItem, GeminiUsageMetadata } from './gemini';
 
+export type ApiErrorKind = 'network' | 'authentication' | 'quota' | 'unsupported_model' | 'safety' | 'empty_response' | 'aborted' | 'unknown';
+
+export interface ClassifiedApiError extends Error {
+  kind: ApiErrorKind;
+  retryable: boolean;
+  status?: number;
+  retryAfterMs?: number;
+}
+
+export interface ChatTerminalResult {
+  status: 'success' | 'abort' | 'error';
+  error?: ClassifiedApiError;
+  parts?: Part[];
+  thoughtsText?: string;
+  usageMetadata?: GeminiUsageMetadata;
+  groundingMetadata?: any;
+  urlContextMetadata?: any;
+}
+
 export interface GeminiService {
   uploadFile: (
     apiKey: string, 
@@ -24,8 +43,7 @@ export interface GeminiService {
     abortSignal: AbortSignal,
     onPart: (part: Part) => void,
     onThoughtChunk: (chunk: string) => void,
-    onError: (error: Error) => void,
-    onComplete: (usageMetadata?: GeminiUsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
+    onTerminal: (result: ChatTerminalResult) => void
   ) => Promise<void>;
 
   sendMessageNonStream: (
@@ -35,8 +53,7 @@ export interface GeminiService {
     parts: Part[],
     config: any,
     abortSignal: AbortSignal,
-    onError: (error: Error) => void,
-    onComplete: (parts: Part[], thoughtsText?: string, usageMetadata?: GeminiUsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
+    onTerminal: (result: ChatTerminalResult) => void
   ) => Promise<void>;
 
   generateImages: (apiKey: string, modelId: string, prompt: string, aspectRatio: string, imageSize: string | undefined, abortSignal: AbortSignal) => Promise<string[]>;

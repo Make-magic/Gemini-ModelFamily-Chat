@@ -4,6 +4,7 @@ import { useCopyToClipboard } from './useCopyToClipboard';
 import { extractTextFromNode } from '../utils/uiUtils';
 import { isLikelyHtml, isLikelyReact, generateReactPreview } from '../utils/codeUtils';
 import { triggerDownload, sanitizeFilename } from '../utils/exportUtils';
+import { downloadBlob } from '../utils/objectUrlManager';
 import { SideViewContent } from '../types';
 
 const COLLAPSE_THRESHOLD_PX = 320;
@@ -206,8 +207,7 @@ export const useCodeBlock = ({
             }
         }
         const blob = new Blob([codeText.current], { type: downloadMimeType });
-        const url = URL.createObjectURL(blob);
-        triggerDownload(url, filename);
+        downloadBlob(blob, filename);
     };
 
     return {

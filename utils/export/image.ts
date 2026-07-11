@@ -1,4 +1,5 @@
 import { triggerDownload } from './core';
+import { downloadBlob } from '../objectUrlManager';
 
 /**
  * Exports a given HTML element as a PNG image.
@@ -106,9 +107,7 @@ export const exportElementAsPng = async (
             });
 
             if (blob) {
-                const url = URL.createObjectURL(blob);
-                triggerDownload(url, filename);
-                // URL.revokeObjectURL(url); // Should be revoked after download started, but core.ts handles it or it's fine for simple apps
+                downloadBlob(blob, filename);
                 return;
             }
         } catch (blobError) {

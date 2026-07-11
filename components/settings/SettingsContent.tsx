@@ -17,6 +17,9 @@ interface SettingsContentProps {
     updateSetting: <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => void;
     handleModelChange: (modelId: string) => void;
     setAvailableModels: (models: ModelOption[]) => void;
+    onRefreshModels: () => Promise<void>;
+    isRefreshingModels: boolean;
+    modelRefreshError: string | null;
     
     // Data Management Handlers
     onClearHistory: () => void;
@@ -42,7 +45,7 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
     availableModels,
     updateSetting,
     handleModelChange,
-    setAvailableModels,
+    setAvailableModels, onRefreshModels, isRefreshingModels, modelRefreshError,
     onClearHistory,
     onClearCache,
     onOpenLogViewer,
@@ -85,6 +88,9 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
                         availableModels={availableModels}
                         t={t as any}
                         setAvailableModels={setAvailableModels}
+                        onRefreshModels={onRefreshModels}
+                        isRefreshingModels={isRefreshingModels}
+                        modelRefreshError={modelRefreshError}
                     />
                 </div>
             )}
