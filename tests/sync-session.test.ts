@@ -7,6 +7,7 @@ import {
   findRedundantConflictCopyIds,
   fingerprintSession,
   migrateSyncClientState,
+  planSessionPush,
   sha256BytesFallback,
 } from '../utils/syncSession';
 
@@ -126,5 +127,18 @@ describe('session sync decision state machine', () => {
     expect(migrated.version).toBe(2);
     expect(migrated.sessions['session-1']).toMatchObject({ revision: 'revision-a', localUpdatedAt: 2 });
     expect(migrated.sessions['session-1'].baseFingerprint).toBeUndefined();
+  });
+
+  it('honors a pending deletion even when Push receives a stale React session snapshot', () => {
+    const staleSnapshot = [session(), { ...session('second'), id: 'session-2' }];
+    const plan = planSessionPush(staleSnapshot, [], ['session-1']);
+    expect(plan.sessions.map(item => item.id)).toEqual(['session-2']);
+    expect(plan.deletionIds).toEqual(['session-1']);
+  });
+
+  it('also deletes previously synced sessions that disappeared from the current snapshot', () => {
+    const plan = planSessionPush([{ ...session(), id: 'session-2' }], ['session-1', 'session-2'], []);
+    expect(plan.sessions.map(item => item.id)).toEqual(['session-2']);
+    expect(plan.deletionIds).toEqual(['session-1']);
   });
 });

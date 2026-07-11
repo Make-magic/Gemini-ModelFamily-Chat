@@ -10,8 +10,11 @@ const GROUPS_STORE = 'groups';
 const SCENARIOS_STORE = 'scenarios';
 const KEY_VALUE_STORE = 'keyValueStore';
 const LOGS_STORE = 'logs';
+const PENDING_SYNC_DELETIONS_KEY = 'pendingSyncSessionDeletions';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
+const pendingSyncSessionDeletionIds = new Set<string>();
+let pendingDeletionMutationQueue: Promise<void> = Promise.resolve();
 
 const getDb = (): Promise<IDBDatabase> => {
   if (!dbPromise) {
@@ -109,6 +112,41 @@ async function setKeyValue<T>(key: string, value: T): Promise<void> {
   return transactionToPromise(tx);
 }
 
+const queuePendingDeletionMutation = (
+  mutate: (current: Record<string, number>) => void,
+): Promise<void> => {
+  pendingDeletionMutationQueue = pendingDeletionMutationQueue
+    .catch(() => undefined)
+    .then(async () => {
+      const current = await getKeyValue<Record<string, number>>(PENDING_SYNC_DELETIONS_KEY) || {};
+      mutate(current);
+      await setKeyValue(PENDING_SYNC_DELETIONS_KEY, current);
+    });
+  return pendingDeletionMutationQueue;
+};
+
+const markPendingSyncSessionDeletion = (id: string): Promise<void> => {
+  pendingSyncSessionDeletionIds.add(id);
+  const deletedAt = Date.now();
+  return queuePendingDeletionMutation(current => {
+    current[id] = deletedAt;
+  });
+};
+
+const clearPendingSyncSessionDeletion = (id: string): Promise<void> => {
+  pendingSyncSessionDeletionIds.delete(id);
+  return queuePendingDeletionMutation(current => {
+    delete current[id];
+  });
+};
+
+const getPendingSyncSessionDeletionIds = async (): Promise<Set<string>> => {
+  await pendingDeletionMutationQueue.catch(() => undefined);
+  const stored = await getKeyValue<Record<string, number>>(PENDING_SYNC_DELETIONS_KEY) || {};
+  Object.keys(stored).forEach(id => pendingSyncSessionDeletionIds.add(id));
+  return new Set(pendingSyncSessionDeletionIds);
+};
+
 // --- Log Specific Methods ---
 
 async function addLogs(logs: LogEntry[]): Promise<void> {
@@ -186,6 +224,8 @@ async function pruneLogs(olderThan: number): Promise<void> {
 // --- General ---
 
 async function clearAllData(): Promise<void> {
+  await pendingDeletionMutationQueue.catch(() => undefined);
+  pendingSyncSessionDeletionIds.clear();
   const db = await getDb();
   const storeNames = [SESSIONS_STORE, GROUPS_STORE, SCENARIOS_STORE, KEY_VALUE_STORE, LOGS_STORE];
   const tx = db.transaction(storeNames, 'readwrite');
@@ -218,6 +258,9 @@ export const dbService = {
 
   getSyncClientState: () => getKeyValue<SyncClientState>('syncClientState'),
   setSyncClientState: (state: SyncClientState) => setKeyValue<SyncClientState>('syncClientState', state),
+  markPendingSyncSessionDeletion,
+  clearPendingSyncSessionDeletion,
+  getPendingSyncSessionDeletionIds,
   
   // Log specific
   addLogs,

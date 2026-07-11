@@ -353,3 +353,18 @@ export const findRedundantConflictCopyIds = async (sessions: SavedChatSession[])
 
   return redundant;
 };
+
+export const planSessionPush = (
+  sessions: SavedChatSession[],
+  knownSessionIds: Iterable<string>,
+  pendingDeletionIds: Iterable<string>,
+): { sessions: SavedChatSession[]; deletionIds: string[] } => {
+  const pending = new Set(pendingDeletionIds);
+  const activeSessions = sessions.filter(session => !pending.has(session.id));
+  const activeIds = new Set(activeSessions.map(session => session.id));
+  const deletionIds = new Set(pending);
+  for (const id of knownSessionIds) {
+    if (!activeIds.has(id)) deletionIds.add(id);
+  }
+  return { sessions: activeSessions, deletionIds: [...deletionIds] };
+};

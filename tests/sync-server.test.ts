@@ -37,6 +37,9 @@ describe('sync metadata v2', () => {
     expect((await service.getMetadata()).tombstones.sessions['legacy-session'].revision).toBe(deletion.revision);
     await expect(service.saveItem('session', legacy, null)).rejects.toMatchObject({ statusCode: 410 });
 
+    const neverUploadedDeletion = await service.deleteItem('session', 'deleted-before-first-push', null);
+    expect((await service.getMetadata()).tombstones.sessions['deleted-before-first-push'].revision).toBe(neverUploadedDeletion.revision);
+
     const restarted = new SyncService(logger, registry, { storagePath: root });
     await restarted.init();
     expect((await restarted.getMetadata()).tombstones.sessions['legacy-session']).toBeTruthy();

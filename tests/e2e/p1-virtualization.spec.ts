@@ -12,6 +12,7 @@ test('1000 messages stay virtualized and the streaming tail remains mounted', as
       id: `virtual-message-${index}`,
       role: index % 2 === 0 ? 'user' : 'model',
       content: index === 999 ? 'TAIL_STREAMING_MARKER' : `Message ${index}`,
+      thoughts: index === 999 ? 'STREAMING_THOUGHT_MARKER' : undefined,
       timestamp: new Date(Date.now() + index),
       isLoading: index === 999,
     }));
@@ -39,6 +40,11 @@ test('1000 messages stay virtualized and the streaming tail remains mounted', as
 
   await page.reload();
   await expect(page.getByText('TAIL_STREAMING_MARKER')).toBeAttached();
+  const streamingMessage = page.locator('[data-message-id="virtual-message-999"]');
+  await expect(streamingMessage).not.toHaveClass(/message-container-animate/);
+  const thinkingDetails = streamingMessage.locator('details');
+  await thinkingDetails.locator('summary').click();
+  await expect(thinkingDetails).toHaveAttribute('open', '');
   const list = page.getByRole('list', { name: 'Chat messages' });
   await expect(list).toBeVisible();
   expect(await list.getByRole('listitem').count()).toBeLessThan(100);

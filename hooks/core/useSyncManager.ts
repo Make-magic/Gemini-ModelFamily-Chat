@@ -22,6 +22,7 @@ import {
     findRedundantConflictCopyIds,
     fingerprintSession,
     migrateSyncClientState,
+    planSessionPush,
     stableStringify,
 } from '../../utils/syncSession';
 
@@ -269,6 +270,7 @@ export const useSyncManager = ({
     ) => {
         delete state.sessions[id];
         state.knownTombstones[id] = tombstone;
+        await dbService.clearPendingSyncSessionDeletion(id);
         await persistClientState(state);
     }, [persistClientState]);
 
@@ -364,7 +366,11 @@ export const useSyncManager = ({
         syncInProgressRef.current = true;
         setPullStatus('syncing');
         try {
-            const [metadata, state] = await Promise.all([fetchMetadata(), loadClientState()]);
+            const [metadata, state, pendingDeletionIds] = await Promise.all([
+                fetchMetadata(),
+                loadClientState(),
+                dbService.getPendingSyncSessionDeletionIds(),
+            ]);
 
             for (const [id, tombstone] of Object.entries(metadata.tombstones.sessions)) {
                 if (savedSessions.some(session => session.id === id)) await removeLocalSession(id);
@@ -375,6 +381,10 @@ export const useSyncManager = ({
                 const local = savedSessions.find(session => session.id === id);
                 const known = state.sessions[id];
                 if (!remoteMetadata.revision) continue;
+                if (pendingDeletionIds.has(id)) {
+                    if (local) await removeLocalSession(id);
+                    continue;
+                }
                 if (!local) {
                     const remote = await pullRawItem<SavedChatSession>('session', id);
                     if (!remote) continue;
@@ -502,8 +512,13 @@ export const useSyncManager = ({
         syncInProgressRef.current = true;
         setPushStatus('syncing');
         try {
-            const [metadata, state] = await Promise.all([fetchMetadata(), loadClientState()]);
-            const redundantCopyIds = new Set(await findRedundantConflictCopyIds(savedSessions));
+            const [metadata, state, pendingDeletionIds] = await Promise.all([
+                fetchMetadata(),
+                loadClientState(),
+                dbService.getPendingSyncSessionDeletionIds(),
+            ]);
+            const sessionsWithoutPendingDeletions = savedSessions.filter(session => !pendingDeletionIds.has(session.id));
+            const redundantCopyIds = new Set(await findRedundantConflictCopyIds(sessionsWithoutPendingDeletions));
             for (const id of redundantCopyIds) {
                 await removeLocalSession(id);
                 const known = state.sessions[id];
@@ -520,16 +535,19 @@ export const useSyncManager = ({
                 logService.info(`Removed ${redundantCopyIds.size} identical generated sync conflict copies.`);
             }
 
-            const sessionsForPush = savedSessions.filter(session => !redundantCopyIds.has(session.id));
-            const localById = new Map(sessionsForPush.map(session => [session.id, session]));
+            const pushPlan = planSessionPush(
+                sessionsWithoutPendingDeletions.filter(session => !redundantCopyIds.has(session.id)),
+                Object.keys(state.sessions),
+                pendingDeletionIds,
+            );
+            const sessionsForPush = pushPlan.sessions;
 
-            for (const [id, known] of Object.entries(state.sessions)) {
-                if (localById.has(id)) continue;
+            for (const id of pushPlan.deletionIds) {
                 if (metadata.tombstones.sessions[id]) {
                     await markSessionDeleted(state, id, metadata.tombstones.sessions[id]);
                     continue;
                 }
-                const currentRemoteRevision = metadata.sessions[id]?.revision ?? known.revision;
+                const currentRemoteRevision = metadata.sessions[id]?.revision ?? state.sessions[id]?.revision ?? null;
                 const result = await deleteRemoteSession(id, currentRemoteRevision);
                 await markSessionDeleted(state, id, result);
             }

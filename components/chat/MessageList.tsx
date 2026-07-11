@@ -14,6 +14,7 @@ import { MediaResolution } from '../../types/settings';
 import { isGemini3Model } from '../../utils/appUtils';
 import { TextSelectionToolbar } from './message-list/TextSelectionToolbar';
 import { useMessageListUI } from '../../hooks/useMessageListUI';
+import { VIRTUOSO_COMPONENTS, type MessageListVirtuosoContext } from './message-list/StreamingMessageFooter';
 
 export interface MessageListProps {
   messages: ChatMessage[];
@@ -86,9 +87,32 @@ export const MessageList: React.FC<MessageListProps> = ({
 
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const activeScrollerRef = useRef<HTMLElement | null>(null);
+  const streamedMessageIdsRef = useRef<Set<string>>(new Set());
   const [visibleRange, setVisibleRange] = useState<ListRange>({ startIndex: 0, endIndex: 0 });
+  const [expandedThoughtMessageIds, setExpandedThoughtMessageIds] = useState<Set<string>>(() => new Set());
   const streamingTail = messages.at(-1)?.isLoading ? messages.at(-1)! : null;
   const virtualizedMessages = streamingTail ? messages.slice(0, -1) : messages;
+  if (streamingTail) streamedMessageIdsRef.current.add(streamingTail.id);
+
+  const handleThoughtsExpandedChange = useCallback((messageId: string, expanded: boolean) => {
+    setExpandedThoughtMessageIds(previous => {
+      const alreadyExpanded = previous.has(messageId);
+      if (alreadyExpanded === expanded) return previous;
+      const next = new Set(previous);
+      if (expanded) next.add(messageId);
+      else next.delete(messageId);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const currentIds = new Set(messages.map(message => message.id));
+    streamedMessageIdsRef.current = new Set([...streamedMessageIdsRef.current].filter(id => currentIds.has(id)));
+    setExpandedThoughtMessageIds(previous => {
+      const next = new Set([...previous].filter(id => currentIds.has(id)));
+      return next.size === previous.size ? previous : next;
+    });
+  }, [messages]);
 
   const setVirtuosoScrollerRef = useCallback((node: HTMLElement | Window | null) => {
     if (activeScrollerRef.current) {
@@ -180,9 +204,19 @@ export const MessageList: React.FC<MessageListProps> = ({
         onOpenSidePanel={onOpenSidePanel}
         onConfigureFile={msg.role === 'user' ? handleConfigureFile : undefined}
         isGemini3={isGemini3}
+        isThoughtsExpanded={expandedThoughtMessageIds.has(msg.id)}
+        onThoughtsExpandedChange={handleThoughtsExpandedChange}
+        suppressEntranceAnimation={streamedMessageIdsRef.current.has(msg.id)}
       />
     </div>
-  ), [appSettings, baseFontSize, expandCodeBlocksByDefault, handleConfigureFile, handleFileClick, handleOpenHtmlPreview, isGemini3, isGraphvizRenderingEnabled, isMermaidRenderingEnabled, messages, onDeleteMessage, onEditMessage, onFollowUpSuggestionClick, onGenerateCanvas, onOpenSidePanel, onRetryMessage, onTextToSpeech, sessionTitle, showThoughts, t, themeColors, themeId, ttsMessageId]);
+  ), [appSettings, baseFontSize, expandCodeBlocksByDefault, expandedThoughtMessageIds, handleConfigureFile, handleFileClick, handleOpenHtmlPreview, handleThoughtsExpandedChange, isGemini3, isGraphvizRenderingEnabled, isMermaidRenderingEnabled, messages, onDeleteMessage, onEditMessage, onFollowUpSuggestionClick, onGenerateCanvas, onOpenSidePanel, onRetryMessage, onTextToSpeech, sessionTitle, showThoughts, t, themeColors, themeId, ttsMessageId]);
+
+  const virtuosoContext = useMemo<MessageListVirtuosoContext>(() => ({
+    streamingTail,
+    streamingIndex: messages.length - 1,
+    renderMessage,
+    bottomPadding: chatInputHeight ? `${chatInputHeight + 16}px` : '160px',
+  }), [chatInputHeight, messages.length, renderMessage, streamingTail]);
 
   return (
     <>
@@ -224,17 +258,11 @@ export const MessageList: React.FC<MessageListProps> = ({
             followOutput={scrollNavVisibility.down ? false : 'auto'}
             increaseViewportBy={{ top: 900, bottom: 1200 }}
             rangeChanged={setVisibleRange}
+            context={virtuosoContext}
             className="h-full px-1.5 sm:px-2 md:px-3 py-3 sm:py-4 md:py-6 custom-scrollbar"
             role="list"
             aria-label="Chat messages"
-            components={{
-              Footer: () => (
-                <>
-                  {streamingTail && renderMessage(streamingTail, messages.length - 1)}
-                  <div aria-hidden="true" style={{ height: chatInputHeight ? `${chatInputHeight + 16}px` : '160px' }} />
-                </>
-              ),
-            }}
+            components={VIRTUOSO_COMPONENTS}
           />
         )}
 

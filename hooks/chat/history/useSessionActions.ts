@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { SavedChatSession } from '../../../types';
 import { createNewSession, logService } from '../../../utils/appUtils';
+import { dbService } from '../../../utils/db';
 
 interface UseSessionActionsProps {
     updateAndPersistSessions: (updater: (prev: SavedChatSession[]) => SavedChatSession[], options?: { persist?: boolean }) => Promise<void>;
@@ -15,6 +16,9 @@ export const useSessionActions = ({
 
     const handleDeleteChatHistorySession = useCallback((sessionId: string) => {
         logService.info(`Deleting session: ${sessionId}`);
+        void dbService.markPendingSyncSessionDeletion(sessionId).catch(error => {
+            logService.error('Failed to persist pending sync deletion', { sessionId, error });
+        });
         updateAndPersistSessions(prev => {
              const sessionToDelete = prev.find(s => s.id === sessionId);
              if (sessionToDelete) {
