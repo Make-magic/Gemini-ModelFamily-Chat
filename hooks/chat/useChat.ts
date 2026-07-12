@@ -44,7 +44,7 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
     const sessionKeyMapRef = useRef<Map<string, string>>(new Map());
 
     // 2. Feature Hooks
-    const { apiModels, isModelsLoading, modelsLoadingError, setApiModels } = useModels();
+    const { apiModels, isModelsLoading, modelsLoadingError, setApiModels, refreshModelsFromProvider, isRefreshingModels, modelRefreshError } = useModels(appSettings);
 
     const historyHandler = useChatHistory({
         appSettings, setSavedSessions, setSavedGroups, setActiveSessionId,
@@ -161,6 +161,9 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
         activeSessionId,
         apiModels,
         setApiModels,
+        refreshModelsFromProvider,
+        isRefreshingModels,
+        modelRefreshError,
         isModelsLoading,
         modelsLoadingError,
         isSwitchingModel,
@@ -209,6 +212,7 @@ export const useChat = (appSettings: AppSettings, setAppSettings: React.Dispatch
         handleAppDragLeave: dragDropHandler.handleAppDragLeave,
         handleAppDrop: dragDropHandler.handleAppDrop,
         handleCancelFileUpload: fileHandler.handleCancelFileUpload,
+        handleRetryFileUpload: fileHandler.handleRetryFileUpload,
         handleAddFileById: fileHandler.handleAddFileById,
 
         // Messaging

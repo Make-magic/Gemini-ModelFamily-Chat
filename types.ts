@@ -5,3 +5,4 @@ export * from './types/chat';
 export * from './types/api';
 export * from './types/theme';
 export * from './types/gemini';
+export * from './types/sync';

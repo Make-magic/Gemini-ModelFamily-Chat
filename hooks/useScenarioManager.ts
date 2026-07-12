@@ -3,6 +3,7 @@ import { SavedScenario } from '../types';
 import { translations } from '../utils/appUtils';
 import { generateUniqueId } from '../utils/appUtils';
 import { triggerDownload, sanitizeFilename } from '../utils/exportUtils';
+import { downloadBlob } from '../utils/objectUrlManager';
 
 export type ModalView = 'list' | 'editor';
 
@@ -117,7 +118,7 @@ export const useScenarioManager = ({
     const jsonString = JSON.stringify(dataToExport, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
     const date = new Date().toISOString().slice(0, 10);
-    triggerDownload(URL.createObjectURL(blob), `scenarios-export-${date}.json`);
+    downloadBlob(blob, `scenarios-export-${date}.json`);
     showFeedback('success', t('scenarios_feedback_exported'));
   }, [scenarios, showFeedback, t]);
 
@@ -130,7 +131,7 @@ export const useScenarioManager = ({
     const safeTitle = sanitizeFilename(scenario.title);
     const jsonString = JSON.stringify(dataToExport, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
-    triggerDownload(URL.createObjectURL(blob), `scenario-${safeTitle}.json`);
+    downloadBlob(blob, `scenario-${safeTitle}.json`);
     showFeedback('success', t('scenarios_feedback_exported'));
   }, [showFeedback, t]);
 

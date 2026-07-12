@@ -25,6 +25,7 @@ export interface ChatInputAreaProps {
         selectedFiles: UploadedFile[];
         onRemove: (id: string) => void;
         onCancelUpload: (id: string) => void;
+        onRetryUpload: (id: string) => void;
         onConfigure: (file: UploadedFile) => void;
         onPreview: (file: UploadedFile) => void;
         isGemini3?: boolean;
@@ -165,9 +166,11 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = ({
                             selectedFiles={fileDisplayProps.selectedFiles}
                             onRemove={fileDisplayProps.onRemove}
                             onCancelUpload={fileDisplayProps.onCancelUpload}
+                            onRetryUpload={fileDisplayProps.onRetryUpload}
                             onConfigure={fileDisplayProps.onConfigure}
                             onPreview={fileDisplayProps.onPreview}
                             isGemini3={fileDisplayProps.isGemini3}
+                            t={t}
                         />
 
                         {quoteProps && (

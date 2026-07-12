@@ -2,10 +2,47 @@
 import { File as GeminiFile } from "@google/genai";
 import { getConfiguredApiClient } from './baseApi';
 import { logService } from "../logService";
+import { classifyApiError, waitForRetry } from './errorClassifier';
+
+const FILE_UPLOAD_START_URL = 'https://generativelanguage.googleapis.com/upload/v1beta/files';
+const FILE_UPLOAD_CHUNK_BYTES = 8 * 1024 * 1024;
+
+const throwAbortError = (): never => {
+    const abortError = new Error('Upload cancelled by user.');
+    abortError.name = 'AbortError';
+    throw abortError;
+};
+
+const readErrorResponse = async (response: Response): Promise<Error> => {
+    const body = await response.text().catch(() => '');
+    const error = new Error(body || `File upload failed (${response.status})`) as Error & { status?: number };
+    error.status = response.status;
+    return error;
+};
+
+const fetchUploadRequest = async (url: string, init: RequestInit, signal: AbortSignal): Promise<Response> => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+            const response = await fetch(url, { ...init, signal });
+            if (response.ok) return response;
+            const error = await readErrorResponse(response);
+            const classified = classifyApiError(error);
+            if (!classified.retryable || attempt === 2) throw classified;
+            await waitForRetry(500 * (2 ** attempt) + Math.floor(Math.random() * 250), signal);
+        } catch (error) {
+            if (signal.aborted) throwAbortError();
+            const classified = classifyApiError(error);
+            if (!classified.retryable || attempt === 2) throw classified;
+            await waitForRetry(500 * (2 ** attempt) + Math.floor(Math.random() * 250), signal);
+        }
+    }
+    throw new Error('File upload retry loop exhausted.');
+};
 
 /**
- * Uploads a file using the official SDK.
- * Reverted from XHR to SDK for stability.
+ * Uploads a file using the Files API resumable protocol documented by Google.
+ * Progress represents bytes acknowledged by the service, and AbortSignal is
+ * attached to every network request.
  */
 export const uploadFileApi = async (
     apiKey: string, 
@@ -17,41 +54,59 @@ export const uploadFileApi = async (
 ): Promise<GeminiFile> => {
     logService.info(`Uploading file (SDK): ${displayName}`, { mimeType, size: file.size });
     
-    if (signal.aborted) {
-        const abortError = new Error("Upload cancelled by user.");
-        abortError.name = "AbortError";
-        throw abortError;
-    }
+    if (signal.aborted) throwAbortError();
 
     try {
-        // Get configured SDK client (handles proxy settings automatically)
-        const ai = await getConfiguredApiClient(apiKey);
-
-        // Use official SDK for upload, which is more stable for Auth and CORS
-        const uploadResult = await ai.files.upload({
-            file: file,
-            config: {
-                displayName: displayName,
-                mimeType: mimeType,
+        const startResponse = await fetchUploadRequest(FILE_UPLOAD_START_URL, {
+            method: 'POST',
+            headers: {
+                'x-goog-api-key': apiKey,
+                'Content-Type': 'application/json',
+                'X-Goog-Upload-Protocol': 'resumable',
+                'X-Goog-Upload-Command': 'start',
+                'X-Goog-Upload-Header-Content-Length': String(file.size),
+                'X-Goog-Upload-Header-Content-Type': mimeType,
+                'X-Goog-Upload-File-Name': encodeURIComponent(displayName),
             },
-        });
+            body: JSON.stringify({ file: { display_name: displayName, mime_type: mimeType } }),
+        }, signal);
 
-        // Since SDK doesn't provide progress, call 100% on completion to satisfy UI
-        if (onProgress) {
-            onProgress(file.size, file.size);
+        const uploadUrl = startResponse.headers.get('x-goog-upload-url');
+        if (!uploadUrl) throw new Error('Files API did not return a resumable upload URL.');
+
+        let offset = 0;
+        let finalFile: GeminiFile | undefined;
+        while (offset < file.size) {
+            if (signal.aborted) throwAbortError();
+            const end = Math.min(offset + FILE_UPLOAD_CHUNK_BYTES, file.size);
+            const isFinal = end === file.size;
+            const chunk = file.slice(offset, end, mimeType);
+            const response = await fetchUploadRequest(uploadUrl, {
+                method: 'POST',
+                headers: {
+                    'X-Goog-Upload-Offset': String(offset),
+                    'X-Goog-Upload-Command': isFinal ? 'upload, finalize' : 'upload',
+                    'Content-Type': mimeType,
+                },
+                body: chunk,
+            }, signal);
+
+            offset = end;
+            onProgress?.(offset, file.size);
+            if (isFinal) {
+                const body = await response.json() as { file?: GeminiFile };
+                finalFile = body.file;
+            }
         }
 
-        return uploadResult;
+        if (!finalFile) throw new Error('Files API upload completed without file metadata.');
+        return finalFile;
 
     } catch (error) {
         logService.error(`Failed to upload file "${displayName}" to Gemini API:`, error);
         
         // If it's an abort, ensure we throw a specific error for UI handling
-        if (signal.aborted) {
-            const abortError = new Error("Upload cancelled by user.");
-            abortError.name = "AbortError";
-            throw abortError;
-        }
+        if (signal.aborted) throwAbortError();
         
         throw error;
     }

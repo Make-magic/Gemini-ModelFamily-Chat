@@ -52,19 +52,6 @@ export const THINKING_LEVELS = [
 
 export const DEFAULT_THINKING_LEVEL: ThinkingLevel = 'HIGH';
 
-export const THINKING_BUDGET_RANGES: { [key: string]: { min: number; max: number } } = {
-    'gemini-2.5-pro': { min: 128, max: 32768 },
-    'gemini-3.5-flash': { min: 32768, max: 32768 },
-    'models/gemini-3.5-flash': { min: 32768, max: 32768 },
-    'gemini-3.1-pro-preview': { min: 32768, max: 32768 },
-    'models/gemini-3.1-pro-preview': { min: 32768, max: 32768 },
-    'gemini-3.1-flash-lite': { min: 32768, max: 32768 },
-    'models/gemini-3.1-flash-lite': { min: 32768, max: 32768 },
-    'gemini-3-flash-preview': { min: 32768, max: 32768 },
-    'models/gemini-3-flash-preview': { min: 32768, max: 32768 },
-    'gemini-2.5-flash-native-audio-preview-12-2025': { min: 0, max: 24576 },
-};
-
 export const DEFAULT_TEMPERATURE = 1.0;
 export const DEFAULT_TOP_P = 0.95;
 export const DEFAULT_SHOW_THOUGHTS = true;

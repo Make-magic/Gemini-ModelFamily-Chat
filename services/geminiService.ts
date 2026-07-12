@@ -1,10 +1,11 @@
 
-import { ChatHistoryItem, GeminiService, GeminiUsageMetadata, ModelOption } from '../types';
+import { ChatHistoryItem, ChatTerminalResult, GeminiService } from '../types';
 import { Part, File as GeminiFile, Modality } from "@google/genai";
 import { uploadFileApi, getFileMetadataApi } from './api/fileApi';
 import { generateImagesApi, generateSpeechApi, transcribeAudioApi, translateTextApi, generateTitleApi, generateSuggestionsApi, countTokensApi } from './api/generationApi';
 import { sendStatelessMessageStreamApi, sendStatelessMessageNonStreamApi } from './api/chatApi';
 import { logService } from "./logService";
+import { getModelCapabilities } from '../constants/modelRegistry';
 
 class GeminiServiceImpl implements GeminiService {
     constructor() {
@@ -61,12 +62,6 @@ class GeminiServiceImpl implements GeminiService {
                 abortError.name = "AbortError";
                 return reject(abortError);
             }
-            const handleComplete = (responseParts: Part[]) => {
-                resolve(responseParts);
-            };
-            const handleError = (error: Error) => {
-                reject(error);
-            };
             
             const config: any = {
                 responseModalities: [Modality.IMAGE, Modality.TEXT],
@@ -77,7 +72,8 @@ class GeminiServiceImpl implements GeminiService {
                 config.imageConfig.aspectRatio = aspectRatio;
             }
 
-            if (modelId === 'gemini-3-pro-image-preview' && imageSize) {
+            const supportedImageSizes = getModelCapabilities(modelId).imageSizes;
+            if (imageSize && supportedImageSizes?.includes(imageSize)) {
                 if (!config.imageConfig) config.imageConfig = {};
                 config.imageConfig.imageSize = imageSize;
             }
@@ -89,8 +85,10 @@ class GeminiServiceImpl implements GeminiService {
                 parts,
                 config,
                 abortSignal,
-                handleError,
-                (responseParts, thoughts, usage, grounding) => handleComplete(responseParts)
+                result => {
+                    if (result.status === 'success') resolve(result.parts ?? []);
+                    else reject(result.error ?? Object.assign(new Error('aborted'), { name: 'AbortError' }));
+                }
             );
         });
     }
@@ -104,11 +102,10 @@ class GeminiServiceImpl implements GeminiService {
         abortSignal: AbortSignal,
         onPart: (part: Part) => void,
         onThoughtChunk: (chunk: string) => void,
-        onError: (error: Error) => void,
-        onComplete: (usageMetadata?: GeminiUsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
+        onTerminal: (result: ChatTerminalResult) => void
     ): Promise<void> {
         return sendStatelessMessageStreamApi(
-            apiKey, modelId, history, parts, config, abortSignal, onPart, onThoughtChunk, onError, onComplete
+            apiKey, modelId, history, parts, config, abortSignal, onPart, onThoughtChunk, onTerminal
         );
     }
 
@@ -119,11 +116,10 @@ class GeminiServiceImpl implements GeminiService {
         parts: Part[],
         config: any,
         abortSignal: AbortSignal,
-        onError: (error: Error) => void,
-        onComplete: (parts: Part[], thoughtsText?: string, usageMetadata?: GeminiUsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => void
+        onTerminal: (result: ChatTerminalResult) => void
     ): Promise<void> {
         return sendStatelessMessageNonStreamApi(
-            apiKey, modelId, history, parts, config, abortSignal, onError, onComplete
+            apiKey, modelId, history, parts, config, abortSignal, onTerminal
         );
     }
 }

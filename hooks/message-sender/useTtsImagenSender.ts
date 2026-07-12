@@ -5,6 +5,8 @@ import { geminiServiceInstance } from '../../services/geminiService';
 import { generateUniqueId, generateSessionTitle, pcmBase64ToWavUrl, showNotification, base64ToBlob, createNewSession } from '../../utils/appUtils';
 import { APP_LOGO_SVG_DATA_URI } from '../../constants/appConstants';
 import { DEFAULT_CHAT_SETTINGS } from '../../constants/appConstants';
+import { createManagedObjectUrl } from '../../utils/objectUrlManager';
+import { getModelCapabilities } from '../../constants/modelRegistry';
 
 type SessionsUpdater = (updater: (prev: SavedChatSession[]) => SavedChatSession[]) => void;
 
@@ -35,7 +37,7 @@ export const useTtsImagenSender = ({
         imageSize: string | undefined,
         options: { shouldLockKey?: boolean } = {}
     ) => {
-        const isTtsModel = currentChatSettings.modelId.includes('-tts');
+        const isTtsModel = getModelCapabilities(currentChatSettings.modelId).tts;
         const modelMessageId = generationId;
         
         let finalSessionId = activeSessionId;
@@ -105,7 +107,7 @@ export const useTtsImagenSender = ({
                     const type = 'image/png';
                     const blob = base64ToBlob(base64Data, type);
                     const file = new File([blob], name, { type });
-                    const dataUrl = URL.createObjectURL(file);
+                    const dataUrl = createManagedObjectUrl(file);
                     return {
                         id: generateUniqueId(),
                         name,

@@ -1,5 +1,5 @@
 
-import { ChatSettings, ChatMessage, UploadedFile, AppSettings, ModelOption, SideViewContent, VideoMetadata, InputCommand } from '../../../types';
+import { ChatSettings, ChatMessage, UploadedFile, AppSettings, ModelOption, SideViewContent, VideoMetadata, InputCommand, SyncConflictChoice, SyncConflictRequest } from '../../../types';
 import { ThemeColors } from '../../../types/theme';
 import { translations } from '../../../utils/appUtils';
 import { MediaResolution } from '../../../types/settings';
@@ -68,9 +68,6 @@ export interface ChatAreaProps {
   ttsMessageId: string | null;
   language: 'en' | 'zh';
   scrollNavVisibility: { up: boolean; down: boolean };
-  onScrollToPrevTurn: () => void;
-  onScrollToNextTurn: () => void;
-  exportStatus?: 'idle' | 'exporting';
 
   // Edit Content
   onEditMessageContent: (messageId: string, newContent: string) => void;
@@ -93,6 +90,7 @@ export interface ChatAreaProps {
   onProcessFiles: (files: FileList | File[]) => Promise<void>;
   onAddFileById: (fileId: string) => Promise<void>;
   onCancelUpload: (fileId: string) => void;
+  onRetryUpload: (fileId: string) => void;
   onTranscribeAudio: (file: File) => Promise<string | null>;
   isProcessingFile: boolean;
   fileError: string | null;
@@ -143,6 +141,8 @@ export interface ChatAreaProps {
   lastPushTime: number | null;
   onPullFromServer: () => void;
   onPushToServer: () => void;
+  syncConflict: SyncConflictRequest | null;
+  onResolveSyncConflict: (choice: SyncConflictChoice) => void;
 
   t: (key: keyof typeof translations, fallback?: string) => string;
 }

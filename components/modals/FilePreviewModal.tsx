@@ -122,12 +122,12 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
 
         {/* Navigation Buttons - Hide in Edit Mode */}
         {!isEditing && hasPrev && onPrev && (
-            <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className={`${navButtonClass} left-2`} aria-label="Previous">
+            <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className={`${navButtonClass} left-2`} aria-label={t('previous')}>
                 <ChevronLeft size={24} />
             </button>
         )}
         {!isEditing && hasNext && onNext && (
-            <button onClick={(e) => { e.stopPropagation(); onNext(); }} className={`${navButtonClass} right-2`} aria-label="Next">
+            <button onClick={(e) => { e.stopPropagation(); onNext(); }} className={`${navButtonClass} right-2`} aria-label={t('next')}>
                 <ChevronRight size={24} />
             </button>
         )}
@@ -167,7 +167,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                           className="absolute bottom-24 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/60 hover:bg-black/80 text-white text-sm rounded-full backdrop-blur-md transition-opacity opacity-0 group-hover/pdf:opacity-100 flex items-center gap-2 pointer-events-auto"
                       >
                           <ExternalLink size={14} />
-                          Open in New Tab
+                          {t('open_new_tab')}
                       </a>
                     </>
                   )}
@@ -188,7 +188,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                   {file.fileUri && getYoutubeEmbedUrl(file.fileUri) ? (
                       <iframe 
                           src={getYoutubeEmbedUrl(file.fileUri)!} 
-                          title="YouTube video player" 
+                          title={t('youtube_player')}
                           frameBorder="0" 
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                           allowFullScreen
@@ -197,7 +197,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
                   ) : (
                       <div className="text-center text-white/50">
                           <Youtube size={64} className="mx-auto mb-4 opacity-50" />
-                          <p>Invalid YouTube URL</p>
+                          <p>{t('invalid_youtube_url')}</p>
                       </div>
                   )}
               </div>
@@ -217,7 +217,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
           ) : (
               <div className="w-full h-full flex items-center justify-center text-white/50 flex-col gap-2">
                   <FileCode2 size={48} />
-                  <p>Preview not available for this file type.</p>
+                  <p>{t('preview_unavailable')}</p>
               </div>
           )}
         </div>

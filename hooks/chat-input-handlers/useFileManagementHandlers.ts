@@ -3,6 +3,7 @@ import { useCallback, Dispatch, SetStateAction } from 'react';
 import { UploadedFile, VideoMetadata } from '../../types';
 import { MediaResolution } from '../../types/settings';
 import { SUPPORTED_IMAGE_MIME_TYPES } from '../../constants/fileConstants';
+import { releaseFileObjectUrl } from '../../utils/objectUrlManager';
 
 interface UseFileManagementHandlersProps {
     selectedFiles: UploadedFile[];
@@ -37,9 +38,7 @@ export const useFileManagementHandlers = ({
     const removeSelectedFile = useCallback((fileIdToRemove: string) => {
         setSelectedFiles(prev => {
             const fileToRemove = prev.find(f => f.id === fileIdToRemove);
-            if (fileToRemove && fileToRemove.dataUrl && fileToRemove.dataUrl.startsWith('blob:')) {
-                URL.revokeObjectURL(fileToRemove.dataUrl);
-            }
+            releaseFileObjectUrl(fileToRemove);
             return prev.filter(f => f.id !== fileIdToRemove);
         });
     }, [setSelectedFiles]);

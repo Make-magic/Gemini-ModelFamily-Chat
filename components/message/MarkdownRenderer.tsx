@@ -96,7 +96,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
       if (isMermaidRenderingEnabled && language === 'mermaid' && typeof rawCode === 'string') {
         return (
           <div>
-            <MermaidBlock code={rawCode} onImageClick={onImageClick} isLoading={isLoading} themeId={themeId} onOpenSidePanel={onOpenSidePanel} />
+            <MermaidBlock code={rawCode} onImageClick={onImageClick} isLoading={isLoading} themeId={themeId} onOpenSidePanel={onOpenSidePanel} t={t} />
           </div>
         );
       }
@@ -104,7 +104,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = React.memo(({
       if (isGraphvizRenderingEnabled && isGraphviz && typeof rawCode === 'string') {
         return (
           <div>
-            <GraphvizBlock code={rawCode} onImageClick={onImageClick} isLoading={isLoading} themeId={themeId} onOpenSidePanel={onOpenSidePanel} />
+            <GraphvizBlock code={rawCode} onImageClick={onImageClick} isLoading={isLoading} themeId={themeId} onOpenSidePanel={onOpenSidePanel} t={t} />
           </div>
         );
       }

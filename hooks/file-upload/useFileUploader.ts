@@ -10,6 +10,7 @@ interface UseFileUploaderProps {
     setAppFileError: Dispatch<SetStateAction<string | null>>;
     currentChatSettings: IndividualChatSettings;
     setCurrentChatSettings: (updater: (prevSettings: IndividualChatSettings) => IndividualChatSettings) => void;
+    selectedFiles: UploadedFile[];
 }
 
 export const useFileUploader = ({
@@ -18,6 +19,7 @@ export const useFileUploader = ({
     setAppFileError,
     currentChatSettings,
     setCurrentChatSettings,
+    selectedFiles,
 }: UseFileUploaderProps) => {
     
     // Refs to track upload speed for each file ID
@@ -67,7 +69,7 @@ export const useFileUploader = ({
             prevFiles.map(file => {
                 if (file.id === fileIdToCancel && file.abortController) {
                     file.abortController.abort();
-                    return { ...file, isProcessing: false, error: "Cancelling...", uploadState: 'failed', uploadSpeed: undefined };
+                    return { ...file, error: undefined, uploadState: 'cancelling', uploadSpeed: undefined };
                 }
                 return file;
             })
@@ -75,5 +77,47 @@ export const useFileUploader = ({
         uploadStatsRef.current.delete(fileIdToCancel);
     }, [setSelectedFiles]);
 
-    return { uploadFiles, cancelUpload };
+    const retryUpload = useCallback(async (fileId: string) => {
+        const existingFile = selectedFiles.find(file => file.id === fileId);
+        if (!existingFile) return;
+
+        if (existingFile.failureStage === 'processing' && existingFile.fileApiName) {
+            setSelectedFiles(prev => prev.map(file => file.id === fileId ? {
+                ...file,
+                uploadState: 'processing_api',
+                isProcessing: true,
+                error: undefined,
+                failureStage: undefined,
+                retryCount: (file.retryCount ?? 0) + 1,
+            } : file));
+            return;
+        }
+
+        if (!(existingFile.rawFile instanceof Blob)) return;
+        const sourceFile = existingFile.rawFile instanceof File
+            ? existingFile.rawFile
+            : new File([existingFile.rawFile], existingFile.name, { type: existingFile.type });
+        const keyResult = getKeyForRequest(appSettings, currentChatSettings);
+        if ('error' in keyResult) {
+            setAppFileError(keyResult.error);
+            return;
+        }
+        if (keyResult.isNewKey) {
+            setCurrentChatSettings(prev => ({ ...prev, lockedApiKey: keyResult.key }));
+        }
+        const defaultResolution = currentChatSettings.mediaResolution !== MediaResolution.MEDIA_RESOLUTION_UNSPECIFIED
+            ? currentChatSettings.mediaResolution
+            : undefined;
+        await uploadFileItem({
+            file: sourceFile,
+            keyToUse: keyResult.key,
+            defaultResolution,
+            appSettings,
+            setSelectedFiles,
+            uploadStatsRef,
+            existingFile,
+        });
+    }, [selectedFiles, appSettings, currentChatSettings, setAppFileError, setCurrentChatSettings, setSelectedFiles]);
+
+    return { uploadFiles, cancelUpload, retryUpload };
 };

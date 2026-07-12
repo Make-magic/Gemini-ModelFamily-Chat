@@ -70,4 +70,9 @@ export const modelSettings = {
     settingsModelSelection_saveList: { en: 'Save List', zh: '保存列表' },
     settingsModelSelection_noModelsInList: { en: 'No models in list. Add one or reset to defaults.', zh: '列表中没有模型。请添加一个或重置为默认值。' },
     settingsModelSelection_confirmReset: { en: 'Reset model list to default? This will clear all custom additions.', zh: '将模型列表重置为默认值？这将清除所有自定义添加项。' },
+    settingsModelSelection_refreshProvider: { en: 'Refresh from Provider', zh: '从 Provider 刷新' },
+    settingsModelSelection_refreshFailed: { en: 'Provider refresh failed; the local catalog was kept', zh: 'Provider 刷新失败，已保留本地目录' },
+    settingsModelSelection_modelId: { en: 'Model ID (for example gemini-pro)', zh: '模型 ID（例如 gemini-pro）' },
+    settingsModelSelection_displayName: { en: 'Display name', zh: '显示名称' },
+    settingsModelSelection_remove: { en: 'Remove model', zh: '移除模型' },
 };

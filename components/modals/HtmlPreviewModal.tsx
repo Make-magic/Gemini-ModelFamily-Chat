@@ -4,12 +4,14 @@ import { useHtmlPreviewModal } from '../../hooks/useHtmlPreviewModal';
 import { HtmlPreviewHeader } from './html-preview/HtmlPreviewHeader';
 import { HtmlPreviewContent } from './html-preview/HtmlPreviewContent';
 import { Modal } from '../shared/Modal';
+import { translations } from '../../utils/appUtils';
 
 interface HtmlPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   htmlContent: string | null;
   initialTrueFullscreenRequest?: boolean;
+  t: (key: keyof typeof translations) => string;
 }
 
 export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
@@ -17,6 +19,7 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
   onClose,
   htmlContent,
   initialTrueFullscreenRequest,
+  t,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -71,12 +74,14 @@ export const HtmlPreviewModal: React.FC<HtmlPreviewModalProps> = ({
             onScreenshot={handleScreenshot}
             onToggleFullscreen={isTrueFullscreen ? exitTrueFullscreen : enterTrueFullscreen}
             onClose={onClose}
+            t={t}
         />
 
         <HtmlPreviewContent 
             iframeRef={iframeRef}
             htmlContent={htmlContent}
             scale={scale}
+            t={t}
         />
     </Modal>
   );

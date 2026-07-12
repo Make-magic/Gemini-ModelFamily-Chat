@@ -6,6 +6,8 @@ import { SideViewContent, UploadedFile } from '../../../types';
 import { exportSvgAsPng } from '../../../utils/exportUtils';
 import { useCopyToClipboard } from '../../../hooks/useCopyToClipboard';
 import { MESSAGE_BLOCK_BUTTON_CLASS } from '../../../constants/appConstants';
+import { translations } from '../../../utils/appUtils';
+import { isDarkThemeId } from '../../../constants/themeConstants';
 
 interface MermaidBlockProps {
   code: string;
@@ -13,9 +15,10 @@ interface MermaidBlockProps {
   isLoading: boolean;
   themeId: string;
   onOpenSidePanel: (content: SideViewContent) => void;
+  t: (key: keyof typeof translations) => string;
 }
 
-export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, isLoading: isMessageLoading, themeId, onOpenSidePanel }) => {
+export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, isLoading: isMessageLoading, themeId, onOpenSidePanel, t }) => {
   const [svg, setSvg] = useState('');
   const [error, setError] = useState('');
   const [isRendering, setIsRendering] = useState(true);
@@ -35,7 +38,7 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
         
         mermaid.initialize({ 
             startOnLoad: false, 
-            theme: themeId === 'onyx' ? 'dark' : 'default',
+            theme: isDarkThemeId(themeId) ? 'dark' : 'default',
             securityLevel: 'loose',
             fontFamily: 'inherit'
         });
@@ -89,11 +92,11 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
   };
 
   const containerClasses = "p-4 border border-[var(--theme-border-secondary)] rounded-md shadow-inner overflow-auto custom-scrollbar flex items-center justify-center min-h-[150px] transition-colors duration-300";
-  const bgClass = themeId === 'onyx' ? 'bg-[var(--theme-bg-secondary)]' : 'bg-white';
+  const bgClass = isDarkThemeId(themeId) ? 'bg-[var(--theme-bg-secondary)]' : 'bg-white';
 
   if (isRendering) {
     return (
-      <div className={`${containerClasses} bg-[var(--theme-bg-tertiary)] my-2`}>
+      <div data-export-pending="true" className={`${containerClasses} bg-[var(--theme-bg-tertiary)] my-2`}>
         <Loader2 size={24} className="animate-spin text-[var(--theme-text-link)]" />
       </div>
     );
@@ -105,7 +108,7 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
           <div className={`${containerClasses} bg-red-900/20 mb-2`}>
             <div className="text-center text-red-400">
                 <AlertTriangle className="mx-auto mb-2" />
-                <strong className="font-semibold">Mermaid Error</strong>
+                <strong className="font-semibold">Mermaid {t('error')}</strong>
                 <pre className="mt-1 text-xs text-left whitespace-pre-wrap">{error}</pre>
             </div>
           </div>
@@ -122,13 +125,13 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
       <div className="flex items-center justify-between px-3 py-2 border border-[var(--theme-border-secondary)] border-b-0 rounded-t-lg bg-[var(--theme-bg-tertiary)]/30 backdrop-blur-sm">
           <span className="text-xs font-bold uppercase tracking-wider text-[var(--theme-text-tertiary)] px-1">Mermaid</span>
           <div className="flex items-center gap-1 flex-shrink-0">
-             <button onClick={() => setShowSource(!showSource)} className={MESSAGE_BLOCK_BUTTON_CLASS} title={showSource ? "Hide Source" : "Show Source"}>
+             <button onClick={() => setShowSource(!showSource)} className={MESSAGE_BLOCK_BUTTON_CLASS} title={t(showSource ? 'hide_source' : 'show_source')}>
                 <Code size={14} />
              </button>
              <button 
                 onClick={() => onOpenSidePanel({ type: 'mermaid', content: code, title: 'Mermaid Diagram' })}
                 className={`${MESSAGE_BLOCK_BUTTON_CLASS} hidden md:block`}
-                title="Open in Side Panel"
+                title={t('open_side_panel')}
              >
                 <Sidebar size={14} />
              </button>
@@ -137,7 +140,7 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
                     <button
                         onClick={(e) => { e.stopPropagation(); onImageClick(diagramFile); }}
                         className={MESSAGE_BLOCK_BUTTON_CLASS}
-                        title="Zoom Diagram"
+                        title={t('zoom_diagram')}
                     >
                         <Maximize size={14} />
                     </button>
@@ -145,7 +148,7 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
                         onClick={(e) => { e.stopPropagation(); handleDownloadPng(); }}
                         disabled={isDownloading}
                         className={MESSAGE_BLOCK_BUTTON_CLASS}
-                        title="Download as PNG"
+                        title={t('download_png')}
                     >
                         {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
                     </button>
@@ -164,7 +167,7 @@ export const MermaidBlock: React.FC<MermaidBlockProps> = ({ code, onImageClick, 
       {showSource && (
           <div className="relative rounded-b-lg border border-[var(--theme-border-secondary)] border-t-0 bg-[var(--theme-bg-code-block)] overflow-hidden">
               <div className="absolute top-2 right-2 z-10">
-                  <button onClick={handleCopyCode} className={MESSAGE_BLOCK_BUTTON_CLASS} title="Copy Code">
+                  <button onClick={handleCopyCode} className={MESSAGE_BLOCK_BUTTON_CLASS} title={t('copy_code')}>
                       {isCopied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
                   </button>
               </div>

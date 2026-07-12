@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Youtube, Loader2, Plus, X } from 'lucide-react';
 
 interface AddUrlInputProps {
@@ -21,9 +21,13 @@ export const AddUrlInput: React.FC<AddUrlInputProps> = ({
     isLoading,
     t,
 }) => {
+    const [touched, setTouched] = useState(false);
+    const isValid = (() => { try { const url = new URL(urlInput); return /(^|\.)youtube\.com$|(^|\.)youtu\.be$/.test(url.hostname); } catch { return false; } })();
+    const errorId = 'add-url-error';
     const handleSubmit = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        onAddUrlSubmit();
+        setTouched(true);
+        if (isValid) onAddUrlSubmit();
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -41,12 +45,17 @@ export const AddUrlInput: React.FC<AddUrlInputProps> = ({
                     </div>
                     <input
                         type="url"
+                        id="add-youtube-url-input"
                         value={urlInput}
-                        onChange={(e) => setUrlInput(e.target.value)}
+                        onChange={(e) => { setUrlInput(e.target.value); if (touched) setTouched(false); }}
+                        onBlur={() => setTouched(true)}
                         onKeyDown={handleKeyDown}
                         placeholder={t('addByUrl_placeholder')}
                         className="w-full py-2 pl-9 pr-3 bg-[var(--theme-bg-input)] border border-[var(--theme-border-secondary)] rounded-lg text-sm text-[var(--theme-text-primary)] placeholder-[var(--theme-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)] focus:border-transparent transition-all shadow-inner"
                         aria-label={t('addByUrl_aria')}
+                        aria-describedby={touched && !isValid ? errorId : undefined}
+                        aria-invalid={touched && !isValid ? true : undefined}
+                        required
                         disabled={isAddingByUrl}
                         autoFocus
                     />
@@ -70,6 +79,7 @@ export const AddUrlInput: React.FC<AddUrlInputProps> = ({
                     <X size={18} strokeWidth={2} />
                 </button>
             </form>
+            {touched && !isValid && <p id={errorId} role="alert" className="mt-1 px-2 text-xs text-[var(--theme-text-danger)]">{t('addByUrl_error')}</p>}
         </div>
     );
 };

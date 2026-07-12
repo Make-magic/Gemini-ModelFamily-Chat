@@ -24,6 +24,7 @@ interface FactoryParams {
     supportedImageSizes?: string[];
     selectedFiles: UploadedFile[];
     onCancelUpload: (id: string) => void;
+    onRetryUpload: (id: string) => void;
     isGemini3: boolean;
     isRecording: boolean;
     isMicInitializing: boolean;
@@ -131,7 +132,7 @@ export const useChatInputAreaProps = (params: FactoryParams): ChatInputAreaProps
         isImagenModel, isGemini3ImageModel, isTtsModel, ttsVoice, setTtsVoice,
         aspectRatio, setAspectRatio, imageSize, setImageSize,
         fileError, isLoading, t, generateQuadImages, onToggleQuadImages, supportedAspectRatios, supportedImageSizes,
-        selectedFiles, onCancelUpload, isGemini3, isNativeAudioModel,
+        selectedFiles, onCancelUpload, onRetryUpload, isGemini3, isNativeAudioModel,
         isRecording, isMicInitializing, isTranscribing, onStopGenerating, isEditing, onCancelEdit, canSend, isWaitingForUpload,
         isGoogleSearchEnabled, onToggleGoogleSearch, isCodeExecutionEnabled, onToggleCodeExecution,
         isUrlContextEnabled, onToggleUrlContext, isDeepSearchEnabled, onToggleDeepSearch, editMode,
@@ -229,6 +230,7 @@ export const useChatInputAreaProps = (params: FactoryParams): ChatInputAreaProps
             selectedFiles,
             onRemove: handlers.removeSelectedFile,
             onCancelUpload,
+            onRetryUpload,
             onConfigure: handlers.onConfigureFile,
             onPreview: handlers.onPreviewFile,
             isGemini3,

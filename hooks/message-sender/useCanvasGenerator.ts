@@ -83,7 +83,7 @@ export const useCanvasGenerator = ({
         };
 
         // 4. Prepare Stream Handlers
-        const { streamOnError, streamOnComplete, streamOnPart, onThoughtChunk } = getStreamHandlers(
+        const { streamOnTerminal, streamOnPart, onThoughtChunk } = getStreamHandlers(
             activeSessionId, 
             generationId, 
             newAbortController, 
@@ -122,11 +122,10 @@ export const useCanvasGenerator = ({
                 newAbortController.signal,
                 streamOnPart,
                 onThoughtChunk,
-                streamOnError,
-                streamOnComplete
+                streamOnTerminal
             );
         } catch (error) {
-            streamOnError(error instanceof Error ? error : new Error(String(error)));
+            streamOnTerminal({ status: 'error', error: Object.assign(error instanceof Error ? error : new Error(String(error)), { kind: 'unknown' as const, retryable: false }) });
         }
 
     }, [appSettings, currentChatSettings, activeSessionId, updateAndPersistSessions, setLoadingSessionIds, activeJobs, getStreamHandlers, setAppFileError, aspectRatio, messages, language]);

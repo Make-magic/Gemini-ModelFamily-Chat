@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { UploadedFile } from '../../../types';
-import { Ban, X, Loader2, CheckCircle, Copy, Check, Scissors, SlidersHorizontal, Settings2, Edit3 } from 'lucide-react';
+import { Ban, X, Loader2, CheckCircle, Copy, Check, Scissors, SlidersHorizontal, Settings2, Edit3, RotateCcw } from 'lucide-react';
 import { getFileTypeCategory, CATEGORY_STYLES, getResolutionColor } from '../../../utils/uiUtils';
 import { useCopyToClipboard } from '../../../hooks/useCopyToClipboard';
 import { SUPPORTED_IMAGE_MIME_TYPES } from '../../../constants/fileConstants';
@@ -10,12 +10,14 @@ interface SelectedFileDisplayProps {
   file: UploadedFile;
   onRemove: (fileId: string) => void;
   onCancelUpload: (fileId: string) => void;
+  onRetryUpload: (fileId: string) => void;
   onConfigure?: (file: UploadedFile) => void;
   onPreview?: (file: UploadedFile) => void;
   isGemini3?: boolean;
+  t: (key: string) => string;
 }
 
-export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({ file, onRemove, onCancelUpload, onConfigure, onPreview, isGemini3 }) => {
+export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({ file, onRemove, onCancelUpload, onRetryUpload, onConfigure, onPreview, isGemini3, t }) => {
   const [isNewlyActive, setIsNewlyActive] = useState(false);
   const prevUploadState = useRef(file.uploadState);
   const { isCopied: idCopied, copyToClipboard } = useCopyToClipboard();
@@ -36,12 +38,13 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({ file, 
   };
 
   const isUploading = file.uploadState === 'uploading';
+  const isCancelling = file.uploadState === 'cancelling';
   const isProcessing = file.uploadState === 'processing_api' || file.isProcessing;
   const isFailed = file.uploadState === 'failed' || !!file.error;
   const isActive = file.uploadState === 'active';
   const isCancelled = file.uploadState === 'cancelled';
 
-  const isCancellable = isUploading || (isProcessing && file.uploadState !== 'processing_api');
+  const isCancellable = isUploading;
   
   const category = getFileTypeCategory(file.type, file.error);
   const { Icon, colorClass, bgClass } = CATEGORY_STYLES[category] || CATEGORY_STYLES['code'];
@@ -71,11 +74,12 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({ file, 
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); isCancellable ? onCancelUpload(file.id) : onRemove(file.id); }}
+        disabled={isCancelling}
         className="absolute -top-2 -right-2 z-30 p-1 bg-[var(--theme-bg-secondary)] rounded-full shadow-sm border border-[var(--theme-border-secondary)] text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-danger)] hover:border-[var(--theme-text-danger)] transition-all opacity-0 group-hover:opacity-100 focus:opacity-100 scale-90 hover:scale-100"
-        title={isCancellable ? "Cancel Upload" : "Remove File"}
-        aria-label={isCancellable ? "Cancel Upload" : "Remove File"}
+        title={t(isCancelling ? 'upload_cancelling' : isCancellable ? 'upload_cancel' : 'file_remove')}
+        aria-label={t(isCancelling ? 'upload_cancelling' : isCancellable ? 'upload_cancel' : 'file_remove')}
       >
-        {isCancellable ? <Ban size={14} /> : <X size={14} />}
+        {isCancellable || isCancelling ? <Ban size={14} /> : <X size={14} />}
       </button>
 
       <div 
@@ -83,7 +87,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({ file, 
         className={`relative w-full aspect-square rounded-xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-tertiary)]/30 overflow-hidden flex items-center justify-center transition-colors group-hover:border-[var(--theme-border-focus)]/50 ${isActive && onPreview ? 'cursor-pointer hover:opacity-90' : ''}`}
       >
         
-        <div className={`w-full h-full flex items-center justify-center p-2 transition-all duration-300 ${isUploading || isProcessing ? 'opacity-30 blur-[1px] scale-95' : 'opacity-100'}`}>
+        <div className={`w-full h-full flex items-center justify-center p-2 transition-all duration-300 ${isUploading || isCancelling || isProcessing ? 'opacity-30 blur-[1px] scale-95' : 'opacity-100'}`}>
             {file.dataUrl && SUPPORTED_IMAGE_MIME_TYPES.includes(file.type) ? (
                 <img 
                     src={file.dataUrl} 
@@ -97,7 +101,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({ file, 
             )}
         </div>
 
-        {(isUploading || isProcessing) && (
+        {(isUploading || isCancelling || isProcessing) && (
             <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
                 {isUploading ? (
                     <div className="flex flex-col items-center">
@@ -128,6 +132,18 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({ file, 
             </div>
         )}
 
+        {(isFailed || isCancelled) && file.rawFile instanceof Blob && (
+            <button
+                type="button"
+                onClick={(event) => { event.stopPropagation(); onRetryUpload(file.id); }}
+                className="absolute inset-x-2 bottom-2 z-30 min-h-8 rounded-lg bg-[var(--theme-bg-primary)]/90 text-[var(--theme-text-link)] text-[10px] font-semibold flex items-center justify-center gap-1.5 border border-[var(--theme-border-secondary)] hover:bg-[var(--theme-bg-primary)]"
+                aria-label={t('upload_retry')}
+                title={t('upload_retry')}
+            >
+                <RotateCcw size={12} /> {t('retry')}
+            </button>
+        )}
+
         {isNewlyActive && (
              <div className="absolute inset-0 flex items-center justify-center bg-[var(--theme-bg-success)]/20 backdrop-blur-[1px] animate-pulse z-20">
                 <CheckCircle size={24} className="text-[var(--theme-text-success)] drop-shadow-md" />
@@ -138,7 +154,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({ file, 
              <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onConfigure && onConfigure(file); }}
-                title={isText ? "Edit File" : "Configure File"}
+                title={t(isText ? 'edit_file' : 'file_configure')}
                 className={`absolute bottom-1 left-1 p-1.5 rounded-md bg-black/50 backdrop-blur-md hover:bg-black/70 transition-all z-20 ${getResolutionColor(file.mediaResolution)}`}
              >
                 <ConfigIcon size={12} strokeWidth={2} />
@@ -149,7 +165,7 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({ file, 
             <button
               type="button"
               onClick={handleCopyId}
-              title={idCopied ? "ID Copied" : "Copy File ID"}
+              title={t(idCopied ? 'file_id_copied' : 'file_id_copy')}
               className={`absolute bottom-1 right-1 p-1.5 rounded-md bg-black/50 backdrop-blur-md text-white/80 hover:text-white hover:bg-black/70 transition-all opacity-0 group-hover:opacity-100 scale-90 hover:scale-100 z-20 ${idCopied ? '!text-green-400 !opacity-100' : ''}`}
             >
               {idCopied ? <Check size={12} strokeWidth={3} /> : <Copy size={12} strokeWidth={2} />}
@@ -167,10 +183,11 @@ export const SelectedFileDisplay: React.FC<SelectedFileDisplayProps> = ({ file, 
         >
             {file.videoMetadata ? <Scissors size={8} className="text-[var(--theme-text-link)]" /> : null}
             {file.mediaResolution && <SlidersHorizontal size={8} className="text-[var(--theme-text-link)]" />}
-            {isFailed ? (file.error || 'Error') : 
-             isUploading ? 'Uploading...' :
-             isProcessing ? 'Processing...' :
-             isCancelled ? 'Cancelled' : 
+            {isFailed ? (file.error || t('error')) :
+             isUploading ? t('upload_uploading') :
+             isCancelling ? t('upload_cancelling') :
+             isProcessing ? t('upload_processing') :
+             isCancelled ? t('upload_cancelled') :
              formatFileSize(file.size)}
         </p>
       </div>

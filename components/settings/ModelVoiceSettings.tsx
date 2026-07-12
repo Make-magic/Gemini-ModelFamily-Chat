@@ -35,6 +35,9 @@ interface ModelVoiceSettingsProps {
   topP: number;
   setTopP: (value: number) => void;
   setAvailableModels: (models: ModelOption[]) => void;
+  onRefreshModels: () => Promise<void>;
+  isRefreshingModels: boolean;
+  modelRefreshError: string | null;
   mediaResolution?: MediaResolution;
   setMediaResolution?: (resolution: MediaResolution) => void;
 }
@@ -51,7 +54,7 @@ export const ModelVoiceSettings: React.FC<ModelVoiceSettingsProps> = (props) => 
     temperature, setTemperature,
     topP, setTopP,
     t,
-    setAvailableModels,
+    setAvailableModels, onRefreshModels, isRefreshingModels, modelRefreshError,
     mediaResolution,
     setMediaResolution
   } = props;
@@ -70,6 +73,9 @@ export const ModelVoiceSettings: React.FC<ModelVoiceSettingsProps> = (props) => 
             selectedModelId={modelId}
             onSelectModel={setModelId}
             setAvailableModels={setAvailableModels}
+            onRefreshModels={onRefreshModels}
+            isRefreshingModels={isRefreshingModels}
+            modelRefreshError={modelRefreshError}
             t={t}
           />
 

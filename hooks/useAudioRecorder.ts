@@ -1,6 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRecorder } from './core/useRecorder';
+import { createManagedObjectUrl, revokeManagedObjectUrl } from '../utils/objectUrlManager';
 
 export type RecorderState = 'idle' | 'recording' | 'review';
 
@@ -12,13 +13,13 @@ export const useAudioRecorder = () => {
     // Cleanup previous URL when component unmounts or url changes
     useEffect(() => {
         return () => {
-            if (audioUrl) URL.revokeObjectURL(audioUrl);
+            revokeManagedObjectUrl(audioUrl);
         };
     }, [audioUrl]);
 
     const handleRecordingComplete = useCallback((blob: Blob) => {
         setAudioBlob(blob);
-        setAudioUrl(URL.createObjectURL(blob));
+        setAudioUrl(createManagedObjectUrl(blob));
         setViewState('review');
     }, []);
 
@@ -38,7 +39,7 @@ export const useAudioRecorder = () => {
 
     const discardRecording = useCallback(() => {
         setAudioBlob(null);
-        if (audioUrl) URL.revokeObjectURL(audioUrl);
+        revokeManagedObjectUrl(audioUrl);
         setAudioUrl(null);
         setViewState('idle');
         cancelCore(); // Ensures stream is closed if in weird state

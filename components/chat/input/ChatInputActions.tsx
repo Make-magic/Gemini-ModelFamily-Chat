@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { ArrowUp, X, Edit2, Loader2, Mic, Languages, Maximize2, Minimize2, Save, AudioWaveform, PhoneOff } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowUp, X, Edit2, Loader2, Mic, Languages, Maximize2, Minimize2, Save, AudioWaveform, PhoneOff, MoreHorizontal } from 'lucide-react';
 import { AttachmentMenu } from './AttachmentMenu';
 import { ToolsMenu } from './ToolsMenu';
 import { IconStop, IconScenarios } from '../../icons/CustomIcons';
@@ -56,6 +56,7 @@ export const ChatInputActions: React.FC<ExtendedChatInputActionsProps> = ({
 }) => {
     const micIconSize = 20;
     const sendIconSize = 20;
+    const [isOverflowOpen, setIsOverflowOpen] = useState(false);
 
     return (
         <div className="flex items-center justify-between w-full">
@@ -84,13 +85,25 @@ export const ChatInputActions: React.FC<ExtendedChatInputActionsProps> = ({
                         type="button"
                         onClick={onOpenScenariosModal}
                         disabled={disabled}
-                        className={`${CHAT_INPUT_BUTTON_CLASS} bg-transparent text-[var(--theme-icon-settings)] hover:bg-[var(--theme-bg-tertiary)]`}
-                        aria-label={t('scenariosManage_aria') || 'Manage Scenarios'}
-                        title={t('scenariosManage_title') || 'Manage Scenarios'}
+                        className={`${CHAT_INPUT_BUTTON_CLASS} hidden sm:flex bg-transparent text-[var(--theme-icon-settings)] hover:bg-[var(--theme-bg-tertiary)]`}
+                        aria-label={t('scenariosManage_aria')}
+                        title={t('scenariosManage_title')}
                     >
                         <IconScenarios size={20} />
                     </button>
                 )}
+                <div className="relative sm:hidden">
+                    <button type="button" onClick={() => setIsOverflowOpen(open => !open)} className={`${CHAT_INPUT_BUTTON_CLASS} bg-transparent text-[var(--theme-icon-settings)] hover:bg-[var(--theme-bg-tertiary)]`} aria-haspopup="menu" aria-expanded={isOverflowOpen} aria-label={t('more_actions')} title={t('more_actions')}>
+                        <MoreHorizontal size={20} />
+                    </button>
+                    {isOverflowOpen && (
+                        <div role="menu" className="absolute bottom-12 left-0 z-50 min-w-52 rounded-xl border border-[var(--theme-border-secondary)] bg-[var(--theme-bg-primary)] p-1.5 shadow-xl">
+                            {onOpenScenariosModal && <button role="menuitem" type="button" onClick={() => { setIsOverflowOpen(false); onOpenScenariosModal(); }} className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]"><IconScenarios size={20} />{t('scenariosManage_title')}</button>}
+                            <button role="menuitem" type="button" disabled={!inputText.trim() || isEditing || disabled || isTranslating} onClick={() => { setIsOverflowOpen(false); onTranslate(); }} className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)] disabled:opacity-50"><Languages size={20} />{t(isTranslating ? 'translating_button_title' : 'translate_button_title')}</button>
+                            {onToggleFullscreen && <button role="menuitem" type="button" onClick={() => { setIsOverflowOpen(false); onToggleFullscreen(); }} className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm text-[var(--theme-text-primary)] hover:bg-[var(--theme-bg-tertiary)]">{isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}{t(isFullscreen ? 'fullscreen_tooltip_collapse' : 'fullscreen_tooltip_expand')}</button>}
+                        </div>
+                    )}
+                </div>
             </div>
 
             <div className="flex flex-shrink-0 items-center gap-2 sm:gap-3">
@@ -111,7 +124,7 @@ export const ChatInputActions: React.FC<ExtendedChatInputActionsProps> = ({
                         type="button"
                         onClick={onToggleFullscreen}
                         disabled={disabled}
-                        className={`${CHAT_INPUT_BUTTON_CLASS} bg-transparent text-[var(--theme-icon-settings)] hover:bg-[var(--theme-bg-tertiary)]`}
+                        className={`${CHAT_INPUT_BUTTON_CLASS} hidden sm:flex bg-transparent text-[var(--theme-icon-settings)] hover:bg-[var(--theme-bg-tertiary)]`}
                         aria-label={isFullscreen ? t('fullscreen_tooltip_collapse') : t('fullscreen_tooltip_expand')}
                         title={isFullscreen ? t('fullscreen_tooltip_collapse') : t('fullscreen_tooltip_expand')}
                     >
@@ -123,7 +136,7 @@ export const ChatInputActions: React.FC<ExtendedChatInputActionsProps> = ({
                     type="button"
                     onClick={onTranslate}
                     disabled={!inputText.trim() || isEditing || disabled || isTranscribing || isMicInitializing || isTranslating}
-                    className={`${CHAT_INPUT_BUTTON_CLASS} bg-transparent text-[var(--theme-icon-settings)] hover:bg-[var(--theme-bg-tertiary)]`}
+                    className={`${CHAT_INPUT_BUTTON_CLASS} hidden sm:flex bg-transparent text-[var(--theme-icon-settings)] hover:bg-[var(--theme-bg-tertiary)]`}
                     aria-label={isTranslating ? t('translating_button_title') : t('translate_button_title')}
                     title={isTranslating ? t('translating_button_title') : t('translate_button_title')}
                 >
@@ -141,8 +154,8 @@ export const ChatInputActions: React.FC<ExtendedChatInputActionsProps> = ({
                         onClick={onStartLiveSession}
                         disabled={disabled}
                         className={`${CHAT_INPUT_BUTTON_CLASS} ${isLiveConnected ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20 animate-pulse' : 'bg-purple-500/10 text-purple-500 hover:bg-purple-500/20'}`}
-                        aria-label={isLiveConnected ? "End Live Session" : "Start Live Session"}
-                        title={isLiveConnected ? "End Live Session" : "Start Live Session"}
+                        aria-label={t(isLiveConnected ? 'live_session_end' : 'live_session_start')}
+                        title={t(isLiveConnected ? 'live_session_end' : 'live_session_start')}
                     >
                         {isLiveConnected ? (
                             <PhoneOff size={micIconSize} strokeWidth={2} />
@@ -192,8 +205,8 @@ export const ChatInputActions: React.FC<ExtendedChatInputActionsProps> = ({
                         type="submit"
                         disabled={!canSend || isWaitingForUpload}
                         className={`${CHAT_INPUT_BUTTON_CLASS} bg-[var(--theme-bg-accent)] hover:bg-[var(--theme-bg-accent-hover)] text-[var(--theme-text-accent)] disabled:bg-[var(--theme-bg-tertiary)] disabled:text-[var(--theme-text-tertiary)]`}
-                        aria-label={isWaitingForUpload ? "Waiting for upload..." : t('sendMessage_aria')}
-                        title={isWaitingForUpload ? "Waiting for upload to complete before sending" : t('sendMessage_title')}
+                        aria-label={isWaitingForUpload ? t('upload_waiting') : t('sendMessage_aria')}
+                        title={isWaitingForUpload ? t('upload_waiting_detail') : t('sendMessage_title')}
                     >
                         {isWaitingForUpload ? (
                             <Loader2 size={sendIconSize} className="animate-spin" strokeWidth={2} />

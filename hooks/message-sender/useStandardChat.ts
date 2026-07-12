@@ -159,7 +159,7 @@ export const useStandardChat = ({
         );
 
         // Pass generationStartTime by value to create a closure-safe handler
-        const { streamOnError, streamOnComplete, streamOnPart, onThoughtChunk } = getStreamHandlers(
+        const { streamOnTerminal, streamOnPart, onThoughtChunk } = getStreamHandlers(
             finalSessionId!,
             generationId,
             newAbortController,
@@ -195,8 +195,7 @@ export const useStandardChat = ({
                 newAbortController.signal,
                 streamOnPart,
                 onThoughtChunk,
-                streamOnError,
-                streamOnComplete
+                streamOnTerminal
             );
         } else {
             await geminiServiceInstance.sendMessageNonStream(
@@ -206,11 +205,10 @@ export const useStandardChat = ({
                 promptParts,
                 config,
                 newAbortController.signal,
-                streamOnError,
-                (parts, thoughts, usage, grounding) => {
-                    for (const part of parts) streamOnPart(part);
-                    if (thoughts) onThoughtChunk(thoughts);
-                    streamOnComplete(usage, grounding);
+                result => {
+                    for (const part of result.parts ?? []) streamOnPart(part);
+                    if (result.thoughtsText) onThoughtChunk(result.thoughtsText);
+                    streamOnTerminal(result);
                 }
             );
         }

@@ -25,8 +25,9 @@ export const useFileUpload = ({
 
     const { processFiles } = useFilePreProcessing({ appSettings, setSelectedFiles });
     
-    const { uploadFiles, cancelUpload } = useFileUploader({ 
+    const { uploadFiles, cancelUpload, retryUpload } = useFileUploader({
         appSettings, 
+        selectedFiles,
         setSelectedFiles, 
         setAppFileError, 
         currentChatSettings, 
@@ -57,6 +58,7 @@ export const useFileUpload = ({
     return {
         handleProcessAndAddFiles,
         handleCancelFileUpload: cancelUpload,
+        handleRetryFileUpload: retryUpload,
         handleAddFileById: addFileById,
     };
 };

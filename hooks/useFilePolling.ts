@@ -49,7 +49,7 @@ export const useFilePolling = ({
                 const poll = async () => {
                     if ((Date.now() - startTime) > MAX_POLLING_DURATION_MS) {
                         logService.error(`Polling timed out for file ${fileApiName}`);
-                        setSelectedFiles(prev => prev.map(f => f.id === fileId ? { ...f, error: 'File processing timed out.', uploadState: 'failed', isProcessing: false } : f));
+                        setSelectedFiles(prev => prev.map(f => f.id === fileId ? { ...f, error: 'File processing timed out.', uploadState: 'failed', failureStage: 'processing', isProcessing: false } : f));
                         return;
                     }
 
@@ -58,7 +58,7 @@ export const useFilePolling = ({
                     const keyResult = getKeyForRequest(appSettings, currentChatSettings, { skipIncrement: true });
                     if ('error' in keyResult) {
                         logService.error(`Polling for ${fileApiName} stopped: ${keyResult.error}`);
-                        setSelectedFiles(prev => prev.map(f => f.id === fileId ? { ...f, error: keyResult.error, uploadState: 'failed', isProcessing: false } : f));
+                        setSelectedFiles(prev => prev.map(f => f.id === fileId ? { ...f, error: keyResult.error, uploadState: 'failed', failureStage: 'processing', isProcessing: false } : f));
                         return;
                     }
 
@@ -66,10 +66,10 @@ export const useFilePolling = ({
                         const metadata = await geminiServiceInstance.getFileMetadata(keyResult.key, fileApiName);
                         if (metadata?.state === 'ACTIVE') {
                             logService.info(`File ${fileApiName} is now ACTIVE.`);
-                            setSelectedFiles(prev => prev.map(f => f.id === fileId ? { ...f, uploadState: 'active', isProcessing: false } : f));
+                            setSelectedFiles(prev => prev.map(f => f.id === fileId ? { ...f, uploadState: 'active', failureStage: undefined, error: undefined, isProcessing: false } : f));
                         } else if (metadata?.state === 'FAILED') {
                             logService.error(`File ${fileApiName} processing FAILED on backend.`);
-                            setSelectedFiles(prev => prev.map(f => f.id === fileId ? { ...f, error: 'Backend processing failed.', uploadState: 'failed', isProcessing: false } : f));
+                            setSelectedFiles(prev => prev.map(f => f.id === fileId ? { ...f, error: 'Backend processing failed.', uploadState: 'failed', failureStage: 'processing', isProcessing: false } : f));
                         }
                     } catch (error) {
                         logService.warn(`Polling for ${fileApiName} failed with a key, will retry.`, { error });

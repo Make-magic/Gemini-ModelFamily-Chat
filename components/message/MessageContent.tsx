@@ -22,6 +22,9 @@ interface MessageContentProps {
     onOpenSidePanel: (content: SideViewContent) => void;
     onConfigureFile?: (file: UploadedFile, messageId: string) => void;
     isGemini3?: boolean;
+    isThoughtsExpanded: boolean;
+    onThoughtsExpandedChange: (messageId: string, expanded: boolean) => void;
+    suppressEntranceAnimation: boolean;
 }
 
 export const MessageContent: React.FC<MessageContentProps> = React.memo((props) => {

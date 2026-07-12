@@ -1,5 +1,5 @@
 import React, { Dispatch, SetStateAction, useCallback } from 'react';
-import { AppSettings, SavedChatSession, ChatMessage, ChatSettings as IndividualChatSettings, GeminiUsageMetadata } from '../../types';
+import { AppSettings, SavedChatSession, ChatMessage, ChatSettings as IndividualChatSettings, ChatTerminalResult } from '../../types';
 import { Part } from '@google/genai';
 import { useApiErrorHandler } from './useApiErrorHandler';
 import { logService, showNotification } from '../../utils/appUtils';
@@ -36,13 +36,16 @@ export const useChatStreamHandler = ({
         let firstContentPartTime: Date | null = null;
         let accumulatedText = "";
 
-        const streamOnError = (error: Error) => {
-            handleApiError(error, currentSessionId, generationId);
-            setLoadingSessionIds(prev => { const next = new Set(prev); next.delete(currentSessionId); return next; });
-            activeJobs.current.delete(generationId);
-        };
-
-        const streamOnComplete = (usageMetadata?: GeminiUsageMetadata, groundingMetadata?: any, urlContextMetadata?: any) => {
+        const streamOnTerminal = (result: ChatTerminalResult) => {
+            if (result.status === 'error') {
+                handleApiError(result.error ?? new Error('Unknown API error'), currentSessionId, generationId);
+                setLoadingSessionIds(prev => { const next = new Set(prev); next.delete(currentSessionId); return next; });
+                activeJobs.current.delete(generationId);
+                return;
+            }
+            const usageMetadata = result.usageMetadata;
+            const groundingMetadata = result.groundingMetadata;
+            const urlContextMetadata = result.urlContextMetadata;
             // Use correct language from state
             const lang = appSettings.language === 'system' 
                 ? (navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en')
@@ -86,7 +89,7 @@ export const useChatStreamHandler = ({
                     usageMetadata,
                     groundingMetadata,
                     urlContextMetadata,
-                    abortController.signal.aborted
+                    result.status === 'abort'
                 );
 
                 sessionToUpdate.messages = updatedMessages;
@@ -112,7 +115,7 @@ export const useChatStreamHandler = ({
             activeJobs.current.delete(generationId);
 
             // Invoke success callback after state updates
-            if (onSuccess && !abortController.signal.aborted) {
+            if (onSuccess && result.status === 'success') {
                 // Use the locally accumulated text to avoid state closure issues
                 setTimeout(() => onSuccess(generationId, accumulatedText), 0);
             }
@@ -179,7 +182,7 @@ export const useChatStreamHandler = ({
             }, { persist: false });
         };
         
-        return { streamOnError, streamOnComplete, streamOnPart, onThoughtChunk };
+        return { streamOnTerminal, streamOnPart, onThoughtChunk };
 
     }, [appSettings.isStreamingEnabled, appSettings.isCompletionNotificationEnabled, appSettings.language, updateAndPersistSessions, handleApiError, setLoadingSessionIds, activeJobs]);
     

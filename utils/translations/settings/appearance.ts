@@ -5,6 +5,8 @@ export const appearanceSettings = {
     settingsThemeSystem: { en: 'System', zh: '系统' },
     settingsThemeDark: { en: 'Dark', zh: '千里江山' },
     settingsThemeLight: { en: 'Light', zh: '水墨绢本' },
+    settingsThemeClaudeLight: { en: 'Claude Warm Sand', zh: 'Claude 暖砂' },
+    settingsThemeClaudeDark: { en: 'Claude Warm Charcoal', zh: 'Claude 暖炭' },
     settingsThemeWenxin: { en: 'Reading', zh: '文心雕龙' },
     settingsThemeGewu: { en: 'STEM', zh: '格物致知' },
     settingsThemeClassicLight: { en: 'Classic Light', zh: '默认浅色' },

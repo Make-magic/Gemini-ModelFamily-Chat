@@ -2,6 +2,7 @@
 import { useMemo } from 'react';
 import { useAppLogic } from './useAppLogic';
 import { CANVAS_SYSTEM_PROMPT, BBOX_SYSTEM_PROMPT } from '../../constants/appConstants';
+import { getModelCapabilities } from '../../constants/modelRegistry';
 
 export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
   const {
@@ -31,7 +32,9 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     lastPullTime,
     lastPushTime,
     pullFromServer,
-    pushToServer
+    pushToServer,
+    syncConflict,
+    resolveSyncConflict,
   } = logic;
 
   // Sidebar Props
@@ -128,8 +131,6 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     ttsMessageId: chatState.ttsMessageId,
     language,
     scrollNavVisibility: chatState.scrollNavVisibility,
-    onScrollToPrevTurn: chatState.scrollToPrevTurn,
-    onScrollToNextTurn: chatState.scrollToNextTurn,
     appSettings,
     commandedInput: chatState.commandedInput,
     setCommandedInput: chatState.setCommandedInput,
@@ -146,11 +147,12 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     onProcessFiles: chatState.handleProcessAndAddFiles,
     onAddFileById: chatState.handleAddFileById,
     onCancelUpload: chatState.handleCancelFileUpload,
+    onRetryUpload: chatState.handleRetryFileUpload,
     onTranscribeAudio: chatState.handleTranscribeAudio,
     isProcessingFile: chatState.isAppProcessingFile,
     fileError: chatState.appFileError,
-    isImagenModel: chatState.currentChatSettings.modelId?.includes('imagen'),
-    isImageEditModel: chatState.currentChatSettings.modelId?.includes('image-preview'),
+    isImagenModel: getModelCapabilities(chatState.currentChatSettings.modelId).imageGeneration,
+    isImageEditModel: getModelCapabilities(chatState.currentChatSettings.modelId).imageEditing,
     aspectRatio: chatState.aspectRatio,
     setAspectRatio: chatState.setAspectRatio,
     imageSize: chatState.imageSize,
@@ -190,13 +192,15 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     lastPushTime,
     onPullFromServer: pullFromServer,
     onPushToServer: pushToServer,
-    exportStatus,
+    syncConflict,
+    onResolveSyncConflict: resolveSyncConflict,
     t,
   }), [
     chatState, uiState, appSettings, currentTheme, language, t, sessionTitle,
     pipState, handleLoadCanvasPromptAndSave, handleSuggestionClick, handleSetThinkingLevel,
-    handleOpenSidePanel, getCurrentModelDisplayName, exportStatus,
-    pullStatus, pushStatus, lastPullTime, lastPushTime, pullFromServer, pushToServer
+    handleOpenSidePanel, getCurrentModelDisplayName,
+    pullStatus, pushStatus, lastPullTime, lastPushTime, pullFromServer, pushToServer,
+    syncConflict, resolveSyncConflict
   ]);
 
   // Merge active chat settings into app settings for the modal so controls reflect current session
@@ -252,6 +256,9 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     currentChatSettings: chatState.currentChatSettings,
     t,
     setAvailableModels: chatState.setApiModels,
+    onRefreshModels: chatState.refreshModelsFromProvider,
+    isRefreshingModels: chatState.isRefreshingModels,
+    modelRefreshError: chatState.modelRefreshError,
   }), [
     uiState, settingsForModal, chatState, eventsState, dataManagement,
     isExportModalOpen, exportStatus, handleExportChat, handleSaveSettings, t

@@ -2,7 +2,14 @@
 
 const CACHE_NAME = 'all-model-chat-cache-v1.9.4';
 const API_HOSTS = ['generativelanguage.googleapis.com'];
-const STATIC_APP_SHELL_URLS = ['/', '/index.html', '/icon/gemini_sparkle_aurora.svg', '/manifest.json'];
+const STATIC_APP_SHELL_URLS = [
+  '/',
+  '/index.html',
+  '/icon/gemini_sparkle_aurora.svg',
+  '/icon/gemini_sparkle_aurora-192.png',
+  '/icon/gemini_sparkle_aurora-512.png',
+  '/manifest.json',
+];
 
 /**
  * Fetches and parses the main HTML file to dynamically discover all critical resources.

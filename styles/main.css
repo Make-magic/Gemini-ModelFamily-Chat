@@ -89,6 +89,18 @@ html, body, #root {
   --shadow-ink-deep: 0 12px 48px rgba(0, 0, 0, 0.08);
 }
 
+.theme-claude-light {
+  --shadow-ink: 0 4px 20px rgba(102, 101, 96, 0.05);
+  --shadow-ink-elevated: 0 8px 30px rgba(217, 119, 87, 0.04);
+  --shadow-ink-deep: 0 12px 40px rgba(102, 101, 96, 0.08);
+}
+
+.theme-claude-dark {
+  --shadow-ink: 0 4px 24px rgba(0, 0, 0, 0.25);
+  --shadow-ink-elevated: 0 8px 32px rgba(0, 0, 0, 0.35);
+  --shadow-ink-deep: 0 12px 48px rgba(0, 0, 0, 0.45);
+}
+
 /* ============================================================
    宣纸噪点纹理 (Xuan Paper Noise Texture)
    仅浅色模式下可见，极低透明度 (<2%)
@@ -113,7 +125,9 @@ html, body, #root {
   --texture-xuan-paper: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
 }
 
-.theme-classic-light {
+.theme-classic-light,
+.theme-claude-light,
+.theme-claude-dark {
   --texture-xuan-paper: none;
 }
 
@@ -179,6 +193,26 @@ html, body, #root {
 .theme-classic-light ::-moz-selection {
   background-color: rgba(37, 99, 235, 0.25);
   color: #000000;
+}
+
+/* Claude 暖砂：陶土桔淡化 */
+.theme-claude-light ::selection {
+  background-color: rgba(217, 119, 87, 0.25);
+  color: #191919;
+}
+.theme-claude-light ::-moz-selection {
+  background-color: rgba(217, 119, 87, 0.25);
+  color: #191919;
+}
+
+/* Claude 暖炭：深陶土桔淡化 */
+.theme-claude-dark ::selection {
+  background-color: rgba(222, 115, 86, 0.3);
+  color: #FAF9F6;
+}
+.theme-claude-dark ::-moz-selection {
+  background-color: rgba(222, 115, 86, 0.3);
+  color: #FAF9F6;
 }
 
 /* ============================================================

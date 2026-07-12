@@ -21,6 +21,8 @@ interface MessageThoughtsProps {
     isMermaidRenderingEnabled: boolean;
     isGraphvizRenderingEnabled: boolean;
     onOpenSidePanel: (content: SideViewContent) => void;
+    isThoughtsExpanded: boolean;
+    onThoughtsExpandedChange: (messageId: string, expanded: boolean) => void;
 }
 
 export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
@@ -34,13 +36,14 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
     expandCodeBlocksByDefault,
     isMermaidRenderingEnabled,
     isGraphvizRenderingEnabled,
-    onOpenSidePanel
+    onOpenSidePanel,
+    isThoughtsExpanded,
+    onThoughtsExpandedChange,
 }) => {
     const { thoughts, isLoading, role } = message;
     const areThoughtsVisible = role === 'model' && thoughts && showThoughts;
     
     // UI State
-    const [isExpanded, setIsExpanded] = useState(false);
     const [translatedThoughts, setTranslatedThoughts] = useState<string | null>(null);
     const [isShowingTranslation, setIsShowingTranslation] = useState(false);
     const [isTranslatingThoughts, setIsTranslatingThoughts] = useState(false);
@@ -101,8 +104,9 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
     return (
         <div className={`mb-2 ${hasFiles ? 'mt-1' : '-mt-2'}`}>
             <details 
+                open={isThoughtsExpanded}
                 className="group rounded-xl bg-[var(--theme-bg-tertiary)]/20 overflow-hidden transition-all duration-200 open:bg-[var(--theme-bg-tertiary)]/30 open:shadow-sm"
-                onToggle={(e) => setIsExpanded((e.target as HTMLDetailsElement).open)}
+                onToggle={(e) => onThoughtsExpandedChange(message.id, (e.currentTarget as HTMLDetailsElement).open)}
             >
                 <summary className="list-none flex select-none items-center justify-between gap-2 px-3 py-2 cursor-pointer transition-colors hover:bg-[var(--theme-bg-tertiary)]/40 focus:outline-none">
                     <ThinkingHeader 
@@ -116,7 +120,7 @@ export const MessageThoughts: React.FC<MessageThoughtsProps> = ({
                     
                     <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
                         <ThinkingActions 
-                            isExpanded={isExpanded}
+                            isExpanded={isThoughtsExpanded}
                             isShowingTranslation={isShowingTranslation}
                             isTranslatingThoughts={isTranslatingThoughts}
                             isCopied={isCopied}

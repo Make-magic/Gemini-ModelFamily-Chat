@@ -99,12 +99,12 @@ export const compressAudioToMp3 = async (file: File | Blob, signal?: AbortSignal
 
         return new Promise((resolve, reject) => {
             const blob = new Blob([WORKER_CODE], { type: 'application/javascript' });
-            const workerUrl = URL.createObjectURL(blob);
+            const workerUrl = createManagedObjectUrl(blob);
             const worker = new Worker(workerUrl);
 
             const cleanup = () => {
                 worker.terminate();
-                URL.revokeObjectURL(workerUrl);
+                revokeManagedObjectUrl(workerUrl);
             };
 
             if (signal) {
@@ -148,3 +148,4 @@ export const compressAudioToMp3 = async (file: File | Blob, signal?: AbortSignal
         return new File([file], originalName, { type: file.type || "audio/wav" });
     }
 };
+import { createManagedObjectUrl, revokeManagedObjectUrl } from './objectUrlManager';

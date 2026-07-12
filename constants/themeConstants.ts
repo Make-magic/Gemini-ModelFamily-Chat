@@ -1,5 +1,5 @@
 
-import { Theme, ThemeColors } from '../types/theme';
+import { BuiltInThemeId, Theme, ThemeColors } from '../types/theme';
 
 export type { Theme } from '../types/theme';
 
@@ -345,13 +345,133 @@ export const CLASSIC_LIGHT_THEME_COLORS: ThemeColors = {
   iconHistory: '#000000',
 };
 
+export const CLAUDE_LIGHT_THEME_COLORS: ThemeColors = {
+  // Backgrounds — Claude Warm Sand
+  bgPrimary: '#FAF9F6',
+  bgSecondary: '#F1F0E8',
+  bgTertiary: '#E2DFD3',
+  bgAccent: '#D97757',
+  bgAccentHover: '#C86548',
+  bgDanger: '#E05C5C',
+  bgDangerHover: '#C94646',
+  bgInput: '#FAF9F6',
+  bgCodeBlock: '#F1F0E8',
+  bgCodeBlockHeader: '#E2DFD3',
+  bgUserMessage: '#F1F0E8',
+  bgModelMessage: 'transparent',
+  bgErrorMessage: 'rgba(224, 92, 92, 0.08)',
+  bgSuccess: 'rgba(120, 140, 93, 0.1)',
+  textSuccess: '#5E6E45',
+  bgInfo: 'rgba(106, 155, 204, 0.1)',
+  textInfo: '#4E78A2',
+  bgWarning: 'rgba(217, 119, 87, 0.1)',
+  textWarning: '#B85B3D',
+
+  // Text
+  textPrimary: '#191919',
+  textSecondary: '#666560',
+  textTertiary: '#9E9D95',
+  textAccent: '#FAF9F6',
+  textDanger: '#C94646',
+  textLink: '#D97757',
+  textCode: '#191919',
+  bgUserMessageText: '#191919',
+  bgModelMessageText: '#191919',
+  bgErrorMessageText: '#C94646',
+
+  // Borders
+  borderPrimary: '#E2DFD3',
+  borderSecondary: '#D5D2C4',
+  borderFocus: '#D97757',
+
+  // Scrollbar
+  scrollbarThumb: '#D5D2C4',
+  scrollbarTrack: 'transparent',
+
+  // Icons
+  iconUser: '#191919',
+  iconModel: '#D97757',
+  iconError: '#C94646',
+  iconThought: '#9E9D95',
+  iconSettings: '#666560',
+  iconClearChat: '#191919',
+  iconSend: '#FAF9F6',
+  iconAttach: '#666560',
+  iconStop: '#FAF9F6',
+  iconEdit: '#666560',
+  iconHistory: '#666560',
+};
+
+export const CLAUDE_DARK_THEME_COLORS: ThemeColors = {
+  // Backgrounds — Claude Warm Charcoal
+  bgPrimary: '#222220',
+  bgSecondary: '#1B1B19',
+  bgTertiary: '#2E2E2B',
+  bgAccent: '#DE7356',
+  bgAccentHover: '#C86548',
+  bgDanger: '#822B2B',
+  bgDangerHover: '#6B2020',
+  bgInput: '#222220',
+  bgCodeBlock: '#1B1B19',
+  bgCodeBlockHeader: '#262624',
+  bgUserMessage: '#2E2E2B',
+  bgModelMessage: 'transparent',
+  bgErrorMessage: 'rgba(130, 43, 43, 0.25)',
+  bgSuccess: 'rgba(120, 140, 93, 0.2)',
+  textSuccess: '#8CA56C',
+  bgInfo: 'rgba(106, 155, 204, 0.2)',
+  textInfo: '#8FB4DB',
+  bgWarning: 'rgba(222, 115, 86, 0.2)',
+  textWarning: '#EBA28D',
+
+  // Text
+  textPrimary: '#FAF9F6',
+  textSecondary: '#B0AEA5',
+  textTertiary: '#7A7872',
+  textAccent: '#FAF9F6',
+  textDanger: '#E57373',
+  textLink: '#DE7356',
+  textCode: '#FAF9F6',
+  bgUserMessageText: '#FAF9F6',
+  bgModelMessageText: '#FAF9F6',
+  bgErrorMessageText: '#E57373',
+
+  // Borders
+  borderPrimary: '#30302E',
+  borderSecondary: '#3D3D39',
+  borderFocus: '#DE7356',
+
+  // Scrollbar
+  scrollbarThumb: '#3D3D39',
+  scrollbarTrack: 'transparent',
+
+  // Icons
+  iconUser: '#FAF9F6',
+  iconModel: '#DE7356',
+  iconError: '#E57373',
+  iconThought: '#7A7872',
+  iconSettings: '#B0AEA5',
+  iconClearChat: '#FAF9F6',
+  iconSend: '#FAF9F6',
+  iconAttach: '#B0AEA5',
+  iconStop: '#FAF9F6',
+  iconEdit: '#B0AEA5',
+  iconHistory: '#B0AEA5',
+};
+
 export const AVAILABLE_THEMES: Theme[] = [
   { id: 'onyx', name: '千里江山 (Dark)', colors: ONYX_THEME_COLORS },
   { id: 'pearl', name: '水墨绢本 (Light)', colors: PEARL_THEME_COLORS },
+  { id: 'claude-light', name: 'Claude 暖砂 (Light)', colors: CLAUDE_LIGHT_THEME_COLORS },
+  { id: 'claude-dark', name: 'Claude 暖炭 (Dark)', colors: CLAUDE_DARK_THEME_COLORS },
   { id: 'wenxin', name: '文心雕龙 (Reading)', colors: WENXIN_THEME_COLORS },
   { id: 'gewu', name: '格物致知 (STEM)', colors: GEWU_THEME_COLORS },
   { id: 'jingshi', name: '经世致用 (Practical)', colors: JINGSHI_THEME_COLORS },
   { id: 'classic-light', name: '默认浅色 (Classic Light)', colors: CLASSIC_LIGHT_THEME_COLORS },
 ];
 
-export const DEFAULT_THEME_ID = 'classic-light';
+export const DARK_THEME_IDS: ReadonlySet<string> = new Set<BuiltInThemeId>(['onyx', 'claude-dark']);
+
+export const isDarkThemeId = (themeId: string): boolean => DARK_THEME_IDS.has(themeId);
+
+export const DEFAULT_THEME_ID: BuiltInThemeId = 'classic-light';

@@ -3,7 +3,7 @@ import { Zap } from 'lucide-react';
 import { ModelOption } from '../../types';
 import { GoogleSpinner } from '../icons/GoogleSpinner';
 import { ModelPicker } from '../shared/ModelPicker';
-import { isGemini3Model } from '../../utils/appUtils';
+import { getModelCapabilities } from '../../constants/modelRegistry';
 
 interface HeaderModelSelectorProps {
   currentModelName?: string;
@@ -44,8 +44,10 @@ export const HeaderModelSelector: React.FC<HeaderModelSelectorProps> = ({
 
   const isSelectorDisabled = availableModels.length === 0 || isLoading || isSwitchingModel;
   
-  // Check for Gemini 3 models (ignoring case) but exclude image models
-  const isGemini3 = isGemini3Model(selectedModelId) && !selectedModelId.toLowerCase().includes('image');
+  const selectedCapabilities = getModelCapabilities(selectedModelId);
+  const isGemini3 = selectedCapabilities.family === 'gemini'
+    && selectedCapabilities.generation === '3'
+    && !selectedCapabilities.imageGeneration;
   const isLowThinking = thinkingLevel === 'LOW';
 
   return (

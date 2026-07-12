@@ -5,6 +5,7 @@ import { UploadedFile } from '../../../types';
 import { triggerDownload } from '../../../utils/exportUtils';
 import { SUPPORTED_IMAGE_MIME_TYPES } from '../../../constants/fileConstants';
 import { formatFileSize } from '../../../utils/domainUtils';
+import { downloadBlob } from '../../../utils/objectUrlManager';
 
 interface FilePreviewHeaderProps {
     file: UploadedFile;
@@ -76,9 +77,8 @@ export const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
                 const base64Content = file.dataUrl.split(',')[1];
                 const svgContent = decodeURIComponent(escape(atob(base64Content)));
                 const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
                 const filename = `${file.name.split('.')[0] || 'diagram'}.svg`;
-                triggerDownload(url, filename, true);
+                downloadBlob(blob, filename);
             } catch (e) {
                 console.error("Failed to download SVG:", e);
             } finally {
@@ -114,7 +114,8 @@ export const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
                             value={editedName}
                             onChange={(e) => onNameChange(e.target.value)}
                             className="bg-transparent border-b border-white/20 text-xs sm:text-sm font-medium text-white/90 focus:border-white/50 outline-none w-full"
-                            placeholder="Filename"
+                            placeholder={t('filename')}
+                            aria-label={t('filename')}
                             autoFocus
                         />
                     ) : (
@@ -134,20 +135,20 @@ export const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
             {/* Top Actions */}
             <div className={`pointer-events-auto ${floatingBarBase} rounded-full p-1 flex items-center gap-1 flex-shrink-0`}>
                 {isEditable ? (
-                    <button onClick={onSave} className={`${actionButtonClass} !text-green-400 hover:!bg-green-500/20`} title="Save Changes">
+                    <button onClick={onSave} className={`${actionButtonClass} !text-green-400 hover:!bg-green-500/20`} title={t('save_changes')}>
                         <Save size={18} strokeWidth={2} />
                     </button>
                 ) : (
                     <>
                         {isText && onToggleEdit && (
-                            <button onClick={onToggleEdit} className={actionButtonClass} title="Edit File">
+                            <button onClick={onToggleEdit} className={actionButtonClass} title={t('edit_file')}>
                                 <Edit3 size={18} strokeWidth={1.5} />
                             </button>
                         )}
-                        <button onClick={handleCopy} disabled={isCopied} className={actionButtonClass} title={isCopied ? "Copied!" : "Copy Content"}>
+                        <button onClick={handleCopy} disabled={isCopied} className={actionButtonClass} title={t(isCopied ? 'copied' : 'copy_content')}>
                             {isCopied ? <Check size={18} className="text-green-400" strokeWidth={2} /> : <ClipboardCopy size={18} strokeWidth={1.5} />}
                         </button>
-                        <button onClick={handleDownload} disabled={isDownloading} className={actionButtonClass} title={isMermaidDiagram ? "Download SVG" : "Download File"}>
+                        <button onClick={handleDownload} disabled={isDownloading} className={actionButtonClass} title={t(isMermaidDiagram ? 'download_svg' : 'download_file')}>
                             {isDownloading ? <Loader2 size={18} className="animate-spin" strokeWidth={1.5}/> : <Download size={18} strokeWidth={1.5} />}
                         </button>
                     </>
@@ -158,8 +159,8 @@ export const FilePreviewHeader: React.FC<FilePreviewHeaderProps> = ({
                 <button
                     onClick={isEditable && onToggleEdit ? onToggleEdit : onClose}
                     className={`${actionButtonClass} hover:bg-red-500/20 hover:text-red-400`}
-                    aria-label={isEditable ? "Cancel Edit" : t('imageZoom_close_aria')}
-                    title={isEditable ? "Cancel Edit" : t('imageZoom_close_title')}
+                    aria-label={isEditable ? t('cancelEdit_title') : t('imageZoom_close_aria')}
+                    title={isEditable ? t('cancelEdit_title') : t('imageZoom_close_title')}
                 >
                     <X size={18} strokeWidth={1.5} />
                 </button>

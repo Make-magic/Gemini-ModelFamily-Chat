@@ -8,6 +8,7 @@ import { useTtsImagenSender } from './message-sender/useTtsImagenSender';
 import { useImageEditSender } from './message-sender/useImageEditSender';
 import { useCanvasGenerator } from './message-sender/useCanvasGenerator';
 import { useStandardChat } from './message-sender/useStandardChat';
+import { getModelCapabilities } from '../constants/modelRegistry';
 
 type SessionsUpdater = (updater: (prev: SavedChatSession[]) => SavedChatSession[]) => void;
 
@@ -84,12 +85,11 @@ export const useMessageSender = (props: MessageSenderProps) => {
         
         const sessionToUpdate = currentChatSettings;
         const activeModelId = sessionToUpdate.modelId;
-        const isTtsModel = activeModelId.includes('-tts');
-        const isImagenModel = activeModelId.includes('imagen');
-        // Exclude gemini-3-pro-image-preview from isImageEditModel to force standard chat flow, 
-        // unless Quad Images are enabled which we handle via edit route
-        const isImageEditModel = (activeModelId.includes('image-preview') || activeModelId.includes('gemini-2.5-flash-image')) && !activeModelId.includes('gemini-3-pro');
-        const isGemini3Image = activeModelId === 'gemini-3-pro-image-preview';
+        const capabilities = getModelCapabilities(activeModelId);
+        const isTtsModel = capabilities.tts;
+        const isGemini3Image = capabilities.imageEditing && Boolean(capabilities.imageSizes?.length);
+        const isImagenModel = capabilities.imageGeneration && !capabilities.imageEditing;
+        const isImageEditModel = capabilities.imageEditing && !isGemini3Image;
 
         logService.info(`Sending message with model ${activeModelId}`, { textLength: textToUse.length, fileCount: filesToUse.length, editingId: effectiveEditingId, sessionId: activeSessionId });
 

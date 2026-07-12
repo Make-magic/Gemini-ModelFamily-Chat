@@ -31,10 +31,13 @@ interface MessageProps {
     onOpenSidePanel: (content: SideViewContent) => void;
     onConfigureFile?: (file: UploadedFile, messageId: string) => void;
     isGemini3?: boolean;
+    isThoughtsExpanded: boolean;
+    onThoughtsExpandedChange: (messageId: string, expanded: boolean) => void;
+    suppressEntranceAnimation: boolean;
 }
 
 export const Message: React.FC<MessageProps> = React.memo((props) => {
-    const { message, prevMessage, messageIndex, t } = props;
+    const { message, prevMessage, messageIndex, suppressEntranceAnimation } = props;
     
     const isGrouped = prevMessage &&
         prevMessage.role === message.role &&
@@ -72,8 +75,8 @@ export const Message: React.FC<MessageProps> = React.memo((props) => {
 
     return (
         <div 
-            className="relative message-container-animate"
-            style={{ animationDelay: `${Math.min(messageIndex * 50, 500)}ms` }}
+            className={`relative ${suppressEntranceAnimation ? '' : 'message-container-animate'}`}
+            style={suppressEntranceAnimation ? undefined : { animationDelay: `${Math.min(messageIndex * 50, 500)}ms` }}
             data-message-id={message.id} 
             data-message-role={message.role}
         >

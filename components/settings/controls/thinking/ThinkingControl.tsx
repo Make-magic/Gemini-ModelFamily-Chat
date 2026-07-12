@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Info, Lightbulb } from 'lucide-react';
-import { THINKING_BUDGET_RANGES, MODELS_MANDATORY_THINKING } from '../../../../constants/appConstants';
 import { Tooltip } from '../../../shared/Tooltip';
-import { isGemini3Model } from '../../../../utils/appUtils';
+import { getModelCapabilities } from '../../../../constants/modelRegistry';
 import { ThinkingModeSelector } from './ThinkingModeSelector';
 import { ThinkingLevelSelector } from './ThinkingLevelSelector';
 import { ThinkingBudgetSlider } from './ThinkingBudgetSlider';
@@ -30,11 +29,12 @@ export const ThinkingControl: React.FC<ThinkingControlProps> = ({
   setShowThoughts,
   t
 }) => {
-  const isGemini3 = isGemini3Model(modelId);
-  const isFlash3 = isGemini3 && modelId.toLowerCase().includes('flash');
-  const budgetConfig = THINKING_BUDGET_RANGES[modelId];
+  const capabilities = getModelCapabilities(modelId);
+  const isGemini3 = capabilities.family === 'gemini' && capabilities.generation === '3';
+  const isFlash3 = isGemini3 && capabilities.variant === 'flash';
+  const budgetConfig = capabilities.thinkingBudgetRange;
   
-  const isMandatoryThinking = MODELS_MANDATORY_THINKING.includes(modelId);
+  const isMandatoryThinking = capabilities.thinkingRequired;
 
   // Default ranges if config is missing (fallback for unknown models)
   const minBudget = budgetConfig?.min ?? 1024;
@@ -46,7 +46,7 @@ export const ThinkingControl: React.FC<ThinkingControlProps> = ({
   
   // Determine current mode
   const mode = thinkingBudget < 0 ? 'auto' : thinkingBudget === 0 ? 'off' : 'custom';
-  const showThinkingControls = !!budgetConfig || isGemini3;
+  const showThinkingControls = capabilities.thinking !== 'none';
 
   useEffect(() => {
     if (thinkingBudget > 0) {

@@ -12,6 +12,7 @@ interface UploadFileItemParams {
     appSettings: any; // Using any to avoid circular dep issues with types if strictly typed, but AppSettings is imported in types
     setSelectedFiles: React.Dispatch<React.SetStateAction<UploadedFile[]>>;
     uploadStatsRef: React.MutableRefObject<Map<string, { lastLoaded: number; lastTime: number }>>;
+    existingFile?: UploadedFile;
 }
 
 export const uploadFileItem = async ({
@@ -20,9 +21,10 @@ export const uploadFileItem = async ({
     defaultResolution,
     appSettings,
     setSelectedFiles,
-    uploadStatsRef
+    uploadStatsRef,
+    existingFile,
 }: UploadFileItemParams) => {
-    const fileId = generateUniqueId();
+    const fileId = existingFile?.id ?? generateUniqueId();
     const effectiveMimeType = getEffectiveMimeType(file);
 
     if (!ALL_SUPPORTED_MIME_TYPES.includes(effectiveMimeType)) {
@@ -34,13 +36,18 @@ export const uploadFileItem = async ({
     const shouldUploadFile = shouldUseFileApi(file, appSettings);
     
     // Generate a blob URL immediately for local preview, regardless of upload method
-    const dataUrl = fileToBlobUrl(file);
+    const dataUrl = existingFile?.dataUrl || fileToBlobUrl(file);
+    const setInitialFile = (initial: UploadedFile) => {
+        setSelectedFiles(prev => existingFile
+            ? prev.map(item => item.id === fileId ? initial : item)
+            : [...prev, initial]);
+    };
 
     if (shouldUploadFile) {
         if (!keyToUse) {
             const errorMsg = 'API key was not available for file upload.';
             logService.error(errorMsg);
-            setSelectedFiles(prev => [...prev, { id: fileId, name: file.name, type: effectiveMimeType, size: file.size, isProcessing: false, progress: 0, error: errorMsg, uploadState: 'failed' }]);
+            setInitialFile({ ...existingFile, id: fileId, name: file.name, type: effectiveMimeType, size: file.size, rawFile: file, dataUrl, isProcessing: false, progress: 0, error: errorMsg, uploadState: 'failed', failureStage: 'upload' });
             return;
         }
         const controller = new AbortController();
@@ -58,13 +65,16 @@ export const uploadFileItem = async ({
             uploadState: 'uploading', 
             abortController: controller,
             uploadSpeed: 'Starting...',
-            mediaResolution: defaultResolution
+            mediaResolution: existingFile?.mediaResolution ?? defaultResolution,
+            retryCount: existingFile ? (existingFile.retryCount ?? 0) + 1 : 0,
+            failureStage: undefined,
+            error: undefined,
         };
         
         // Initialize tracking for speed calculation
         uploadStatsRef.current.set(fileId, { lastLoaded: 0, lastTime: Date.now() });
         
-        setSelectedFiles(prev => [...prev, initialFileState]);
+        setInitialFile(initialFileState);
 
         const handleProgress = (loaded: number, total: number) => {
             const now = Date.now();
@@ -123,6 +133,7 @@ export const uploadFileItem = async ({
                 rawFile: file, // Preserve local file reference for preview
                 uploadState: uploadState,
                 error: uploadedFileInfo.state === 'FAILED' ? 'File API processing failed' : (f.error || undefined),
+                failureStage: uploadedFileInfo.state === 'FAILED' ? 'processing' : undefined,
                 abortController: undefined,
                 uploadSpeed: undefined, // Clear speed on complete
             } : f));
@@ -136,7 +147,7 @@ export const uploadFileItem = async ({
                 logService.warn(`File upload cancelled by user: ${file.name}`);
             }
             logService.error(`File upload failed for ${file.name}`, { error: uploadError });
-            setSelectedFiles(prev => prev.map(f => f.id === fileId ? { ...f, isProcessing: false, error: errorMsg, rawFile: undefined, uploadState: uploadStateUpdate, abortController: undefined, uploadSpeed: undefined } : f));
+            setSelectedFiles(prev => prev.map(f => f.id === fileId ? { ...f, isProcessing: false, error: errorMsg, rawFile: file, dataUrl, uploadState: uploadStateUpdate, failureStage: 'upload', abortController: undefined, uploadSpeed: undefined } : f));
         } finally {
             uploadStatsRef.current.delete(fileId);
         }
@@ -154,7 +165,7 @@ export const uploadFileItem = async ({
             dataUrl: dataUrl,
             mediaResolution: defaultResolution
         };
-        setSelectedFiles(prev => [...prev, initialFileState]);
+        setInitialFile(initialFileState);
 
         // Mark active immediately
         setSelectedFiles(p => p.map(f => f.id === fileId ? { ...f, isProcessing: false, progress: 100, uploadState: 'active' } : f));

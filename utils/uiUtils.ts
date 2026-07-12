@@ -2,7 +2,8 @@
 import React from 'react';
 import { ThemeColors } from '../types/theme';
 import { AppSettings, MediaResolution } from '../types';
-import { Theme, AVAILABLE_THEMES } from '../constants/themeConstants';
+import { Theme, AVAILABLE_THEMES, isDarkThemeId } from '../constants/themeConstants';
+import { createManagedObjectUrl } from './objectUrlManager';
 import { 
   SUPPORTED_IMAGE_MIME_TYPES, 
   SUPPORTED_AUDIO_MIME_TYPES, 
@@ -48,7 +49,15 @@ export const applyThemeToDocument = (doc: Document, theme: Theme, settings: AppS
   const hljsDarkTheme = doc.getElementById('hljs-dark-theme') as HTMLLinkElement;
   const hljsLightTheme = doc.getElementById('hljs-light-theme') as HTMLLinkElement;
 
-  const isDark = theme.id === 'onyx';
+  const isDark = isDarkThemeId(theme.id);
+
+  doc.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+
+  const colorSchemeMeta = doc.querySelector('meta[name="color-scheme"]') as HTMLMetaElement | null;
+  if (colorSchemeMeta) colorSchemeMeta.content = isDark ? 'dark' : 'light';
+
+  const themeColorMeta = doc.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null;
+  if (themeColorMeta) themeColorMeta.content = theme.colors.bgPrimary;
 
   if (markdownDarkTheme) markdownDarkTheme.disabled = !isDark;
   if (markdownLightTheme) markdownLightTheme.disabled = isDark;
@@ -87,7 +96,7 @@ export function pcmBase64ToWavUrl(
   dv.setUint32(p, pcm.length, true); p += 4;
 
   new Uint8Array(wav, 44).set(pcm);
-  return URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }));
+  return createManagedObjectUrl(new Blob([wav], { type: 'audio/wav' }));
 }
 
 export const showNotification = async (title: string, options?: NotificationOptions) => {

@@ -15,4 +15,9 @@ export const apiSettings = {
     apiConfig_docs_btn: { en: 'API DOC', zh: 'API 文档' },
     settings_api_overriding_key: { en: 'Overriding environment API key', zh: '覆盖环境变量中的 API Key' },
     settings_api_preview_url: { en: 'Preview of actual request URL:', zh: '实际请求 URL 预览:' },
+    apiConfig_proxy_label: { en: 'API Proxy', zh: 'API 代理' },
+    apiConfig_proxy_reset: { en: 'Reset to default', zh: '恢复默认值' },
+    apiConfig_proxy_url_label: { en: 'API proxy URL', zh: 'API 代理地址' },
+    apiConfig_proxy_url_help: { en: 'Use a complete HTTPS base URL. Credentials embedded in the URL are redacted from logs.', zh: '请输入完整的 HTTPS 基础地址；URL 中的凭据会在日志里自动脱敏。' },
+    apiConfig_test_model: { en: 'Test connection model', zh: '连通性测试模型' },
 };

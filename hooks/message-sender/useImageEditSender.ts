@@ -5,6 +5,7 @@ import { geminiServiceInstance } from '../../services/geminiService';
 import { generateUniqueId, buildContentParts, base64ToBlob, createChatHistoryForApi, logService, createNewSession } from '../../utils/appUtils';
 import { DEFAULT_CHAT_SETTINGS } from '../../constants/appConstants';
 import { Part } from '@google/genai';
+import { createManagedObjectUrl } from '../../utils/objectUrlManager';
 
 type SessionsUpdater = (updater: (prev: SavedChatSession[]) => SavedChatSession[]) => void;
 
@@ -119,7 +120,7 @@ export const useImageEditSender = ({
                             const name = `edited-image-${index + 1}.png`;
                             const blob = base64ToBlob(data, mimeType);
                             const file = new File([blob], name, { type: mimeType });
-                            const dataUrl = URL.createObjectURL(file);
+                            const dataUrl = createManagedObjectUrl(file);
                             combinedFiles.push({
                                 id: generateUniqueId(),
                                 name,

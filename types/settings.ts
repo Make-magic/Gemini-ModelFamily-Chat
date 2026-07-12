@@ -1,7 +1,51 @@
+import type { ThemePreference } from './theme';
+
 export interface ModelOption {
   id: string;
   name: string;
   isPinned?: boolean;
+  source?: 'static' | 'user' | 'provider';
+  supportedActions?: string[];
+  capabilities?: Partial<ModelCapabilities>;
+}
+
+export type ModelFamily = 'gemini' | 'imagen' | 'gemma' | 'unknown';
+export type ModelGeneration = '3' | '2.5' | 'unknown';
+export type ModelVariant = 'flash' | 'pro' | 'image' | 'tts' | 'live' | 'unknown';
+export type ImageModelKind = 'none' | 'gemini-native' | 'imagen' | 'unknown';
+export type TranscriptionThinking =
+  | { mode: 'level'; level: ThinkingLevel; includeThoughts: boolean }
+  | { mode: 'budget'; budget: number }
+  | { mode: 'disabled' };
+
+export interface ModelCapabilities {
+  family: ModelFamily;
+  generation: ModelGeneration;
+  variant: ModelVariant;
+  catalogPriority: number;
+  text: boolean;
+  imageGeneration: boolean;
+  imageEditing: boolean;
+  imageModelKind: ImageModelKind;
+  tts: boolean;
+  live: boolean;
+  thinking: 'none' | 'budget' | 'level' | 'budget-and-level';
+  thinkingRequired: boolean;
+  thinkingBudgetRange?: { min: number; max: number };
+  tools: {
+    googleSearch: boolean;
+    codeExecution: boolean;
+    urlContext: boolean;
+  };
+  mediaResolution: 'none' | 'global' | 'per-part';
+  imageSizes?: string[];
+  aspectRatios?: string[];
+  quadImageGeneration: boolean;
+  transcriptionThinking: TranscriptionThinking;
+}
+
+export interface ModelDescriptor extends ModelOption {
+  capabilities: ModelCapabilities;
 }
 
 export type ThinkingLevel = 'MINIMAL' | 'LOW' | 'MEDIUM' | 'HIGH';
@@ -67,7 +111,7 @@ export interface ShortcutsConfig {
 }
 
 export interface AppSettings extends ChatSettings {
-  themeId: 'system' | 'onyx' | 'pearl';
+  themeId: ThemePreference;
   baseFontSize: number;
   useCustomApiConfig: boolean;
   apiKey: string | null;

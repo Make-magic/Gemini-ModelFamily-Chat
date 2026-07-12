@@ -4,6 +4,7 @@ import { Download, Check } from 'lucide-react';
 import { triggerDownload } from '../../../utils/exportUtils';
 import { extractTextFromNode } from '../../../utils/uiUtils';
 import { MESSAGE_BLOCK_BUTTON_CLASS } from '../../../constants/appConstants';
+import { downloadBlob } from '../../../utils/objectUrlManager';
 
 export const ToolResultBlock: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({ className, children, ...props }) => {
     const [copied, setCopied] = useState(false);
@@ -34,8 +35,7 @@ export const ToolResultBlock: React.FC<React.HTMLAttributes<HTMLDivElement>> = (
         }
 
         const blob = new Blob([rawCode], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        triggerDownload(url, `execution-output-${Date.now()}.${extension}`);
+        downloadBlob(blob, `execution-output-${Date.now()}.${extension}`);
         
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);

@@ -3,6 +3,7 @@ import { toGeminiThinkingLevel } from '../geminiAdapter';
 import { logService } from "../../logService";
 import { Part } from "@google/genai";
 import { fileToBase64 } from "../../../utils/appUtils";
+import { getModelCapabilities } from '../../../constants/modelRegistry';
 
 export const generateSpeechApi = async (apiKey: string, modelId: string, text: string, voice: string, abortSignal: AbortSignal): Promise<string> => {
     logService.info(`Generating speech with model ${modelId}`, { textLength: text.length, voice });
@@ -84,23 +85,17 @@ export const transcribeAudioApi = async (apiKey: string, audioFile: File, modelI
           5. Return ONLY the transcribed text.`,
         };
 
-        // Apply specific defaults based on model
-        if (modelId.includes('gemini-3')) {
+        const transcriptionThinking = getModelCapabilities(modelId).transcriptionThinking;
+        if (transcriptionThinking.mode === 'level') {
             config.thinkingConfig = {
-                includeThoughts: false,
-                thinkingLevel: toGeminiThinkingLevel('LOW')
+                includeThoughts: transcriptionThinking.includeThoughts,
+                thinkingLevel: toGeminiThinkingLevel(transcriptionThinking.level),
             };
-        } else if (modelId === 'gemini-2.5-pro') {
+        } else if (transcriptionThinking.mode === 'budget') {
             config.thinkingConfig = {
-                thinkingBudget: 128,
-            };
-        } else if (modelId.includes('flash')) {
-            // Both 2.5 Flash and Flash Lite
-            config.thinkingConfig = {
-                thinkingBudget: 512,
+                thinkingBudget: transcriptionThinking.budget,
             };
         } else {
-            // Disable thinking for other models by default
             config.thinkingConfig = {
                 thinkingBudget: 0,
             };

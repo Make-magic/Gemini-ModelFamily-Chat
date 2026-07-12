@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, Loader2, Plus, X } from 'lucide-react';
 
 interface AddFileByIdInputProps {
@@ -21,10 +21,15 @@ export const AddFileByIdInput: React.FC<AddFileByIdInputProps> = ({
     isLoading,
     t,
 }) => {
+    const [touched, setTouched] = useState(false);
+    const isValid = /^files\/[A-Za-z0-9._-]+$/.test(fileIdInput.trim());
+    const errorId = 'add-file-id-error';
+    const helpId = 'add-file-id-help';
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !isLoading && fileIdInput.trim()) {
             e.preventDefault();
-            onAddFileByIdSubmit();
+            setTouched(true);
+            if (isValid) onAddFileByIdSubmit();
         } else if (e.key === 'Escape') {
             onCancel();
         }
@@ -38,13 +43,19 @@ export const AddFileByIdInput: React.FC<AddFileByIdInputProps> = ({
                         <Link size={16} strokeWidth={2} />
                     </div>
                     <input
+                        id="add-file-id-input"
                         type="text"
                         value={fileIdInput}
-                        onChange={(e) => setFileIdInput(e.target.value)}
+                        onChange={(e) => { setFileIdInput(e.target.value); if (touched && /^files\/[A-Za-z0-9._-]+$/.test(e.target.value.trim())) setTouched(false); }}
+                        onBlur={() => setTouched(true)}
                         onKeyDown={handleKeyDown}
                         placeholder={t('addById_placeholder')}
                         className="w-full py-2 pl-9 pr-3 bg-[var(--theme-bg-input)] border border-[var(--theme-border-secondary)] rounded-lg text-sm text-[var(--theme-text-primary)] placeholder-[var(--theme-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--theme-border-focus)] focus:border-transparent transition-all font-mono shadow-inner"
                         aria-label={t('addById_aria')}
+                        aria-describedby={`${helpId}${touched && !isValid ? ` ${errorId}` : ''}`}
+                        aria-invalid={touched && !isValid ? true : undefined}
+                        required
+                        pattern="files/[A-Za-z0-9._-]+"
                         disabled={isAddingById}
                         autoFocus
                         spellCheck={false}
@@ -53,7 +64,7 @@ export const AddFileByIdInput: React.FC<AddFileByIdInputProps> = ({
                 
                 <button
                     type="button"
-                    onClick={onAddFileByIdSubmit}
+                    onClick={() => { setTouched(true); if (isValid) onAddFileByIdSubmit(); }}
                     disabled={!fileIdInput.trim() || isAddingById || isLoading}
                     className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-[var(--theme-bg-accent)] hover:bg-[var(--theme-bg-accent-hover)] text-[var(--theme-text-accent)] rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm active:scale-95 whitespace-nowrap"
                     aria-label={t('addById_button_aria')}
@@ -73,10 +84,11 @@ export const AddFileByIdInput: React.FC<AddFileByIdInputProps> = ({
                 </button>
             </div>
             <div className="px-2 mt-1.5">
-                <p className="text-[10px] text-[var(--theme-text-tertiary)] flex items-center gap-1.5 ml-1">
+                <p id={helpId} className="text-[10px] text-[var(--theme-text-tertiary)] flex items-center gap-1.5 ml-1">
                     <span className="inline-block w-1 h-1 rounded-full bg-[var(--theme-text-tertiary)]" />
-                    Enter a valid Gemini API File URI (e.g., <code className="bg-[var(--theme-bg-tertiary)] px-1 rounded text-[var(--theme-text-secondary)]">files/888...</code>)
+                    {t('addById_help')} <code className="bg-[var(--theme-bg-tertiary)] px-1 rounded text-[var(--theme-text-secondary)]">files/888...</code>
                 </p>
+                {touched && !isValid && <p id={errorId} role="alert" className="mt-1 text-xs text-[var(--theme-text-danger)]">{t('addById_error')}</p>}
             </div>
         </div>
     );

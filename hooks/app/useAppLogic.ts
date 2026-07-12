@@ -36,7 +36,9 @@ export const useAppLogic = () => {
     lastPullTime, 
     lastPushTime, 
     pullFromServer, 
-    pushToServer 
+    pushToServer,
+    syncConflict,
+    resolveSyncConflict,
   } = useSyncManager({
     appSettings,
     setAppSettings,
@@ -47,7 +49,8 @@ export const useAppLogic = () => {
     savedScenarios: chatState.savedScenarios,
     setSavedScenarios: chatState.setUserSavedScenarios,
     isSettingsLoaded,
-    isHistoryLoaded: chatState.isHistoryLoaded
+    isHistoryLoaded: chatState.isHistoryLoaded,
+    activeSessionId: chatState.activeSessionId,
   });
 
   const uiState = useAppUI();
@@ -121,7 +124,6 @@ export const useAppLogic = () => {
     handleSaveAllScenarios: chatState.handleSaveAllScenarios,
     t,
     activeChat,
-    scrollContainerRef: chatState.scrollContainerRef,
     currentTheme,
     language,
   });
@@ -294,6 +296,8 @@ export const useAppLogic = () => {
     lastPullTime,
     lastPushTime,
     pullFromServer,
-    pushToServer
+    pushToServer,
+    syncConflict,
+    resolveSyncConflict,
   };
 };
