@@ -152,7 +152,7 @@ export const GraphvizBlock: React.FC<GraphvizBlockProps> = ({ code, onImageClick
 
   if (isRendering) {
       return (
-        <div className={`${containerClasses} bg-[var(--theme-bg-tertiary)] my-2`}>
+        <div data-export-pending="true" className={`${containerClasses} bg-[var(--theme-bg-tertiary)] my-2`}>
             <Loader2 size={24} className="animate-spin text-[var(--theme-text-link)]" />
         </div>
       );

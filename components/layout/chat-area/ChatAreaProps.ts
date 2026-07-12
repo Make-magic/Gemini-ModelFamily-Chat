@@ -68,9 +68,6 @@ export interface ChatAreaProps {
   ttsMessageId: string | null;
   language: 'en' | 'zh';
   scrollNavVisibility: { up: boolean; down: boolean };
-  onScrollToPrevTurn: () => void;
-  onScrollToNextTurn: () => void;
-  exportStatus?: 'idle' | 'exporting';
 
   // Edit Content
   onEditMessageContent: (messageId: string, newContent: string) => void;

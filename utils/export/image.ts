@@ -1,6 +1,14 @@
 import { triggerDownload } from './core';
 import { downloadBlob } from '../objectUrlManager';
 
+const waitForNextPaint = (): Promise<void> => new Promise(resolve => {
+    if (typeof requestAnimationFrame !== 'function') {
+        resolve();
+        return;
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+});
+
 /**
  * Exports a given HTML element as a PNG image.
  * @param element The HTML element to capture.
@@ -24,8 +32,8 @@ export const exportElementAsPng = async (
         });
     }));
 
-    // Force a layout recalc/paint wait to ensure styles are applied in the detached container
-    await new Promise(resolve => setTimeout(resolve, 800));
+    if (document.fonts?.ready) await document.fonts.ready;
+    await waitForNextPaint();
 
     // Calculate dimensions with multiple fallbacks
     let width = Math.ceil(element.scrollWidth);

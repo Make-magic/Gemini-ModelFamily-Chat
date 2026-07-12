@@ -19,7 +19,6 @@ interface DataManagementProps {
     handleSaveAllScenarios: (scenarios: SavedScenario[]) => void;
     t: (key: string) => string;
     activeChat: SavedChatSession | undefined;
-    scrollContainerRef: React.RefObject<HTMLDivElement>;
     currentTheme: Theme;
     language: 'en' | 'zh';
 }
@@ -51,7 +50,7 @@ export const useDataManagement = (props: DataManagementProps) => {
 
     const { exportChatLogic } = useChatSessionExport({
         activeChat: props.activeChat,
-        scrollContainerRef: props.scrollContainerRef,
+        appSettings: props.appSettings,
         currentTheme: props.currentTheme,
         language: props.language,
         t: props.t

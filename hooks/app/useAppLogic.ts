@@ -124,7 +124,6 @@ export const useAppLogic = () => {
     handleSaveAllScenarios: chatState.handleSaveAllScenarios,
     t,
     activeChat,
-    scrollContainerRef: chatState.scrollContainerRef,
     currentTheme,
     language,
   });

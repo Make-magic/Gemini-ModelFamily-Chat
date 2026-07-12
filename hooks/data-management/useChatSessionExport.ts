@@ -1,6 +1,6 @@
 
 import React, { useCallback } from 'react';
-import { SavedChatSession, Theme } from '../../types';
+import { AppSettings, SavedChatSession, Theme } from '../../types';
 import { logService } from '../../utils/appUtils';
 import { downloadBlob } from '../../utils/objectUrlManager';
 import {
@@ -9,7 +9,6 @@ import {
     exportHtmlStringAsFile,
     exportTextStringAsFile,
     gatherPageStyles,
-    triggerDownload,
     generateExportHtmlTemplate,
     generateExportTxtTemplate,
     embedImagesInClone,
@@ -17,10 +16,11 @@ import {
     exportChatAsPdfDocument
 } from '../../utils/exportUtils';
 import DOMPurify from 'dompurify';
+import { createChatExportDom } from '../../utils/export/chatDom';
 
 interface UseChatSessionExportProps {
     activeChat: SavedChatSession | undefined;
-    scrollContainerRef: React.RefObject<HTMLDivElement>;
+    appSettings: AppSettings;
     currentTheme: Theme;
     language: 'en' | 'zh';
     t: (key: string) => string;
@@ -28,7 +28,7 @@ interface UseChatSessionExportProps {
 
 export const useChatSessionExport = ({
     activeChat,
-    scrollContainerRef,
+    appSettings,
     currentTheme,
     language,
     t
@@ -45,14 +45,6 @@ export const useChatSessionExport = ({
         // Use .md extension for both 'txt' and 'md' formats
         const extension = (format === 'txt' || format === 'md') ? 'md' : format;
         const filename = `chat-${safeTitle}-${isoDate}.${extension}`;
-        const scrollContainer = scrollContainerRef.current;
-
-        // Small delay to allow MessageList to render all messages (bypassing virtualization)
-        // when exportStatus is set to 'exporting' in the parent.
-        if (format === 'png' || format === 'html') {
-            await new Promise(resolve => setTimeout(resolve, 800));
-        }
-
         if (format === 'pdf') {
             await exportChatAsPdfDocument(
                 activeChat.title,
@@ -63,18 +55,23 @@ export const useChatSessionExport = ({
         }
 
         if (format === 'png') {
-            if (!scrollContainer) return;
-
             let cleanup = () => { };
+            let removeExportDom = () => { };
             try {
+                const exportDom = await createChatExportDom({
+                    session: activeChat,
+                    appSettings,
+                    theme: currentTheme,
+                    t,
+                });
+                removeExportDom = exportDom.remove;
                 const { container, innerContent, remove, rootBgColor } = await createSnapshotContainer(
                     currentTheme.id,
                     '800px'
                 );
                 cleanup = remove;
 
-                // Clone the chat container
-                const chatClone = scrollContainer.cloneNode(true) as HTMLElement;
+                const chatClone = exportDom.content.cloneNode(true) as HTMLElement;
                 chatClone.style.height = 'auto';
                 chatClone.style.maxHeight = 'none';
                 chatClone.style.overflow = 'visible';
@@ -135,9 +132,6 @@ export const useChatSessionExport = ({
 
                 innerContent.appendChild(exportWrapper);
 
-                // Wait for rendering
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
                 await exportElementAsPng(container, filename, {
                     backgroundColor: rootBgColor,
                     scale: 2,
@@ -145,54 +139,58 @@ export const useChatSessionExport = ({
 
             } finally {
                 cleanup();
+                removeExportDom();
             }
             return;
         }
 
         if (format === 'html') {
-            if (!scrollContainer) return;
-
-            // 1. Clone the container to avoid modifying the live UI
-            const chatClone = scrollContainer.cloneNode(true) as HTMLElement;
-
-            // 2. Clean UI elements that shouldn't be in the export
-            const selectorsToRemove = [
-                'button',
-                '.message-actions',
-                '.sticky',
-                'input',
-                'textarea',
-                '.code-block-utility-button',
-                '[role="tooltip"]',
-                '.loading-dots-container'
-            ];
-            chatClone.querySelectorAll(selectorsToRemove.join(',')).forEach(el => el.remove());
-
-            // 3. Expand all details elements (thoughts) so they are visible in export
-            chatClone.querySelectorAll('details').forEach(el => el.setAttribute('open', 'true'));
-
-            // 4. Embed Images: Convert blob/url images to Base64 for self-contained HTML
-            await embedImagesInClone(chatClone);
-
-            // 5. Gather Styles & Generate Template
-            const styles = await gatherPageStyles();
-            const bodyClasses = document.body.className;
-            const rootBgColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-primary');
-            const chatHtml = chatClone.innerHTML;
-
-            const fullHtml = generateExportHtmlTemplate({
-                title: DOMPurify.sanitize(activeChat.title),
-                date: dateStr,
-                model: activeChat.settings.modelId,
-                contentHtml: chatHtml,
-                styles,
-                themeId: currentTheme.id,
-                language,
-                rootBgColor,
-                bodyClasses
+            const exportDom = await createChatExportDom({
+                session: activeChat,
+                appSettings,
+                theme: currentTheme,
+                t,
             });
+            try {
+                const chatClone = exportDom.content.cloneNode(true) as HTMLElement;
 
-            exportHtmlStringAsFile(fullHtml, filename);
+                const selectorsToRemove = [
+                    'button',
+                    '.message-actions',
+                    '.sticky',
+                    'input',
+                    'textarea',
+                    '.code-block-utility-button',
+                    '[role="tooltip"]',
+                    '.loading-dots-container'
+                ];
+                chatClone.querySelectorAll(selectorsToRemove.join(',')).forEach(el => el.remove());
+
+                chatClone.querySelectorAll('details').forEach(el => el.setAttribute('open', 'true'));
+
+                await embedImagesInClone(chatClone);
+
+                const styles = await gatherPageStyles();
+                const bodyClasses = document.body.className;
+                const rootBgColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-primary');
+                const chatHtml = chatClone.innerHTML;
+
+                const fullHtml = generateExportHtmlTemplate({
+                    title: DOMPurify.sanitize(activeChat.title),
+                    date: dateStr,
+                    model: activeChat.settings.modelId,
+                    contentHtml: chatHtml,
+                    styles,
+                    themeId: currentTheme.id,
+                    language,
+                    rootBgColor,
+                    bodyClasses
+                });
+
+                exportHtmlStringAsFile(fullHtml, filename);
+            } finally {
+                exportDom.remove();
+            }
         } else if (format === 'txt' || format === 'md') {
             const txtContent = generateExportTxtTemplate({
                 title: activeChat.title,
@@ -225,7 +223,7 @@ export const useChatSessionExport = ({
                 alert(t('export_failed_title'));
             }
         }
-    }, [activeChat, currentTheme, language, scrollContainerRef, t]);
+    }, [activeChat, appSettings, currentTheme, language, t]);
 
     return { exportChatLogic };
 };

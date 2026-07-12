@@ -131,8 +131,6 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     ttsMessageId: chatState.ttsMessageId,
     language,
     scrollNavVisibility: chatState.scrollNavVisibility,
-    onScrollToPrevTurn: chatState.scrollToPrevTurn,
-    onScrollToNextTurn: chatState.scrollToNextTurn,
     appSettings,
     commandedInput: chatState.commandedInput,
     setCommandedInput: chatState.setCommandedInput,
@@ -196,12 +194,11 @@ export const useAppProps = (logic: ReturnType<typeof useAppLogic>) => {
     onPushToServer: pushToServer,
     syncConflict,
     onResolveSyncConflict: resolveSyncConflict,
-    exportStatus,
     t,
   }), [
     chatState, uiState, appSettings, currentTheme, language, t, sessionTitle,
     pipState, handleLoadCanvasPromptAndSave, handleSuggestionClick, handleSetThinkingLevel,
-    handleOpenSidePanel, getCurrentModelDisplayName, exportStatus,
+    handleOpenSidePanel, getCurrentModelDisplayName,
     pullStatus, pushStatus, lastPullTime, lastPushTime, pullFromServer, pushToServer,
     syncConflict, resolveSyncConflict
   ]);

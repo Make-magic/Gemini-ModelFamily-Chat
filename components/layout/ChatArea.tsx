@@ -27,7 +27,7 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
     expandCodeBlocksByDefault, isMermaidRenderingEnabled, isGraphvizRenderingEnabled,
     onSuggestionClick, onOrganizeInfoClick, onSmartBoardClick, onBboxClick, onResearchSearchClick, onFollowUpSuggestionClick, onTextToSpeech, onGenerateCanvas, ttsMessageId, language, scrollNavVisibility,
     isSmartBoardActive, isOrganizeActive, isBboxActive, isResearchActive,
-    onScrollToPrevTurn, onScrollToNextTurn, onEditMessageContent, onUpdateMessageFile,
+    onEditMessageContent, onUpdateMessageFile,
     appSettings, commandedInput, setCommandedInput, onMessageSent,
     selectedFiles, setSelectedFiles, onSendMessage, isEditing, editMode, editingMessageId, setEditingMessageId, onStopGenerating,
     onCancelEdit, onProcessFiles, onAddFileById, onCancelUpload, onRetryUpload, onTranscribeAudio,
@@ -41,7 +41,6 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
     generateQuadImages, onToggleQuadImages,
     onSetThinkingLevel, setCurrentChatSettings, onUpdateMessageContent, onAddUserMessage,
     onOpenSidePanel,
-    exportStatus,
     pullStatus,
     pushStatus,
     lastPullTime,
@@ -179,15 +178,12 @@ export const ChatArea: React.FC<ChatAreaProps> = (props) => {
         t={t}
         language={language}
         scrollNavVisibility={scrollNavVisibility}
-        onScrollToPrevTurn={onScrollToPrevTurn}
-        onScrollToNextTurn={onScrollToNextTurn}
         chatInputHeight={chatInputHeight}
         appSettings={appSettings}
         currentModelId={currentChatSettings.modelId}
         onOpenSidePanel={onOpenSidePanel}
         onUpdateMessageFile={onUpdateMessageFile}
         onQuote={handleQuote}
-        exportStatus={exportStatus}
       />
 
       <div ref={chatInputContainerRef} className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none">

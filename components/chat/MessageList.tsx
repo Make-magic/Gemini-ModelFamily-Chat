@@ -42,24 +42,20 @@ export interface MessageListProps {
   t: (key: keyof typeof translations, fallback?: string) => string;
   language: 'en' | 'zh';
   scrollNavVisibility: { up: boolean, down: boolean };
-  onScrollToPrevTurn: () => void;
-  onScrollToNextTurn: () => void;
   chatInputHeight: number;
   appSettings: AppSettings;
   currentModelId: string;
   onOpenSidePanel: (content: SideViewContent) => void;
   onQuote: (text: string) => void;
   onEditMessageContent: (messageId: string, newContent: string) => void;
-  exportStatus?: 'idle' | 'exporting';
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
   messages, sessionTitle, scrollContainerRef, setScrollContainerRef, onScrollContainerScroll,
   onEditMessage, onDeleteMessage, onRetryMessage, onUpdateMessageFile, showThoughts, themeColors, baseFontSize,
   expandCodeBlocksByDefault, isMermaidRenderingEnabled, isGraphvizRenderingEnabled, onSuggestionClick, onOrganizeInfoClick, onFollowUpSuggestionClick, onTextToSpeech, onGenerateCanvas, ttsMessageId, t, language, themeId,
-  scrollNavVisibility, onScrollToPrevTurn, onScrollToNextTurn,
-  chatInputHeight, appSettings, currentModelId, onOpenSidePanel, onQuote, onEditMessageContent,
-  exportStatus
+  scrollNavVisibility,
+  chatInputHeight, appSettings, currentModelId, onOpenSidePanel, onQuote, onEditMessageContent
 }) => {
   const {
     previewFile,
@@ -237,16 +233,6 @@ export const MessageList: React.FC<MessageListProps> = ({
               themeId={themeId}
             />
           </div>
-        ) : exportStatus === 'exporting' ? (
-          <div
-            ref={setScrollContainerRef}
-            onScroll={onScrollContainerScroll}
-            className="h-full overflow-y-auto px-1.5 sm:px-2 md:px-3 py-3 sm:py-4 md:py-6 custom-scrollbar"
-            style={{ paddingBottom: chatInputHeight ? `${chatInputHeight + 16}px` : '160px' }}
-            role="list"
-          >
-            {messages.map((message, index) => <React.Fragment key={message.id}>{renderMessage(message, index)}</React.Fragment>)}
-          </div>
         ) : (
           <Virtuoso
             ref={virtuosoRef}
@@ -269,8 +255,8 @@ export const MessageList: React.FC<MessageListProps> = ({
         <ScrollNavigation
           showUp={scrollNavVisibility.up}
           showDown={scrollNavVisibility.down}
-          onScrollToPrev={exportStatus === 'exporting' ? onScrollToPrevTurn : handleVirtualPrevTurn}
-          onScrollToNext={exportStatus === 'exporting' ? onScrollToNextTurn : handleVirtualNextTurn}
+          onScrollToPrev={handleVirtualPrevTurn}
+          onScrollToNext={handleVirtualNextTurn}
           bottomOffset={Math.max(16, chatInputHeight + 16)}
         />
       </div>
